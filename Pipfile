@@ -7,6 +7,7 @@ pytest-mypy = "*"
 
 [packages]
 pydantic = "*"
+toml = "*"
 
 [scripts]
 start = "python -m chuleisi"
