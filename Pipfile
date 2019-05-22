@@ -1,0 +1,9 @@
+[dev-packages]
+flake8-bugbear = "*"
+pytest = "*"
+pytest-cov = "*"
+pytest-flake8 = "*"
+pytest-mypy = "*"
+
+[scripts]
+test = "py.test --cov=chuleisi --flake8 --mypy --no-cov-on-fail"
