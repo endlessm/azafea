@@ -5,6 +5,9 @@ pytest-cov = "*"
 pytest-flake8 = "*"
 pytest-mypy = "*"
 
+[packages]
+pydantic = "*"
+
 [scripts]
 start = "python -m chuleisi"
 test = "py.test --cov=chuleisi --flake8 --mypy --no-cov-on-fail"

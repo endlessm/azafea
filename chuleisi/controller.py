@@ -1,9 +1,9 @@
 import logging
 from typing import List
 
+from .config import Config
 from .logging import setup_logging
 from .processor import Processor
-from .utils import get_cpu_count
 
 
 log = logging.getLogger(__name__)
@@ -14,10 +14,11 @@ class Controller:
         self._processors: List[Processor] = []
 
         # TODO: Get this from a configuration file
-        setup_logging(verbose=True)
+        config = Config()
 
-        # TODO: Get this from a configuration file
-        self._number_of_workers = get_cpu_count()
+        setup_logging(verbose=config.main.verbose)
+
+        self._number_of_workers = config.main.number_of_workers
 
     def start(self) -> None:
         log.info('Starting the controller with %s worker%s',
