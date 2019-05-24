@@ -75,3 +75,6 @@ class Config(_Base):
             raise InvalidConfigurationError('main', e.raw_errors)
 
         return cls(main=main)
+
+    def __str__(self) -> str:
+        return toml.dumps(dataclasses.asdict(self)).strip()

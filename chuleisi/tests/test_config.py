@@ -11,6 +11,12 @@ def test_defaults():
     assert not config.main.verbose
     assert config.main.number_of_workers == number_of_workers
 
+    assert str(config) == '\n'.join([
+        '[main]',
+        'verbose = false',
+        f'number_of_workers = {number_of_workers}',
+    ])
+
 
 def test_get_nonexistent_option():
     config = chuleisi.config.Config()
@@ -28,6 +34,12 @@ def test_override(make_config):
 
     assert not config.main.verbose
     assert config.main.number_of_workers == 1
+
+    assert str(config) == '\n'.join([
+        '[main]',
+        'verbose = false',
+        'number_of_workers = 1',
+    ])
 
 
 def test_override_with_nonexistent_file():
