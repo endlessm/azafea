@@ -46,7 +46,7 @@ class Controller:
                  self._number_of_workers, 's' if self._number_of_workers > 1 else '')
 
         for i in range(1, self._number_of_workers + 1):
-            proc = Processor(f'worker-{i}')
+            proc = Processor(f'worker-{i}', self.config)
             proc.start()
             self._processors.append(proc)
 

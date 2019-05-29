@@ -6,13 +6,17 @@ import time
 from typing import Any
 
 
+from .config import Config
+
+
 log = logging.getLogger(__name__)
 
 
 class Processor(Process):
-    def __init__(self, name: str) -> None:
+    def __init__(self, name: str, config: Config) -> None:
         super().__init__(name=name)
 
+        self.config = config
         self._continue = True
 
     def _exit_cleanly(self, signum: int, _: Any) -> None:

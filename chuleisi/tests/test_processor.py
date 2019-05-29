@@ -2,14 +2,16 @@ import os
 from signal import SIGINT, SIGTERM
 import time
 
+from chuleisi.config import Config
 from chuleisi.logging import setup_logging
 import chuleisi.processor
 
 
 def test_start(capfd):
-    setup_logging(verbose=False)
+    config = Config()
+    setup_logging(verbose=config.main.verbose)
 
-    proc = chuleisi.processor.Processor('test-worker')
+    proc = chuleisi.processor.Processor('test-worker', config)
 
     # Prevent the processor from running its main loop
     proc._continue = False
@@ -21,10 +23,11 @@ def test_start(capfd):
     assert '{test-worker} Starting' in capture.out
 
 
-def test_start_then_sigint(capfd):
-    setup_logging(verbose=True)
+def test_start_then_sigint(capfd, make_config):
+    config = make_config({'main': {'verbose': True}})
+    setup_logging(verbose=config.main.verbose)
 
-    proc = chuleisi.processor.Processor('test-worker')
+    proc = chuleisi.processor.Processor('test-worker', config)
     proc.start()
 
     # Give the process a bit of time to start before sending the signal; 0.1s should be way enough
@@ -40,10 +43,11 @@ def test_start_then_sigint(capfd):
     assert '{test-worker} Received SIGINT, finishing the current task…' in capture.out
 
 
-def test_start_then_sigterm(capfd):
-    setup_logging(verbose=True)
+def test_start_then_sigterm(capfd, make_config):
+    config = make_config({'main': {'verbose': True}})
+    setup_logging(verbose=config.main.verbose)
 
-    proc = chuleisi.processor.Processor('test-worker')
+    proc = chuleisi.processor.Processor('test-worker', config)
     proc.start()
 
     # Give the process a bit of time to start before sending the signal; 0.1s should be way enough

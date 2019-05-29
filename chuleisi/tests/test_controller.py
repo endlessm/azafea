@@ -8,7 +8,7 @@ from chuleisi.utils import get_cpu_count
 
 
 class MockProcessor:
-    def __init__(self, name):
+    def __init__(self, name, config):
         self.name = name
         self.joined = False
         self.terminated = False
@@ -65,7 +65,7 @@ def test_sigint_handler(capfd, make_config):
 
     with pytest.raises(SystemExit) as exc_info:
         controller = chuleisi.controller.Controller(config)
-        controller._processors = [MockProcessor('test-worker')]
+        controller._processors = [MockProcessor('test-worker', config)]
         controller._exit_cleanly(SIGINT, None)
 
     for proc in controller._processors:
@@ -84,7 +84,7 @@ def test_sigterm_handler(capfd, make_config):
 
     with pytest.raises(SystemExit) as exc_info:
         controller = chuleisi.controller.Controller(config)
-        controller._processors = [MockProcessor('test-worker')]
+        controller._processors = [MockProcessor('test-worker', config)]
         controller._exit_cleanly(SIGTERM, None)
 
     for proc in controller._processors:
