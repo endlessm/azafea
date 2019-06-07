@@ -9,7 +9,7 @@ from pydantic.error_wrappers import ErrorWrapper, ValidationError
 
 import toml
 
-from ._validators import is_boolean, is_strictly_positive_integer
+from ._validators import is_boolean, is_non_empty_string, is_strictly_positive_integer
 from ..utils import get_cpu_count
 
 
@@ -59,8 +59,23 @@ class Main(_Base):
 
 
 @dataclass(frozen=True)
+class Redis(_Base):
+    host: str = 'localhost'
+    port: int = 6379
+
+    @validator('host', pre=True)
+    def host_is_non_empty_string(cls, value: Any) -> str:
+        return is_non_empty_string(value)
+
+    @validator('port', pre=True)
+    def port_is_strictly_positive_integer(cls, value: Any) -> int:
+        return is_strictly_positive_integer(value)
+
+
+@dataclass(frozen=True)
 class Config(_Base):
     main: Main = dataclasses.field(default_factory=Main)
+    redis: Redis = dataclasses.field(default_factory=Redis)
 
     @classmethod
     def from_file(cls, config_file_path: str) -> 'Config':
@@ -74,7 +89,12 @@ class Config(_Base):
         except ValidationError as e:
             raise InvalidConfigurationError('main', e.raw_errors)
 
-        return cls(main=main)
+        try:
+            redis = Redis(**overrides.get('redis', {}))
+        except ValidationError as e:
+            raise InvalidConfigurationError('redis', e.raw_errors)
+
+        return cls(main=main, redis=redis)
 
     def __str__(self) -> str:
         return toml.dumps(dataclasses.asdict(self)).strip()

@@ -8,6 +8,16 @@ def is_boolean(value: Any) -> bool:
     return value
 
 
+def is_non_empty_string(value: Any) -> str:
+    if not isinstance(value, str):
+        raise TypeError(f'{value!r} is not a string')
+
+    if not value:
+        raise ValueError(f'{value!r} is empty')
+
+    return value
+
+
 def is_strictly_positive_integer(value: Any) -> int:
     if type(value) is not int:
         raise TypeError(f'{value!r} is not an integer')
