@@ -73,9 +73,46 @@ class Redis(_Base):
 
 
 @dataclass(frozen=True)
+class PostgreSQL(_Base):
+    host: str = 'localhost'
+    port: int = 5432
+    user: str = 'chuleisi'
+    password: str = 'CHANGE ME!!'
+    database: str = 'chuleisi'
+
+    @validator('host', pre=True)
+    def host_is_non_empty_string(cls, value: Any) -> str:
+        return is_non_empty_string(value)
+
+    @validator('port', pre=True)
+    def port_is_strictly_positive_integer(cls, value: Any) -> int:
+        return is_strictly_positive_integer(value)
+
+    @validator('user', pre=True)
+    def user_is_non_empty_string(cls, value: Any) -> str:
+        return is_non_empty_string(value)
+
+    @validator('password', pre=True)
+    def password_is_non_empty_string(cls, value: Any) -> str:
+        return is_non_empty_string(value)
+
+    @validator('password')
+    def password_is_left_to_default(cls, value: str) -> str:
+        if value == 'CHANGE ME!!':
+            logger.warning('Did you forget to change the PostgreSQL password?')
+
+        return value
+
+    @validator('database', pre=True)
+    def database_is_non_empty_string(cls, value: Any) -> str:
+        return is_non_empty_string(value)
+
+
+@dataclass(frozen=True)
 class Config(_Base):
     main: Main = dataclasses.field(default_factory=Main)
     redis: Redis = dataclasses.field(default_factory=Redis)
+    postgresql: PostgreSQL = dataclasses.field(default_factory=PostgreSQL)
 
     @classmethod
     def from_file(cls, config_file_path: str) -> 'Config':
@@ -94,7 +131,12 @@ class Config(_Base):
         except ValidationError as e:
             raise InvalidConfigurationError('redis', e.raw_errors)
 
-        return cls(main=main, redis=redis)
+        try:
+            postgresql = PostgreSQL(**overrides.get('postgresql', {}))
+        except ValidationError as e:
+            raise InvalidConfigurationError('postgresql', e.raw_errors)
+
+        return cls(main=main, redis=redis, postgresql=postgresql)
 
     def __str__(self) -> str:
         return toml.dumps(dataclasses.asdict(self)).strip()
