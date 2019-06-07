@@ -6,6 +6,7 @@ from typing import Any
 from redis import Redis
 
 from .config import Config
+from .model import Db
 
 
 log = logging.getLogger(__name__)
@@ -19,6 +20,8 @@ class Processor(Process):
         self._continue = True
 
         self._redis = Redis(host=config.redis.host, port=config.redis.port)
+        self._db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
+                      config.postgresql.password, config.postgresql.database)
 
     def _exit_cleanly(self, signum: int, _: Any) -> None:
         signal_name = Signals(signum).name

@@ -8,10 +8,15 @@ pytest = "*"
 pytest-cov = "*"
 pytest-flake8 = "*"
 pytest-mypy = "*"
+# Waiting for 0.2, master got lots of fixes and improvements since the last
+# release: https://github.com/dropbox/sqlalchemy-stubs/issues/78
+sqlalchemy-stubs = {git = "https://github.com/dropbox/sqlalchemy-stubs.git"}
 
 [packages]
+psycopg2 = "*"
 pydantic = "*"
 redis = "*"
+sqlalchemy = "*"
 toml = "*"
 
 [scripts]
