@@ -18,6 +18,8 @@ class Controller:
 
         self._number_of_workers = config.main.number_of_workers
 
+        log.debug('Loaded the following configuration:\n%s', config)
+
     def start(self) -> None:
         log.info('Starting the controller with %s worker%s',
                  self._number_of_workers, 's' if self._number_of_workers > 1 else '')
