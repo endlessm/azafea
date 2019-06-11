@@ -1,3 +1,4 @@
+from chuleisi.config import Config
 import chuleisi.controller
 from chuleisi.utils import get_cpu_count
 
@@ -14,9 +15,11 @@ class MockProcessor:
 
 
 def test_start(capfd, monkeypatch):
+    config = Config()
+
     with monkeypatch.context() as m:
         m.setattr(chuleisi.controller, 'Processor', MockProcessor)
-        controller = chuleisi.controller.Controller()
+        controller = chuleisi.controller.Controller(config)
         controller.start()
 
     number = get_cpu_count()

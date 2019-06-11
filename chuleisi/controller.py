@@ -10,11 +10,9 @@ log = logging.getLogger(__name__)
 
 
 class Controller:
-    def __init__(self) -> None:
+    def __init__(self, config: Config) -> None:
+        self.config = config
         self._processors: List[Processor] = []
-
-        # TODO: Get this from a configuration file
-        config = Config()
 
         setup_logging(verbose=config.main.verbose)
 

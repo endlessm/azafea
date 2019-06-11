@@ -1,5 +1,8 @@
+from .config import Config
 from .controller import Controller
 
 
-controller = Controller()
+config = Config()
+
+controller = Controller(config)
 controller.main()
