@@ -32,7 +32,7 @@ def test_defaults():
         'host = "localhost"',
         'port = 5432',
         'user = "chuleisi"',
-        'password = "CHANGE ME!!"',
+        'password = "** hidden **"',
         'database = "chuleisi"',
     ])
 
@@ -76,7 +76,7 @@ def test_override(make_config):
         'host = "pg-server"',
         'port = 5432',
         'user = "chuleisi"',
-        'password = "CHANGE ME!!"',
+        'password = "** hidden **"',
         'database = "chuleisi"',
     ])
 

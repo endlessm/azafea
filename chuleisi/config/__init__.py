@@ -139,4 +139,7 @@ class Config(_Base):
         return cls(main=main, redis=redis, postgresql=postgresql)
 
     def __str__(self) -> str:
-        return toml.dumps(dataclasses.asdict(self)).strip()
+        pg_no_password = dataclasses.replace(self.postgresql, password='** hidden **')
+        self_no_passwords = dataclasses.replace(self, postgresql=pg_no_password)
+
+        return toml.dumps(dataclasses.asdict(self_no_passwords)).strip()
