@@ -25,3 +25,22 @@ def test_get_fqdn(module, name, expected):
     module = import_module(module)
     f = getattr(module, name)
     assert chuleisi.utils.get_fqdn(f) == expected
+
+
+def test_wrap_with_repr(capfd):
+    def some_function(some, arguments):
+        """An excellent doc string"""
+        print(f'Calling some_function({some!r}, {arguments!r})')
+
+    assert repr(some_function) != 'Some super repr'
+
+    wrapped = chuleisi.utils.wrap_with_repr(some_function, 'Some super repr')
+    assert repr(wrapped) == 'Some super repr'
+    assert wrapped.__doc__ == 'An excellent doc string'
+    assert wrapped.__module__ == 'chuleisi.tests.test_utils'
+    assert wrapped.__name__ == 'some_function'
+
+    wrapped('foo', 42)
+
+    capture = capfd.readouterr()
+    assert "Calling some_function('foo', 42)" in capture.out
