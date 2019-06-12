@@ -1,5 +1,9 @@
 import pytest
 
+from sqlalchemy.orm import relationship
+from sqlalchemy.schema import Column, ForeignKey
+from sqlalchemy.types import Integer, Text
+
 from chuleisi.config import Config
 import chuleisi.model
 
@@ -84,3 +88,41 @@ def test_fail_in_db_session(monkeypatch):
         assert not dbsession.open
         assert not dbsession.committed
         assert dbsession.rolled_back
+
+
+def test_model():
+    class Address(chuleisi.model.Base):
+        __tablename__ = 'addresses'
+
+        id = Column(Integer, primary_key=True)
+        street_number = Column(Text)
+        street_name = Column(Text)
+        city = Column(Text)
+
+    class Person(chuleisi.model.Base):
+        __tablename__ = 'people'
+
+        id = Column(Integer, primary_key=True)
+        name = Column(Text)
+        address_id = Column(Integer, ForeignKey('addresses.id'))
+
+        address = relationship(Address)
+
+    address = Address(id=1, street_number='221B', street_name='Baker Street', city='London',
+                      # Extra arg, to ensure it is ignored
+                      ignored='whatever')
+    person = Person(id=1, name='Sherlock Holmes', address=address)
+
+    assert str(person) == '\n'.join([
+        '# chuleisi.tests.test_model.Person',
+        '* address: 1',
+        '* id: 1',
+        '* name: Sherlock Holmes',
+    ])
+    assert str(address) == '\n'.join([
+        '# chuleisi.tests.test_model.Address',
+        '* city: London',
+        '* id: 1',
+        '* street_name: Baker Street',
+        '* street_number: 221B',
+    ])
