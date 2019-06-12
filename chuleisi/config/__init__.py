@@ -1,16 +1,18 @@
 import dataclasses
 import logging
 import os
-from typing import Any, MutableMapping, Sequence, Union
+from typing import Any, Callable, Mapping, MutableMapping, Sequence, Union
 
 from pydantic.class_validators import validator
 from pydantic.dataclasses import dataclass
 from pydantic.error_wrappers import ErrorWrapper, ValidationError
 
+from sqlalchemy.orm.session import Session as DbSession
+
 import toml
 
 from ._validators import is_boolean, is_non_empty_string, is_strictly_positive_integer
-from ..utils import get_cpu_count
+from ..utils import get_cpu_count, get_handler, wrap_with_repr
 
 
 logger = logging.getLogger(__name__)
@@ -109,14 +111,34 @@ class PostgreSQL(_Base):
 
 
 @dataclass(frozen=True)
+class Queue(_Base):
+    handler: Callable
+
+    @validator('handler', pre=True)
+    def get_handler(cls, value: str) -> Callable[[DbSession, bytes], None]:
+        try:
+            handler = get_handler(value)
+
+        except ImportError:
+            raise ValueError(f'Could not import handler module {value!r}')
+
+        except AttributeError:
+            raise ValueError(f'Handler {value!r} is missing a "process" function')
+
+        return wrap_with_repr(handler, value)
+
+
+@dataclass(frozen=True)
 class Config(_Base):
     main: Main = dataclasses.field(default_factory=Main)
     redis: Redis = dataclasses.field(default_factory=Redis)
     postgresql: PostgreSQL = dataclasses.field(default_factory=PostgreSQL)
+    queues: Mapping[str, Queue] = dataclasses.field(default_factory=dict)
 
     @classmethod
     def from_file(cls, config_file_path: str) -> 'Config':
         overrides: MutableMapping[str, Any] = {}
+        queues: MutableMapping[str, Queue] = {}
 
         if os.path.exists(config_file_path):
             overrides = toml.load(config_file_path)
@@ -136,7 +158,13 @@ class Config(_Base):
         except ValidationError as e:
             raise InvalidConfigurationError('postgresql', e.raw_errors)
 
-        return cls(main=main, redis=redis, postgresql=postgresql)
+        try:
+            for name, queue_options in overrides.get('queues', {}).items():
+                queues[name] = Queue(**queue_options)
+        except ValidationError as e:
+            raise InvalidConfigurationError('queues', e.raw_errors)
+
+        return cls(main=main, redis=redis, postgresql=postgresql, queues=queues)
 
     def __str__(self) -> str:
         pg_no_password = dataclasses.replace(self.postgresql, password='** hidden **')

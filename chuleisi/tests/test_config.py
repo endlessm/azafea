@@ -34,6 +34,8 @@ def test_defaults():
         'user = "chuleisi"',
         'password = "** hidden **"',
         'database = "chuleisi"',
+        '',
+        '[queues]',
     ])
 
 
@@ -46,12 +48,21 @@ def test_get_nonexistent_option():
     assert f"No such configuration option: 'gauche'" in str(exc_info.value)
 
 
-def test_override(make_config):
-    config = make_config({
-        'main': {'number_of_workers': 1},
-        'redis': {'port': 42},
-        'postgresql': {'host': 'pg-server'}
-    })
+def test_override(monkeypatch, make_config):
+    def process(*args, **kwargs):
+        pass
+
+    def mock_get_handler(module):
+        return process
+
+    with monkeypatch.context() as m:
+        m.setattr(chuleisi.config, 'get_handler', mock_get_handler)
+        config = make_config({
+            'main': {'number_of_workers': 1},
+            'redis': {'port': 42},
+            'postgresql': {'host': 'pg-server'},
+            'queues': {'some-queue': {'handler': 'chuleisi.tests.test_config'}},
+        })
 
     assert not config.main.verbose
     assert config.main.number_of_workers == 1
@@ -78,6 +89,9 @@ def test_override(make_config):
         'user = "chuleisi"',
         'password = "** hidden **"',
         'database = "chuleisi"',
+        '',
+        '[queues.some-queue]',
+        'handler = "chuleisi.tests.test_config"',
     ])
 
 
@@ -287,3 +301,21 @@ def test_override_postgresql_database_empty(make_config):
 
     assert ('Invalid [postgresql] configuration:\n'
             f"* database: '' is empty") in str(exc_info.value)
+
+
+def test_add_queue_with_nonexistent_handler_module(make_config):
+    with pytest.raises(chuleisi.config.InvalidConfigurationError) as exc_info:
+        make_config({'queues': {'some-queue': {'handler': 'no.such.module'}}})
+
+    assert ('Invalid [queues] configuration:\n'
+            f"* handler: Could not import handler module 'no.such.module'"
+            ) in str(exc_info.value)
+
+
+def test_add_queue_with_invalid_handler_module(make_config):
+    with pytest.raises(chuleisi.config.InvalidConfigurationError) as exc_info:
+        make_config({'queues': {'some-queue': {'handler': 'chuleisi'}}})
+
+    assert ('Invalid [queues] configuration:\n'
+            f"* handler: Handler 'chuleisi' is missing a \"process\" function"
+            ) in str(exc_info.value)
