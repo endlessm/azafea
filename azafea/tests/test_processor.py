@@ -3,9 +3,9 @@ from signal import SIGINT, SIGTERM
 import time
 from typing import Optional, Sequence, Tuple
 
-from chuleisi.config import Config
-from chuleisi.logging import setup_logging
-import chuleisi.processor
+from azafea.config import Config
+from azafea.logging import setup_logging
+import azafea.processor
 
 
 class MockRedis:
@@ -47,7 +47,7 @@ def test_start(capfd):
     config = Config()
     setup_logging(verbose=config.main.verbose)
 
-    proc = chuleisi.processor.Processor('test-worker', config)
+    proc = azafea.processor.Processor('test-worker', config)
 
     # Prevent the processor from running its main loop
     proc._continue = False
@@ -67,17 +67,17 @@ def test_start_then_sigint(capfd, monkeypatch, make_config):
         return process
 
     with monkeypatch.context() as m:
-        m.setattr(chuleisi.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_handler', mock_get_handler)
         config = make_config({
             'main': {'verbose': True},
-            'queues': {'some-queue': {'handler': 'chuleisi.tests.test_processor'}},
+            'queues': {'some-queue': {'handler': 'azafea.tests.test_processor'}},
         })
 
     setup_logging(verbose=config.main.verbose)
 
     with monkeypatch.context() as m:
-        m.setattr(chuleisi.processor, 'Redis', MockRedis)
-        proc = chuleisi.processor.Processor('test-worker', config)
+        m.setattr(azafea.processor, 'Redis', MockRedis)
+        proc = azafea.processor.Processor('test-worker', config)
         proc.start()
 
     # Give the process a bit of time to start before sending the signal; 0.1s should be way enough
@@ -101,17 +101,17 @@ def test_start_then_sigterm(capfd, monkeypatch, make_config):
         return process
 
     with monkeypatch.context() as m:
-        m.setattr(chuleisi.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_handler', mock_get_handler)
         config = make_config({
             'main': {'verbose': True},
-            'queues': {'some-queue': {'handler': 'chuleisi.tests.test_processor'}},
+            'queues': {'some-queue': {'handler': 'azafea.tests.test_processor'}},
         })
 
     setup_logging(verbose=config.main.verbose)
 
     with monkeypatch.context() as m:
-        m.setattr(chuleisi.processor, 'Redis', MockRedis)
-        proc = chuleisi.processor.Processor('test-worker', config)
+        m.setattr(azafea.processor, 'Redis', MockRedis)
+        proc = azafea.processor.Processor('test-worker', config)
         proc.start()
 
     # Give the process a bit of time to start before sending the signal; 0.1s should be way enough
@@ -135,18 +135,18 @@ def test_process_with_error(capfd, monkeypatch, make_config, mock_sessionmaker):
         return failing_process
 
     with monkeypatch.context() as m:
-        m.setattr(chuleisi.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_handler', mock_get_handler)
         config = make_config({
             'main': {'verbose': True},
-            'queues': {'some-queue': {'handler': 'chuleisi.tests.test_processor'}},
+            'queues': {'some-queue': {'handler': 'azafea.tests.test_processor'}},
         })
 
     setup_logging(verbose=config.main.verbose)
 
     with monkeypatch.context() as m:
-        m.setattr(chuleisi.model, 'sessionmaker', mock_sessionmaker)
-        m.setattr(chuleisi.processor, 'Redis', MockRedis)
-        proc = chuleisi.processor.Processor('test-worker', config)
+        m.setattr(azafea.model, 'sessionmaker', mock_sessionmaker)
+        m.setattr(azafea.processor, 'Redis', MockRedis)
+        proc = azafea.processor.Processor('test-worker', config)
         proc.start()
 
     # Give the process a bit of time to start before sending the signal; 0.1s should be way enough
@@ -160,6 +160,6 @@ def test_process_with_error(capfd, monkeypatch, make_config, mock_sessionmaker):
     assert '{test-worker} Starting' in capture.out
     assert '{test-worker} Pulled "value" from the ' in capture.out
     assert ('{test-worker} An error occured while processing an event from the some-queue queue '
-            'with chuleisi.tests.test_processor.failing_process\nDetails:') in capture.err
+            'with azafea.tests.test_processor.failing_process\nDetails:') in capture.err
     assert 'ValueError: Oh no!' in capture.err
     assert 'Ran Redis command: LPUSH errors-some-queue value' in capture.out

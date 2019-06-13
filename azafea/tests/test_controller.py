@@ -2,9 +2,9 @@ from signal import SIGINT, SIGTERM
 
 import pytest
 
-from chuleisi.config import Config
-import chuleisi.controller
-from chuleisi.utils import get_cpu_count
+from azafea.config import Config
+import azafea.controller
+from azafea.utils import get_cpu_count
 
 
 class MockProcessor:
@@ -27,8 +27,8 @@ def test_start(capfd, monkeypatch):
     config = Config()
 
     with monkeypatch.context() as m:
-        m.setattr(chuleisi.controller, 'Processor', MockProcessor)
-        controller = chuleisi.controller.Controller(config)
+        m.setattr(azafea.controller, 'Processor', MockProcessor)
+        controller = azafea.controller.Controller(config)
         controller.start()
 
     number = get_cpu_count()
@@ -45,8 +45,8 @@ def test_override_num_workers(capfd, monkeypatch, make_config):
     config = make_config({'main': {'number_of_workers': 1}})
 
     with monkeypatch.context() as m:
-        m.setattr(chuleisi.controller, 'Processor', MockProcessor)
-        controller = chuleisi.controller.Controller(config)
+        m.setattr(azafea.controller, 'Processor', MockProcessor)
+        controller = azafea.controller.Controller(config)
         controller.start()
 
     number = get_cpu_count()
@@ -64,7 +64,7 @@ def test_sigint_handler(capfd, make_config):
     config = make_config({'main': {'number_of_workers': 1}})
 
     with pytest.raises(SystemExit) as exc_info:
-        controller = chuleisi.controller.Controller(config)
+        controller = azafea.controller.Controller(config)
         controller._processors = [MockProcessor('test-worker', config)]
         controller._exit_cleanly(SIGINT, None)
 
@@ -83,7 +83,7 @@ def test_sigterm_handler(capfd, make_config):
     config = make_config({'main': {'number_of_workers': 1}})
 
     with pytest.raises(SystemExit) as exc_info:
-        controller = chuleisi.controller.Controller(config)
+        controller = azafea.controller.Controller(config)
         controller._processors = [MockProcessor('test-worker', config)]
         controller._exit_cleanly(SIGTERM, None)
 

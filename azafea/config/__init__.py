@@ -78,9 +78,9 @@ class Redis(_Base):
 class PostgreSQL(_Base):
     host: str = 'localhost'
     port: int = 5432
-    user: str = 'chuleisi'
+    user: str = 'azafea'
     password: str = 'CHANGE ME!!'
-    database: str = 'chuleisi'
+    database: str = 'azafea'
 
     @validator('host', pre=True)
     def host_is_non_empty_string(cls, value: Any) -> str:

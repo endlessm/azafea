@@ -20,5 +20,5 @@ sqlalchemy = "*"
 toml = "*"
 
 [scripts]
-start = "python -m chuleisi"
-test = "py.test --cov=chuleisi --flake8 --mypy --no-cov-on-fail"
+start = "python -m azafea"
+test = "py.test --cov=azafea --flake8 --mypy --no-cov-on-fail"

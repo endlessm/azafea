@@ -4,7 +4,7 @@ import pytest
 
 import toml
 
-from chuleisi.config import Config
+from azafea.config import Config
 
 
 class MockSqlAlchemySession:
@@ -33,7 +33,7 @@ def mock_sessionmaker():
 
 @pytest.fixture()
 def make_config(tmp_path):
-    config_file_path = tmp_path.joinpath('chuleisi.conf')
+    config_file_path = tmp_path.joinpath('azafea.conf')
 
     def maker(d: Mapping) -> Config:
         with config_file_path.open('w') as f:

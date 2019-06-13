@@ -1,6 +1,6 @@
 import logging
 
-from chuleisi.logging import setup_logging
+from azafea.logging import setup_logging
 
 
 def test_default(capfd):

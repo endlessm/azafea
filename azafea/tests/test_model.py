@@ -4,18 +4,18 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.schema import Column, ForeignKey
 from sqlalchemy.types import Integer, Text
 
-from chuleisi.config import Config
-import chuleisi.model
+from azafea.config import Config
+import azafea.model
 
 
 def test_use_db_session(monkeypatch, mock_sessionmaker):
     config = Config()
 
     with monkeypatch.context() as m:
-        m.setattr(chuleisi.model, 'sessionmaker', mock_sessionmaker)
-        db = chuleisi.model.Db(config.postgresql.host, config.postgresql.port,
-                               config.postgresql.user, config.postgresql.password,
-                               config.postgresql.database)
+        m.setattr(azafea.model, 'sessionmaker', mock_sessionmaker)
+        db = azafea.model.Db(config.postgresql.host, config.postgresql.port,
+                             config.postgresql.user, config.postgresql.password,
+                             config.postgresql.database)
 
         with db as dbsession:
             assert dbsession.open
@@ -34,10 +34,10 @@ def test_fail_committing_db_session(monkeypatch, mock_sessionmaker):
         raise ValueError('Could not commit')
 
     with monkeypatch.context() as m:
-        m.setattr(chuleisi.model, 'sessionmaker', mock_sessionmaker)
-        db = chuleisi.model.Db(config.postgresql.host, config.postgresql.port,
-                               config.postgresql.user, config.postgresql.password,
-                               config.postgresql.database)
+        m.setattr(azafea.model, 'sessionmaker', mock_sessionmaker)
+        db = azafea.model.Db(config.postgresql.host, config.postgresql.port,
+                             config.postgresql.user, config.postgresql.password,
+                             config.postgresql.database)
 
         with pytest.raises(ValueError) as exc_info:
             with db as dbsession:
@@ -54,10 +54,10 @@ def test_fail_in_db_session(monkeypatch, mock_sessionmaker):
     config = Config()
 
     with monkeypatch.context() as m:
-        m.setattr(chuleisi.model, 'sessionmaker', mock_sessionmaker)
-        db = chuleisi.model.Db(config.postgresql.host, config.postgresql.port,
-                               config.postgresql.user, config.postgresql.password,
-                               config.postgresql.database)
+        m.setattr(azafea.model, 'sessionmaker', mock_sessionmaker)
+        db = azafea.model.Db(config.postgresql.host, config.postgresql.port,
+                             config.postgresql.user, config.postgresql.password,
+                             config.postgresql.database)
 
         with pytest.raises(ValueError) as exc_info:
             with db as dbsession:
@@ -71,7 +71,7 @@ def test_fail_in_db_session(monkeypatch, mock_sessionmaker):
 
 
 def test_model():
-    class Address(chuleisi.model.Base):
+    class Address(azafea.model.Base):
         __tablename__ = 'addresses'
 
         id = Column(Integer, primary_key=True)
@@ -79,7 +79,7 @@ def test_model():
         street_name = Column(Text)
         city = Column(Text)
 
-    class Person(chuleisi.model.Base):
+    class Person(azafea.model.Base):
         __tablename__ = 'people'
 
         id = Column(Integer, primary_key=True)
@@ -94,13 +94,13 @@ def test_model():
     person = Person(id=1, name='Sherlock Holmes', address=address)
 
     assert str(person) == '\n'.join([
-        '# chuleisi.tests.test_model.Person',
+        '# azafea.tests.test_model.Person',
         '* address: 1',
         '* id: 1',
         '* name: Sherlock Holmes',
     ])
     assert str(address) == '\n'.join([
-        '# chuleisi.tests.test_model.Address',
+        '# azafea.tests.test_model.Address',
         '* city: London',
         '* id: 1',
         '* street_name: Baker Street',
