@@ -3,6 +3,11 @@ import pytest
 import chuleisi.utils
 
 
+# A dummy process function to use in tests
+def process(*args, **kwargs):
+    pass
+
+
 def test_get_cpu_count_failed(monkeypatch):
     def mock_cpu_count():
         # Pretend Python could not find how many CPUs the machine has
@@ -25,6 +30,22 @@ def test_get_fqdn(module, name, expected):
     module = import_module(module)
     f = getattr(module, name)
     assert chuleisi.utils.get_fqdn(f) == expected
+
+
+def test_get_handler():
+    handler = chuleisi.utils.get_handler('chuleisi.tests.test_utils')
+
+    assert handler == process
+
+
+def test_get_nonexistent_handler_module():
+    with pytest.raises(ImportError):
+        chuleisi.utils.get_handler('no.such.module')
+
+
+def test_get_invalid_handler_module():
+    with pytest.raises(AttributeError):
+        chuleisi.utils.get_handler('chuleisi')
 
 
 def test_wrap_with_repr(capfd):

@@ -1,3 +1,4 @@
+from importlib import import_module
 import os
 from typing import Any, Callable, TypeVar
 
@@ -13,6 +14,12 @@ def get_cpu_count() -> int:
 
 def get_fqdn(f: Callable) -> str:
     return f'{f.__module__}.{f.__name__}'
+
+
+def get_handler(module: str) -> Callable:
+    handler_module = import_module(module)
+
+    return handler_module.process  # type: ignore
 
 
 def wrap_with_repr(f: Callable, repr_: str) -> Callable:
