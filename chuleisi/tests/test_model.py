@@ -8,27 +8,7 @@ from chuleisi.config import Config
 import chuleisi.model
 
 
-class MockSqlAlchemySession:
-    def __init__(self):
-        self.open = True
-        self.committed = False
-        self.rolled_back = False
-
-    def commit(self):
-        self.committed = True
-
-    def rollback(self):
-        self.rolled_back = True
-
-    def close(self):
-        self.open = False
-
-
-def mock_sessionmaker(bind=None):
-    return MockSqlAlchemySession
-
-
-def test_use_db_session(monkeypatch):
+def test_use_db_session(monkeypatch, mock_sessionmaker):
     config = Config()
 
     with monkeypatch.context() as m:
@@ -47,7 +27,7 @@ def test_use_db_session(monkeypatch):
         assert not dbsession.rolled_back
 
 
-def test_fail_committing_db_session(monkeypatch):
+def test_fail_committing_db_session(monkeypatch, mock_sessionmaker):
     config = Config()
 
     def raise_when_committing():
@@ -70,7 +50,7 @@ def test_fail_committing_db_session(monkeypatch):
         assert dbsession.rolled_back
 
 
-def test_fail_in_db_session(monkeypatch):
+def test_fail_in_db_session(monkeypatch, mock_sessionmaker):
     config = Config()
 
     with monkeypatch.context() as m:
