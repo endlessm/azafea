@@ -36,6 +36,12 @@ class MockRedis:
 
         return key.encode('utf-8'), value
 
+    def lpush(self, name, *values):
+        str_values = b' '.join(values).decode('utf-8')
+        print(f'Ran Redis command: LPUSH {name} {str_values}')
+
+        return 1
+
 
 def test_start(capfd):
     config = Config()
@@ -54,7 +60,19 @@ def test_start(capfd):
 
 
 def test_start_then_sigint(capfd, monkeypatch, make_config):
-    config = make_config({'main': {'verbose': True}})
+    def process(*args, **kwargs):
+        pass
+
+    def mock_get_handler(module):
+        return process
+
+    with monkeypatch.context() as m:
+        m.setattr(chuleisi.config, 'get_handler', mock_get_handler)
+        config = make_config({
+            'main': {'verbose': True},
+            'queues': {'some-queue': {'handler': 'chuleisi.tests.test_processor'}},
+        })
+
     setup_logging(verbose=config.main.verbose)
 
     with monkeypatch.context() as m:
@@ -76,7 +94,19 @@ def test_start_then_sigint(capfd, monkeypatch, make_config):
 
 
 def test_start_then_sigterm(capfd, monkeypatch, make_config):
-    config = make_config({'main': {'verbose': True}})
+    def process(*args, **kwargs):
+        pass
+
+    def mock_get_handler(module):
+        return process
+
+    with monkeypatch.context() as m:
+        m.setattr(chuleisi.config, 'get_handler', mock_get_handler)
+        config = make_config({
+            'main': {'verbose': True},
+            'queues': {'some-queue': {'handler': 'chuleisi.tests.test_processor'}},
+        })
+
     setup_logging(verbose=config.main.verbose)
 
     with monkeypatch.context() as m:
@@ -95,3 +125,41 @@ def test_start_then_sigterm(capfd, monkeypatch, make_config):
     assert '{test-worker} Starting' in capture.out
     assert '{test-worker} Pulled "value" from the ' in capture.out
     assert '{test-worker} Received SIGTERM, finishing the current task…' in capture.out
+
+
+def test_process_with_error(capfd, monkeypatch, make_config, mock_sessionmaker):
+    def failing_process(*args, **kwargs):
+        raise ValueError('Oh no!')
+
+    def mock_get_handler(module):
+        return failing_process
+
+    with monkeypatch.context() as m:
+        m.setattr(chuleisi.config, 'get_handler', mock_get_handler)
+        config = make_config({
+            'main': {'verbose': True},
+            'queues': {'some-queue': {'handler': 'chuleisi.tests.test_processor'}},
+        })
+
+    setup_logging(verbose=config.main.verbose)
+
+    with monkeypatch.context() as m:
+        m.setattr(chuleisi.model, 'sessionmaker', mock_sessionmaker)
+        m.setattr(chuleisi.processor, 'Redis', MockRedis)
+        proc = chuleisi.processor.Processor('test-worker', config)
+        proc.start()
+
+    # Give the process a bit of time to start before sending the signal; 0.1s should be way enough
+    # to pass at least once in the main loop
+    time.sleep(0.1)
+    os.kill(proc.pid, SIGTERM)
+
+    proc.join()
+
+    capture = capfd.readouterr()
+    assert '{test-worker} Starting' in capture.out
+    assert '{test-worker} Pulled "value" from the ' in capture.out
+    assert ('{test-worker} An error occured while processing an event from the some-queue queue '
+            'with chuleisi.tests.test_processor.failing_process\nDetails:') in capture.err
+    assert 'ValueError: Oh no!' in capture.err
+    assert 'Ran Redis command: LPUSH errors-some-queue value' in capture.out

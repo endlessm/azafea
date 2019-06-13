@@ -7,6 +7,7 @@ from redis import Redis
 
 from .config import Config
 from .model import Db
+from .utils import get_fqdn
 
 
 log = logging.getLogger(__name__)
@@ -34,7 +35,8 @@ class Processor(Process):
         intercept_signal(SIGINT, self._exit_cleanly)
         intercept_signal(SIGTERM, self._exit_cleanly)
 
-        queues = ('some_events:1', 'other_events:1', 'other_events:2')
+        queues = tuple(self.config.queues.keys())
+        log.debug('{%s} Pulling from event queues: %s', self.name, queues)
 
         while self._continue:
             result = self._redis.brpop(queues, timeout=5)
@@ -47,3 +49,17 @@ class Processor(Process):
             value = value.decode('utf-8')
 
             log.debug('{%s} Pulled "%s" from the %s queue', self.name, value, queue)
+
+            queue_handler = self.config.queues[queue].handler
+            log.debug('{%s} Processing event from the %s queue with %s',
+                      self.name, queue, get_fqdn(queue_handler))
+
+            try:
+                with self._db as dbsession:
+                    queue_handler(dbsession, value)
+
+            except Exception:
+                log.exception('{%s} An error occured while processing an event from the %s queue '
+                              'with %s\nDetails:',
+                              self.name, queue, get_fqdn(queue_handler))
+                self._redis.lpush(f'errors-{queue}', value.encode('utf-8'))
