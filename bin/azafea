@@ -1,8 +1,20 @@
+#!/usr/bin/python3
+
+
 import argparse
+import os
 import sys
 
-from .config import Config, InvalidConfigurationError
-from .controller import Controller
+
+if os.environ.get('PIPENV_ACTIVE', '0') == '1':
+    parent = os.path.dirname(os.path.dirname(__file__))
+
+    if os.path.exists(os.path.join(parent, 'Pipfile')):
+        # Running in a venv from a development tree
+        sys.path.insert(0, parent)
+
+from azafea.config import Config, InvalidConfigurationError
+from azafea.controller import Controller
 
 
 parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
