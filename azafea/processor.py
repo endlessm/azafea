@@ -46,9 +46,8 @@ class Processor(Process):
 
             queue, value = result
             queue = queue.decode('utf-8')
-            value = value.decode('utf-8')
 
-            log.debug('{%s} Pulled "%s" from the %s queue', self.name, value, queue)
+            log.debug('{%s} Pulled %s from the %s queue', self.name, value, queue)
 
             queue_handler = self.config.queues[queue].handler
             log.debug('{%s} Processing event from the %s queue with %s',
@@ -62,4 +61,4 @@ class Processor(Process):
                 log.exception('{%s} An error occured while processing an event from the %s queue '
                               'with %s\nDetails:',
                               self.name, queue, get_fqdn(queue_handler))
-                self._redis.lpush(f'errors-{queue}', value.encode('utf-8'))
+                self._redis.lpush(f'errors-{queue}', value)

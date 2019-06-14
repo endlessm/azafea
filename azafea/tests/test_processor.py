@@ -89,7 +89,7 @@ def test_start_then_sigint(capfd, monkeypatch, make_config):
 
     capture = capfd.readouterr()
     assert '{test-worker} Starting' in capture.out
-    assert '{test-worker} Pulled "value" from the ' in capture.out
+    assert "{test-worker} Pulled b'value' from the some-queue queue" in capture.out
     assert '{test-worker} Received SIGINT, finishing the current task…' in capture.out
 
 
@@ -123,7 +123,7 @@ def test_start_then_sigterm(capfd, monkeypatch, make_config):
 
     capture = capfd.readouterr()
     assert '{test-worker} Starting' in capture.out
-    assert '{test-worker} Pulled "value" from the ' in capture.out
+    assert "{test-worker} Pulled b'value' from the some-queue queue" in capture.out
     assert '{test-worker} Received SIGTERM, finishing the current task…' in capture.out
 
 
@@ -158,7 +158,8 @@ def test_process_with_error(capfd, monkeypatch, make_config, mock_sessionmaker):
 
     capture = capfd.readouterr()
     assert '{test-worker} Starting' in capture.out
-    assert '{test-worker} Pulled "value" from the ' in capture.out
+    print(capture.out)
+    assert "{test-worker} Pulled b'value' from the some-queue queue" in capture.out
     assert ('{test-worker} An error occured while processing an event from the some-queue queue '
             'with azafea.tests.test_processor.failing_process\nDetails:') in capture.err
     assert 'ValueError: Oh no!' in capture.err
