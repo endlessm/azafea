@@ -14,21 +14,12 @@ if os.environ.get('PIPENV_ACTIVE', '0') == '1':
         sys.path.insert(0, parent)
 
 from azafea.cli import parse_args
-from azafea.config import Config, InvalidConfigurationError
-from azafea.controller import Controller
 
 
 args = parse_args(sys.argv[1:])
 
 try:
-    config = Config.from_file(args.config)
+    args.subcommand(args)
 
-except InvalidConfigurationError as e:
+except Exception as e:
     sys.exit(str(e))
-
-if args.print_config:
-    print(config)
-    sys.exit(0)
-
-controller = Controller(config)
-controller.main()

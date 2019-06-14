@@ -10,13 +10,9 @@ def test_print_config(capfd, make_config_file):
 
     args = azafea.cli.parse_args([
         '-c', str(config_file),
-        '--print-config',
+        'print-config',
     ])
-
-    # FIXME: This is a silly temporary test, it will make more sense soon
-    from azafea.config import Config
-    if args.print_config:
-        print(Config.from_file(str(config_file)))
+    args.subcommand(args)
 
     capture = capfd.readouterr()
     assert capture.out.strip() == '\n'.join([
@@ -37,3 +33,26 @@ def test_print_config(capfd, make_config_file):
         '',
         '[queues]',
     ])
+
+
+def test_run(capfd, monkeypatch, make_config_file):
+    class MockController:
+        def __init__(self, config):
+            pass
+
+        def main(self):
+            print('Running the mock controller…')
+
+    config_file = make_config_file({})
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'run',
+    ])
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.cli, 'Controller', MockController)
+        args.subcommand(args)
+
+    capture = capfd.readouterr()
+    assert 'Running the mock controller…' in capture.out
