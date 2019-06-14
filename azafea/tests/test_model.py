@@ -70,7 +70,7 @@ def test_fail_in_db_session(monkeypatch, mock_sessionmaker):
         assert dbsession.rolled_back
 
 
-def test_model():
+def test_base_model():
     class Address(azafea.model.Base):
         __tablename__ = 'addresses'
 
@@ -106,3 +106,7 @@ def test_model():
         '* street_name: Baker Street',
         '* street_number: 221B',
     ])
+
+    # Deregister the test models, to avoid side-effects between tests
+    azafea.model.Base._decl_class_registry.clear()
+    azafea.model.Base.metadata.clear()
