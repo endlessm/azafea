@@ -1,6 +1,29 @@
 import azafea.cli
 
 
+def test_initdb(capfd, monkeypatch, make_config_file):
+    class MockDb:
+        def __init__(self, *args):
+            pass
+
+        def create_all(self):
+            print('Creating the tables…')
+
+    config_file = make_config_file({})
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'initdb',
+    ])
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.cli, 'Db', MockDb)
+        args.subcommand(args)
+
+    capture = capfd.readouterr()
+    assert 'Creating the tables…' in capture.out
+
+
 def test_print_config(capfd, make_config_file):
     config_file = make_config_file({
         'main': {'number_of_workers': 1},
