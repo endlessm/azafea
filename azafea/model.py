@@ -29,6 +29,7 @@ from sqlalchemy.inspection import inspect
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.orm.session import Session as DbSession, sessionmaker
 from sqlalchemy.schema import CreateColumn, MetaData
+from sqlalchemy.types import Enum, TypeDecorator
 
 from .utils import get_fqdn
 
@@ -124,6 +125,58 @@ class Db:
 
     def drop_all(self) -> None:
         Base.metadata.drop_all(self._engine)
+
+
+class NullableBoolean(TypeDecorator):
+    """A three-states boolean, which allows working with UNIQUE constraints
+
+    In PostgreSQL, when making a composite UNIQUE constraint where one of the columns is a nullable
+    boolean, then null values for that column are counted as always different.
+
+    So if you have:
+
+        class MyModel(Base):
+            __tablename__ = 'mymodel'
+
+            id = Column(Integer, primary_key=True)
+            col1 = Column(Unicode, nullable=False)
+            col2 = Column(Unicode, nullable=False)
+            col3 = Column(Boolean)
+
+            __table_args__ = (
+                UniqueConstraint(col1, col2, col3, name='uq_mymodel_col1_col2_col3'),
+            }
+
+    Then you could INSERT multiple records which have the same (col1, col2) when col3 is None.
+
+    If you want None to be considered a "proper" value that triggers the unicity constraint, then
+    use this type instead of a nullable Boolean. Make sure you declare it with `nullable=False`
+    though.
+    """
+    impl = Enum
+
+    def __init__(self, **kwargs: Any) -> None:
+        kwargs['name'] = 'nullable_boolean_enum'
+
+        super().__init__('true', 'false', 'unknown', **kwargs)
+
+    def process_bind_param(self, value: Optional[bool], dialect: Any) -> str:
+        """Convert the Python values into the SQL ones"""
+        return {
+            True: 'true',
+            False: 'false',
+            None: 'unknown',
+        }[value]
+
+    def process_result_value(self, value: Optional[str], dialect: Any) -> Optional[bool]:
+        """Convert the SQL values into the Python ones"""
+        # The function signature says value is an Optional[Any], but in our case it can never be
+        # None, as long as the model declares this column as nullable=False.
+        return {  # type: ignore
+            'true': True,
+            'false': False,
+            'unknown': None,
+        }[value]
 
 
 class PostgresqlConnectionError(Exception):
