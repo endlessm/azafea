@@ -83,6 +83,16 @@ class Db:
         finally:
             self._sa_session.close()
 
+    def create_all(self) -> None:
+        # This creates all the tables for registered models. A model is registered if it inherits
+        # from Base, and the model class has been imported.
+        #
+        # In Azafea, the model classes are imported when the queue config imports their handlers.
+        #
+        # So if models are written correctly, inheriting from Base, then their tables will be
+        # created here.
+        Base.metadata.create_all(self._engine)
+
 
 metadata = MetaData(naming_convention=NAMING_CONVENTION)
 Base = declarative_base(cls=BaseModel, constructor=BaseModel.__init__, metadata=metadata)
