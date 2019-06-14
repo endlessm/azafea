@@ -40,3 +40,6 @@ def setup_logging(*, verbose: bool = False) -> None:
 
     format_ = '[{levelname}] {name}: {message}'
     logging.basicConfig(level=level, handlers=[out, err], format=format_, style='{')
+
+    if verbose:
+        logging.getLogger('sqlalchemy').setLevel(logging.DEBUG)
