@@ -3,6 +3,10 @@ from signal import SIGINT, SIGTERM
 import time
 from typing import Optional, Sequence, Tuple
 
+from redis.exceptions import ConnectionError as RedisConnectionError
+
+import pytest
+
 from azafea.config import Config
 from azafea.logging import setup_logging
 import azafea.processor
@@ -17,6 +21,8 @@ class MockRedis:
         # properly.
         self._next_key = 0
         self._next_value = 0
+
+        self.connection_pool = MockRedisConnectionPool()
 
     def brpop(self, keys: Sequence[str], timeout: int = 0) -> Optional[Tuple[bytes, bytes]]:
         str_keys = ' '.join(keys)
@@ -43,11 +49,23 @@ class MockRedis:
         return 1
 
 
-def test_start(capfd):
+class MockRedisConnectionPool:
+    def make_connection(self):
+        return MockRedisConnection()
+
+
+class MockRedisConnection:
+    def connect(self):
+        pass
+
+
+def test_start(capfd, monkeypatch):
     config = Config()
     setup_logging(verbose=config.main.verbose)
 
-    proc = azafea.processor.Processor('test-worker', config)
+    with monkeypatch.context() as m:
+        m.setattr(azafea.processor, 'Redis', MockRedis)
+        proc = azafea.processor.Processor('test-worker', config)
 
     # Prevent the processor from running its main loop
     proc._continue = False
@@ -164,3 +182,12 @@ def test_process_with_error(capfd, monkeypatch, make_config, mock_sessionmaker):
             'with azafea.tests.test_processor.failing_process\nDetails:') in capture.err
     assert 'ValueError: Oh no!' in capture.err
     assert 'Ran Redis command: LPUSH errors-some-queue value' in capture.out
+
+
+def test_cannot_connect_to_redis(monkeypatch, make_config):
+    # Hopefully nobody will ever run the tests with a Redis server accessible at this host:port
+    config = make_config({'redis': {'host': 'no-such-host', 'port': 1}})
+
+    # Do not monkeypatch Redis here, let it try to actually connect so it fails
+    with pytest.raises(RedisConnectionError):
+        azafea.processor.Processor('test-worker', config)

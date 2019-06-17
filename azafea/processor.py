@@ -20,7 +20,7 @@ class Processor(Process):
         self.config = config
         self._continue = True
 
-        self._redis = Redis(host=config.redis.host, port=config.redis.port)
+        self._redis = self._get_redis()
         self._db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
                       config.postgresql.password, config.postgresql.database)
 
@@ -28,6 +28,15 @@ class Processor(Process):
         signal_name = Signals(signum).name
         log.info('{%s} Received %s, finishing the current task…', self.name, signal_name)
         self._continue = False
+
+    def _get_redis(self) -> Redis:
+        redis = Redis(host=self.config.redis.host, port=self.config.redis.port)
+
+        # Try to connect, to fail early if the Redis server can't be reached. The connection
+        # disconnects automatically when garbage collected.
+        redis.connection_pool.make_connection().connect()
+
+        return redis
 
     def run(self) -> None:
         log.info('{%s} Starting', self.name)

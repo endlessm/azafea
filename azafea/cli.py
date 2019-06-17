@@ -4,6 +4,8 @@ import logging
 from typing import List
 import sys
 
+from redis.exceptions import ConnectionError as RedisConnectionError
+
 from .config import Config, InvalidConfigurationError
 from .controller import Controller
 from .logging import setup_logging
@@ -17,6 +19,7 @@ class ExitCode(IntEnum):
     OK = 0
     INVALID_CONFIG = -1
     NO_EVENT_QUEUE = -2
+    CONNECTION_ERROR = -3
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -102,6 +105,12 @@ def do_run(args: argparse.Namespace) -> int:
         return ExitCode.NO_EVENT_QUEUE
 
     controller = Controller(config)
-    controller.main()
+
+    try:
+        controller.main()
+
+    except RedisConnectionError as e:
+        log.error('Could not connect to Redis: %s', e)
+        return ExitCode.CONNECTION_ERROR
 
     return ExitCode.OK
