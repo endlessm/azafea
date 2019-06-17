@@ -276,7 +276,8 @@ def test_override_postgresql_password_empty(make_config):
 
 def test_postgresql_default_password(capfd):
     setup_logging(verbose=False)
-    azafea.config.Config()
+    config = azafea.config.Config()
+    config.warn_about_default_passwords()
 
     capture = capfd.readouterr()
     assert 'Did you forget to change the PostgreSQL password?' in capture.err

@@ -98,13 +98,6 @@ class PostgreSQL(_Base):
     def password_is_non_empty_string(cls, value: Any) -> str:
         return is_non_empty_string(value)
 
-    @validator('password')
-    def password_is_left_to_default(cls, value: str) -> str:
-        if value == 'CHANGE ME!!':
-            logger.warning('Did you forget to change the PostgreSQL password?')
-
-        return value
-
     @validator('database', pre=True)
     def database_is_non_empty_string(cls, value: Any) -> str:
         return is_non_empty_string(value)
@@ -165,6 +158,10 @@ class Config(_Base):
             raise InvalidConfigurationError('queues', e.raw_errors)
 
         return cls(main=main, redis=redis, postgresql=postgresql, queues=queues)
+
+    def warn_about_default_passwords(self) -> None:
+        if self.postgresql.password == 'CHANGE ME!!':
+            log.warning('Did you forget to change the PostgreSQL password?')
 
     def __str__(self) -> str:
         pg_no_password = dataclasses.replace(self.postgresql, password='** hidden **')

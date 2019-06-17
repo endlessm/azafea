@@ -59,6 +59,7 @@ def do_initdb(args: argparse.Namespace) -> int:
         return ExitCode.INVALID_CONFIG
 
     setup_logging(verbose=config.main.verbose)
+    config.warn_about_default_passwords()
 
     if not config.queues:
         log.error('Could not initialize the database: no event queue configured')
@@ -80,6 +81,7 @@ def do_print_config(args: argparse.Namespace) -> int:
         return ExitCode.INVALID_CONFIG
 
     setup_logging(verbose=config.main.verbose)
+    config.warn_about_default_passwords()
 
     print(config)
 
@@ -99,6 +101,7 @@ def do_run(args: argparse.Namespace) -> int:
         return ExitCode.INVALID_CONFIG
 
     setup_logging(verbose=config.main.verbose)
+    config.warn_about_default_passwords()
 
     if not config.queues:
         log.error('Could not start: no event queue configured')
