@@ -15,7 +15,7 @@ from ._validators import is_boolean, is_non_empty_string, is_strictly_positive_i
 from ..utils import get_cpu_count, get_handler, wrap_with_repr
 
 
-logger = logging.getLogger(__name__)
+log = logging.getLogger(__name__)
 
 
 class InvalidConfigurationError(Exception):
