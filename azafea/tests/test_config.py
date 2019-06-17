@@ -27,6 +27,7 @@ def test_defaults():
         '[redis]',
         'host = "localhost"',
         'port = 6379',
+        'password = "** hidden **"',
         '',
         '[postgresql]',
         'host = "localhost"',
@@ -82,6 +83,7 @@ def test_override(monkeypatch, make_config):
         '[redis]',
         'host = "localhost"',
         'port = 42',
+        'password = "** hidden **"',
         '',
         '[postgresql]',
         'host = "pg-server"',
@@ -274,15 +276,6 @@ def test_override_postgresql_password_empty(make_config):
             f"* password: '' is empty") in str(exc_info.value)
 
 
-def test_postgresql_default_password(capfd):
-    setup_logging(verbose=False)
-    config = azafea.config.Config()
-    config.warn_about_default_passwords()
-
-    capture = capfd.readouterr()
-    assert 'Did you forget to change the PostgreSQL password?' in capture.err
-
-
 @pytest.mark.parametrize('value', [
     False,
     True,
@@ -320,3 +313,26 @@ def test_add_queue_with_invalid_handler_module(make_config):
     assert ('Invalid [queues] configuration:\n'
             f"* handler: Handler 'azafea' is missing a \"process\" function"
             ) in str(exc_info.value)
+
+
+def test_default_passwords(capfd):
+    setup_logging(verbose=False)
+    config = azafea.config.Config()
+    config.warn_about_default_passwords()
+
+    capture = capfd.readouterr()
+    assert 'Did you forget to change the PostgreSQL password?' in capture.err
+    assert 'Did you forget to change the Redis password?' in capture.err
+
+
+def test_non_default_passwords(capfd, make_config):
+    setup_logging(verbose=False)
+    config = make_config({
+        'postgresql': {'password': 'not default'},
+        'redis': {'password': 'not default'},
+    })
+    config.warn_about_default_passwords()
+
+    capture = capfd.readouterr()
+    assert 'Did you forget to change the PostgreSQL password?' not in capture.err
+    assert 'Did you forget to change the Redis password?' not in capture.err

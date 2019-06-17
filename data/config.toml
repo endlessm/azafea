@@ -16,6 +16,9 @@
 # The port on which Redis is listening. Defaults to 6379
 #port = 6379
 
+# The password to pass to Redis
+#password = "CHANGE ME!!"
+
 
 [postgresql]
 

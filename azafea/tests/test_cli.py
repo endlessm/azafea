@@ -101,6 +101,7 @@ def test_print_config(capfd, monkeypatch, make_config_file):
         '[redis]',
         'host = "redis-server"',
         'port = 6379',
+        'password = "** hidden **"',
         '',
         '[postgresql]',
         'host = "localhost"',

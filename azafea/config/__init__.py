@@ -66,6 +66,7 @@ class Main(_Base):
 class Redis(_Base):
     host: str = 'localhost'
     port: int = 6379
+    password: str = DEFAULT_PASSWORD
 
     @validator('host', pre=True)
     def host_is_non_empty_string(cls, value: Any) -> str:
@@ -165,8 +166,13 @@ class Config(_Base):
         if self.postgresql.password == DEFAULT_PASSWORD:
             log.warning('Did you forget to change the PostgreSQL password?')
 
+        if self.redis.password == DEFAULT_PASSWORD:
+            log.warning('Did you forget to change the Redis password?')
+
     def __str__(self) -> str:
         pg_no_password = dataclasses.replace(self.postgresql, password='** hidden **')
-        self_no_passwords = dataclasses.replace(self, postgresql=pg_no_password)
+        redis_no_password = dataclasses.replace(self.redis, password='** hidden **')
+        self_no_passwords = dataclasses.replace(self, postgresql=pg_no_password,
+                                                redis=redis_no_password)
 
         return toml.dumps(dataclasses.asdict(self_no_passwords)).strip()
