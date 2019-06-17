@@ -2,13 +2,15 @@ from operator import attrgetter
 from typing import Any, Optional, Type
 from types import TracebackType
 
+from sqlalchemy.dialects.postgresql.base import PGDDLCompiler
 from sqlalchemy.engine import create_engine
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.orm.session import Session as DbSession, sessionmaker
-from sqlalchemy.schema import MetaData
+from sqlalchemy.schema import CreateColumn, MetaData
 
 from .utils import get_fqdn
 
@@ -112,3 +114,12 @@ class PostgresqlConnectionError(Exception):
 
 metadata = MetaData(naming_convention=NAMING_CONVENTION)
 Base = declarative_base(cls=BaseModel, constructor=BaseModel.__init__, metadata=metadata)
+
+
+# https://docs.sqlalchemy.org/en/13/dialects/postgresql.html#postgresql-10-identity-columns
+@compiles(CreateColumn, 'postgresql')
+def use_identity(element: CreateColumn, compiler: PGDDLCompiler, **kwargs: Any) -> str:
+    text = compiler.visit_create_column(element, **kwargs)
+    text = text.replace("SERIAL", "INT GENERATED ALWAYS AS IDENTITY")
+
+    return text
