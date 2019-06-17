@@ -17,6 +17,8 @@ from ..utils import get_cpu_count, get_handler, wrap_with_repr
 
 log = logging.getLogger(__name__)
 
+DEFAULT_PASSWORD = 'CHANGE ME!!'
+
 
 class InvalidConfigurationError(Exception):
     def __init__(self, section: str, errors: Sequence[Union[Sequence[Any], ErrorWrapper]]) -> None:
@@ -79,7 +81,7 @@ class PostgreSQL(_Base):
     host: str = 'localhost'
     port: int = 5432
     user: str = 'azafea'
-    password: str = 'CHANGE ME!!'
+    password: str = DEFAULT_PASSWORD
     database: str = 'azafea'
 
     @validator('host', pre=True)
@@ -160,7 +162,7 @@ class Config(_Base):
         return cls(main=main, redis=redis, postgresql=postgresql, queues=queues)
 
     def warn_about_default_passwords(self) -> None:
-        if self.postgresql.password == 'CHANGE ME!!':
+        if self.postgresql.password == DEFAULT_PASSWORD:
             log.warning('Did you forget to change the PostgreSQL password?')
 
     def __str__(self) -> str:
