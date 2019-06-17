@@ -240,3 +240,45 @@ def test_run_redis_connection_error(capfd, monkeypatch, make_config_file):
     capture = capfd.readouterr()
     assert 'Could not connect to Redis:' in capture.err
     assert 'Name or service not known' in capture.err
+
+
+def test_run_postgresql_connection_error(capfd, monkeypatch, make_config_file):
+    class MockRedis:
+        def __init__(self, *args, **kwargs):
+            self.connection_pool = MockRedisConnectionPool()
+
+    class MockRedisConnectionPool:
+        def make_connection(self):
+            return MockRedisConnection()
+
+    class MockRedisConnection:
+        def connect(self):
+            pass
+
+    def mock_get_handler(module):
+        def process(*args, **kwargs):
+            pass
+
+        return process
+
+    # Hopefully nobody will ever run the tests with a Redis server accessible at this host:port
+    config_file = make_config_file({
+        'postgresql': {'host': 'no-such-host', 'port': 1},
+        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}}
+    })
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'run',
+    ])
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.processor, 'Redis', MockRedis)
+        result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.CONNECTION_ERROR
+
+    capture = capfd.readouterr()
+    assert ('Could not connect to PostgreSQL: '
+            'connection refused on postgresql://azafea@no-such-host:1/azafea') in capture.err

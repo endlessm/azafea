@@ -9,7 +9,7 @@ from redis.exceptions import ConnectionError as RedisConnectionError
 from .config import Config, InvalidConfigurationError
 from .controller import Controller
 from .logging import setup_logging
-from .model import Db
+from .model import Db, PostgresqlConnectionError
 
 
 log = logging.getLogger(__name__)
@@ -108,6 +108,10 @@ def do_run(args: argparse.Namespace) -> int:
 
     try:
         controller.main()
+
+    except PostgresqlConnectionError as e:
+        log.error('Could not connect to PostgreSQL: %s', e)
+        return ExitCode.CONNECTION_ERROR
 
     except RedisConnectionError as e:
         log.error('Could not connect to Redis: %s', e)

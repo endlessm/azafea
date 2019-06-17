@@ -3,6 +3,7 @@ from typing import Any, Optional, Type
 from types import TracebackType
 
 from sqlalchemy.engine import create_engine
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm.relationships import RelationshipProperty
@@ -56,6 +57,9 @@ class Db:
         self._engine = create_engine(f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}')
         self._session_factory = sessionmaker(bind=self._engine)
 
+        # Store the URL to use in exceptions
+        self._url = f'postgresql://{user}@{host}:{port}/{db}'
+
     def __enter__(self) -> DbSession:
         self._sa_session = self._session_factory()
 
@@ -81,6 +85,15 @@ class Db:
         finally:
             self._sa_session.close()
 
+    def ensure_connection(self) -> None:
+        with self as dbsession:
+            try:
+                dbsession.connection()
+
+            except OperationalError:
+                # FIXME: Are we sure this is the only error possible?
+                raise PostgresqlConnectionError(f'connection refused on {self._url}')
+
     def create_all(self) -> None:
         # This creates all the tables for registered models. A model is registered if it inherits
         # from Base, and the model class has been imported.
@@ -90,6 +103,10 @@ class Db:
         # So if models are written correctly, inheriting from Base, then their tables will be
         # created here.
         Base.metadata.create_all(self._engine)
+
+
+class PostgresqlConnectionError(Exception):
+    pass
 
 
 metadata = MetaData(naming_convention=NAMING_CONVENTION)

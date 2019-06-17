@@ -9,6 +9,7 @@ import pytest
 
 from azafea.config import Config
 from azafea.logging import setup_logging
+from azafea.model import PostgresqlConnectionError
 import azafea.processor
 
 
@@ -59,12 +60,13 @@ class MockRedisConnection:
         pass
 
 
-def test_start(capfd, monkeypatch):
+def test_start(capfd, monkeypatch, mock_sessionmaker):
     config = Config()
     setup_logging(verbose=config.main.verbose)
 
     with monkeypatch.context() as m:
         m.setattr(azafea.processor, 'Redis', MockRedis)
+        m.setattr(azafea.model, 'sessionmaker', mock_sessionmaker)
         proc = azafea.processor.Processor('test-worker', config)
 
     # Prevent the processor from running its main loop
@@ -77,7 +79,7 @@ def test_start(capfd, monkeypatch):
     assert '{test-worker} Starting' in capture.out
 
 
-def test_start_then_sigint(capfd, monkeypatch, make_config):
+def test_start_then_sigint(capfd, monkeypatch, make_config, mock_sessionmaker):
     def process(*args, **kwargs):
         pass
 
@@ -95,6 +97,7 @@ def test_start_then_sigint(capfd, monkeypatch, make_config):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.processor, 'Redis', MockRedis)
+        m.setattr(azafea.model, 'sessionmaker', mock_sessionmaker)
         proc = azafea.processor.Processor('test-worker', config)
         proc.start()
 
@@ -111,7 +114,7 @@ def test_start_then_sigint(capfd, monkeypatch, make_config):
     assert '{test-worker} Received SIGINT, finishing the current task…' in capture.out
 
 
-def test_start_then_sigterm(capfd, monkeypatch, make_config):
+def test_start_then_sigterm(capfd, monkeypatch, make_config, mock_sessionmaker):
     def process(*args, **kwargs):
         pass
 
@@ -129,6 +132,7 @@ def test_start_then_sigterm(capfd, monkeypatch, make_config):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.processor, 'Redis', MockRedis)
+        m.setattr(azafea.model, 'sessionmaker', mock_sessionmaker)
         proc = azafea.processor.Processor('test-worker', config)
         proc.start()
 
@@ -191,3 +195,15 @@ def test_cannot_connect_to_redis(monkeypatch, make_config):
     # Do not monkeypatch Redis here, let it try to actually connect so it fails
     with pytest.raises(RedisConnectionError):
         azafea.processor.Processor('test-worker', config)
+
+
+def test_cannot_connect_to_postgresql(monkeypatch, make_config):
+    # Hopefully nobody will ever run the tests with a Postgres server accessible at this host:port
+    config = make_config({'postgresql': {'host': 'no-such-host', 'port': 1}})
+
+    # Do not monkeypatch the DB session here, let it try to actually connect so it fails
+    with monkeypatch.context() as m:
+        m.setattr(azafea.processor, 'Redis', MockRedis)
+
+        with pytest.raises(PostgresqlConnectionError):
+            azafea.processor.Processor('test-worker', config)

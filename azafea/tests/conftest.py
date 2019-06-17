@@ -23,6 +23,9 @@ class MockSqlAlchemySession:
     def close(self):
         self.open = False
 
+    def connection(self):
+        pass
+
 
 @pytest.fixture()
 def mock_sessionmaker():
