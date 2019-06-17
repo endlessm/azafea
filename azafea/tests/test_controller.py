@@ -4,6 +4,7 @@ import pytest
 
 from azafea.config import Config
 import azafea.controller
+from azafea.logging import setup_logging
 from azafea.utils import get_cpu_count
 
 
@@ -25,6 +26,7 @@ class MockProcessor:
 
 def test_start(capfd, monkeypatch):
     config = Config()
+    setup_logging(verbose=config.main.verbose)
 
     with monkeypatch.context() as m:
         m.setattr(azafea.controller, 'Processor', MockProcessor)
@@ -43,6 +45,7 @@ def test_start(capfd, monkeypatch):
 
 def test_override_num_workers(capfd, monkeypatch, make_config):
     config = make_config({'main': {'number_of_workers': 1}})
+    setup_logging(verbose=config.main.verbose)
 
     with monkeypatch.context() as m:
         m.setattr(azafea.controller, 'Processor', MockProcessor)
@@ -62,6 +65,7 @@ def test_override_num_workers(capfd, monkeypatch, make_config):
 
 def test_sigint_handler(capfd, make_config):
     config = make_config({'main': {'number_of_workers': 1}})
+    setup_logging(verbose=config.main.verbose)
 
     with pytest.raises(SystemExit) as exc_info:
         controller = azafea.controller.Controller(config)
@@ -81,6 +85,7 @@ def test_sigint_handler(capfd, make_config):
 
 def test_sigterm_handler(capfd, make_config):
     config = make_config({'main': {'number_of_workers': 1}})
+    setup_logging(verbose=config.main.verbose)
 
     with pytest.raises(SystemExit) as exc_info:
         controller = azafea.controller.Controller(config)

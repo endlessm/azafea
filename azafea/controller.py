@@ -5,7 +5,6 @@ import time
 from typing import Any, List
 
 from .config import Config
-from .logging import setup_logging
 from .processor import Processor
 
 
@@ -16,8 +15,6 @@ class Controller:
     def __init__(self, config: Config) -> None:
         self.config = config
         self._processors: List[Processor] = []
-
-        setup_logging(verbose=config.main.verbose)
 
         self._number_of_workers = config.main.number_of_workers
 

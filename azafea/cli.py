@@ -1,11 +1,16 @@
 import argparse
 from enum import IntEnum
+import logging
 from typing import List
 import sys
 
 from .config import Config, InvalidConfigurationError
 from .controller import Controller
+from .logging import setup_logging
 from .model import Db
+
+
+log = logging.getLogger(__name__)
 
 
 class ExitCode(IntEnum):
@@ -49,6 +54,8 @@ def do_initdb(args: argparse.Namespace) -> int:
         print(str(e), file=sys.stderr)
         return ExitCode.INVALID_CONFIG
 
+    setup_logging(verbose=config.main.verbose)
+
     db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
             config.postgresql.password, config.postgresql.database)
     db.create_all()
@@ -76,6 +83,8 @@ def do_run(args: argparse.Namespace) -> int:
     except InvalidConfigurationError as e:
         print(str(e), file=sys.stderr)
         return ExitCode.INVALID_CONFIG
+
+    setup_logging(verbose=config.main.verbose)
 
     controller = Controller(config)
     controller.main()
