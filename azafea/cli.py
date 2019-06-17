@@ -16,6 +16,7 @@ log = logging.getLogger(__name__)
 class ExitCode(IntEnum):
     OK = 0
     INVALID_CONFIG = -1
+    NO_EVENT_QUEUE = -2
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -56,6 +57,10 @@ def do_initdb(args: argparse.Namespace) -> int:
 
     setup_logging(verbose=config.main.verbose)
 
+    if not config.queues:
+        log.error('Could not initialize the database: no event queue configured')
+        return ExitCode.NO_EVENT_QUEUE
+
     db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
             config.postgresql.password, config.postgresql.database)
     db.create_all()
@@ -71,7 +76,13 @@ def do_print_config(args: argparse.Namespace) -> int:
         print(str(e), file=sys.stderr)
         return ExitCode.INVALID_CONFIG
 
+    setup_logging(verbose=config.main.verbose)
+
     print(config)
+
+    if not config.queues:
+        log.warning('Did you forget to configure event queues?')
+        return ExitCode.NO_EVENT_QUEUE
 
     return ExitCode.OK
 
@@ -85,6 +96,10 @@ def do_run(args: argparse.Namespace) -> int:
         return ExitCode.INVALID_CONFIG
 
     setup_logging(verbose=config.main.verbose)
+
+    if not config.queues:
+        log.error('Could not start: no event queue configured')
+        return ExitCode.NO_EVENT_QUEUE
 
     controller = Controller(config)
     controller.main()

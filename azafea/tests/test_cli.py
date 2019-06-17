@@ -1,4 +1,5 @@
 import azafea.cli
+import azafea.config
 
 
 def test_initdb(capfd, monkeypatch, make_config_file):
@@ -9,7 +10,13 @@ def test_initdb(capfd, monkeypatch, make_config_file):
         def create_all(self):
             print('Creating the tables…')
 
-    config_file = make_config_file({})
+    def mock_get_handler(module):
+        def process(*args, **kwargs):
+            pass
+
+        return process
+
+    config_file = make_config_file({'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}}})
 
     args = azafea.cli.parse_args([
         '-c', str(config_file),
@@ -17,6 +24,7 @@ def test_initdb(capfd, monkeypatch, make_config_file):
     ])
 
     with monkeypatch.context() as m:
+        m.setattr(azafea.config, 'get_handler', mock_get_handler)
         m.setattr(azafea.cli, 'Db', MockDb)
         result = args.subcommand(args)
 
@@ -43,18 +51,44 @@ def test_initdb_invalid_config(capfd, make_config_file):
     assert "Invalid [main] configuration:\n* verbose: 'blah' is not a boolean" in capture.err
 
 
-def test_print_config(capfd, make_config_file):
+def test_initdb_no_event_queue(capfd, make_config_file):
+    config_file = make_config_file({})
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'initdb',
+    ])
+
+    result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.NO_EVENT_QUEUE
+
+    capture = capfd.readouterr()
+    assert "Could not initialize the database: no event queue configured" in capture.err
+
+
+def test_print_config(capfd, monkeypatch, make_config_file):
+    def mock_get_handler(module):
+        def process(*args, **kwargs):
+            pass
+
+        return process
+
     config_file = make_config_file({
         'main': {'number_of_workers': 1},
         'redis': {'host': 'redis-server'},
         'postgresql': {'user': 'Léo'},
+        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
     })
 
     args = azafea.cli.parse_args([
         '-c', str(config_file),
         'print-config',
     ])
-    result = args.subcommand(args)
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        result = args.subcommand(args)
 
     assert result == azafea.cli.ExitCode.OK
 
@@ -75,7 +109,8 @@ def test_print_config(capfd, make_config_file):
         'password = "** hidden **"',
         'database = "azafea"',
         '',
-        '[queues]',
+        '[queues.some-queue]',
+        'handler = "azafea.tests.test_cli"',
     ])
 
 
@@ -96,6 +131,22 @@ def test_print_invalid_config(capfd, make_config_file):
     assert "Invalid [main] configuration:\n* verbose: 'blah' is not a boolean" in capture.err
 
 
+def test_print_config_no_event_queue(capfd, make_config_file):
+    config_file = make_config_file({})
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'print-config',
+    ])
+
+    result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.NO_EVENT_QUEUE
+
+    capture = capfd.readouterr()
+    assert "Did you forget to configure event queues?" in capture.err
+
+
 def test_run(capfd, monkeypatch, make_config_file):
     class MockController:
         def __init__(self, config):
@@ -104,7 +155,13 @@ def test_run(capfd, monkeypatch, make_config_file):
         def main(self):
             print('Running the mock controller…')
 
-    config_file = make_config_file({})
+    def mock_get_handler(module):
+        def process(*args, **kwargs):
+            pass
+
+        return process
+
+    config_file = make_config_file({'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}}})
 
     args = azafea.cli.parse_args([
         '-c', str(config_file),
@@ -112,6 +169,7 @@ def test_run(capfd, monkeypatch, make_config_file):
     ])
 
     with monkeypatch.context() as m:
+        m.setattr(azafea.config, 'get_handler', mock_get_handler)
         m.setattr(azafea.cli, 'Controller', MockController)
         result = args.subcommand(args)
 
@@ -136,3 +194,20 @@ def test_run_invalid_config(capfd, make_config_file):
 
     capture = capfd.readouterr()
     assert "Invalid [main] configuration:\n* verbose: 'blah' is not a boolean" in capture.err
+
+
+def test_run_no_event_queue(capfd, make_config_file):
+    # Make a wrong config file
+    config_file = make_config_file({})
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'run',
+    ])
+
+    result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.NO_EVENT_QUEUE
+
+    capture = capfd.readouterr()
+    assert 'Could not start: no event queue configured' in capture.err
