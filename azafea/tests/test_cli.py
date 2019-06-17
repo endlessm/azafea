@@ -26,6 +26,23 @@ def test_initdb(capfd, monkeypatch, make_config_file):
     assert 'Creating the tables…' in capture.out
 
 
+def test_initdb_invalid_config(capfd, make_config_file):
+    # Make a wrong config file
+    config_file = make_config_file({'main': {'verbose': 'blah'}})
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'initdb',
+    ])
+
+    result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.INVALID_CONFIG
+
+    capture = capfd.readouterr()
+    assert "Invalid [main] configuration:\n* verbose: 'blah' is not a boolean" in capture.err
+
+
 def test_print_config(capfd, make_config_file):
     config_file = make_config_file({
         'main': {'number_of_workers': 1},
@@ -62,6 +79,23 @@ def test_print_config(capfd, make_config_file):
     ])
 
 
+def test_print_invalid_config(capfd, make_config_file):
+    # Make a wrong config file
+    config_file = make_config_file({'main': {'verbose': 'blah'}})
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'print-config',
+    ])
+
+    result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.INVALID_CONFIG
+
+    capture = capfd.readouterr()
+    assert "Invalid [main] configuration:\n* verbose: 'blah' is not a boolean" in capture.err
+
+
 def test_run(capfd, monkeypatch, make_config_file):
     class MockController:
         def __init__(self, config):
@@ -85,3 +119,20 @@ def test_run(capfd, monkeypatch, make_config_file):
 
     capture = capfd.readouterr()
     assert 'Running the mock controller…' in capture.out
+
+
+def test_run_invalid_config(capfd, make_config_file):
+    # Make a wrong config file
+    config_file = make_config_file({'main': {'verbose': 'blah'}})
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'run',
+    ])
+
+    result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.INVALID_CONFIG
+
+    capture = capfd.readouterr()
+    assert "Invalid [main] configuration:\n* verbose: 'blah' is not a boolean" in capture.err

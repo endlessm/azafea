@@ -1,14 +1,16 @@
 import argparse
 from enum import IntEnum
 from typing import List
+import sys
 
-from .config import Config
+from .config import Config, InvalidConfigurationError
 from .controller import Controller
 from .model import Db
 
 
 class ExitCode(IntEnum):
     OK = 0
+    INVALID_CONFIG = -1
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -40,7 +42,13 @@ def parse_args(args: List[str]) -> argparse.Namespace:
 
 
 def do_initdb(args: argparse.Namespace) -> int:
-    config = Config.from_file(args.config)
+    try:
+        config = Config.from_file(args.config)
+
+    except InvalidConfigurationError as e:
+        print(str(e), file=sys.stderr)
+        return ExitCode.INVALID_CONFIG
+
     db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
             config.postgresql.password, config.postgresql.database)
     db.create_all()
@@ -49,13 +57,27 @@ def do_initdb(args: argparse.Namespace) -> int:
 
 
 def do_print_config(args: argparse.Namespace) -> int:
-    print(Config.from_file(args.config))
+    try:
+        config = Config.from_file(args.config)
+
+    except InvalidConfigurationError as e:
+        print(str(e), file=sys.stderr)
+        return ExitCode.INVALID_CONFIG
+
+    print(config)
 
     return ExitCode.OK
 
 
 def do_run(args: argparse.Namespace) -> int:
-    controller = Controller(Config.from_file(args.config))
+    try:
+        config = Config.from_file(args.config)
+
+    except InvalidConfigurationError as e:
+        print(str(e), file=sys.stderr)
+        return ExitCode.INVALID_CONFIG
+
+    controller = Controller(config)
     controller.main()
 
     return ExitCode.OK
