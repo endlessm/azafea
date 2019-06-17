@@ -52,10 +52,8 @@ class BaseModel:
 
 
 class Db:
-    def __init__(self, pg_host: str, pg_port: int, pg_user: str, pg_password: str,
-                 pg_db: str) -> None:
-        self._engine = create_engine(
-            f'postgresql+psycopg2://{pg_user}:{pg_password}@{pg_host}:{pg_port}/{pg_db}')
+    def __init__(self, host: str, port: int, user: str, password: str, db: str) -> None:
+        self._engine = create_engine(f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}')
         self._session_factory = sessionmaker(bind=self._engine)
 
     def __enter__(self) -> DbSession:
