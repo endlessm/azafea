@@ -1,9 +1,14 @@
 import argparse
+from enum import IntEnum
 from typing import List
 
 from .config import Config
 from .controller import Controller
 from .model import Db
+
+
+class ExitCode(IntEnum):
+    OK = 0
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -34,18 +39,23 @@ def parse_args(args: List[str]) -> argparse.Namespace:
     return parser.parse_args(args)
 
 
-def do_initdb(args: argparse.Namespace) -> None:
+def do_initdb(args: argparse.Namespace) -> int:
     config = Config.from_file(args.config)
     db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
             config.postgresql.password, config.postgresql.database)
-
     db.create_all()
 
+    return ExitCode.OK
 
-def do_print_config(args: argparse.Namespace) -> None:
+
+def do_print_config(args: argparse.Namespace) -> int:
     print(Config.from_file(args.config))
 
+    return ExitCode.OK
 
-def do_run(args: argparse.Namespace) -> None:
+
+def do_run(args: argparse.Namespace) -> int:
     controller = Controller(Config.from_file(args.config))
     controller.main()
+
+    return ExitCode.OK

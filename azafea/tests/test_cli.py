@@ -18,7 +18,9 @@ def test_initdb(capfd, monkeypatch, make_config_file):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.cli, 'Db', MockDb)
-        args.subcommand(args)
+        result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.OK
 
     capture = capfd.readouterr()
     assert 'Creating the tables…' in capture.out
@@ -35,7 +37,9 @@ def test_print_config(capfd, make_config_file):
         '-c', str(config_file),
         'print-config',
     ])
-    args.subcommand(args)
+    result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.OK
 
     capture = capfd.readouterr()
     assert capture.out.strip() == '\n'.join([
@@ -75,7 +79,9 @@ def test_run(capfd, monkeypatch, make_config_file):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.cli, 'Controller', MockController)
-        args.subcommand(args)
+        result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.OK
 
     capture = capfd.readouterr()
     assert 'Running the mock controller…' in capture.out

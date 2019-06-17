@@ -18,8 +18,4 @@ from azafea.cli import parse_args
 
 args = parse_args(sys.argv[1:])
 
-try:
-    args.subcommand(args)
-
-except Exception as e:
-    sys.exit(str(e))
+sys.exit(args.subcommand(args))
