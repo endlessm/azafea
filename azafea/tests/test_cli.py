@@ -2,6 +2,71 @@ import azafea.cli
 import azafea.config
 
 
+def test_dropdb(capfd, monkeypatch, make_config_file):
+    class MockDb:
+        def __init__(self, *args):
+            pass
+
+        def drop_all(self):
+            print('Dropping the tables…')
+
+    def mock_get_handler(module):
+        def process(*args, **kwargs):
+            pass
+
+        return process
+
+    config_file = make_config_file({'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}}})
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'dropdb',
+    ])
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.cli, 'Db', MockDb)
+        result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.OK
+
+    capture = capfd.readouterr()
+    assert 'Dropping the tables…' in capture.out
+
+
+def test_dropdb_invalid_config(capfd, make_config_file):
+    # Make a wrong config file
+    config_file = make_config_file({'main': {'verbose': 'blah'}})
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'dropdb',
+    ])
+
+    result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.INVALID_CONFIG
+
+    capture = capfd.readouterr()
+    assert "Invalid [main] configuration:\n* verbose: 'blah' is not a boolean" in capture.err
+
+
+def test_dropdb_no_event_queue(capfd, make_config_file):
+    config_file = make_config_file({})
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'dropdb',
+    ])
+
+    result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.NO_EVENT_QUEUE
+
+    capture = capfd.readouterr()
+    assert "Could not clear the database: no event queue configured" in capture.err
+
+
 def test_initdb(capfd, monkeypatch, make_config_file):
     class MockDb:
         def __init__(self, *args):

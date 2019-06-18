@@ -31,6 +31,9 @@ def get_parser() -> argparse.ArgumentParser:
 
     subs = parser.add_subparsers(title='subcommands', dest='subcommand', required=True)
 
+    dropdb = subs.add_parser('dropdb', help='Drop the tables in the database')
+    dropdb.set_defaults(subcommand=do_dropdb)
+
     initdb = subs.add_parser('initdb', help='Initialize the database, creating the tables')
     initdb.set_defaults(subcommand=do_initdb)
 
@@ -48,6 +51,28 @@ def parse_args(args: List[str]) -> argparse.Namespace:
     parser = get_parser()
 
     return parser.parse_args(args)
+
+
+def do_dropdb(args: argparse.Namespace) -> int:
+    try:
+        config = Config.from_file(args.config)
+
+    except InvalidConfigurationError as e:
+        print(str(e), file=sys.stderr)
+        return ExitCode.INVALID_CONFIG
+
+    setup_logging(verbose=config.main.verbose)
+    config.warn_about_default_passwords()
+
+    if not config.queues:
+        log.error('Could not clear the database: no event queue configured')
+        return ExitCode.NO_EVENT_QUEUE
+
+    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
+            config.postgresql.password, config.postgresql.database)
+    db.drop_all()
+
+    return ExitCode.OK
 
 
 def do_initdb(args: argparse.Namespace) -> int:
