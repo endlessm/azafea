@@ -94,15 +94,16 @@ class Db:
                 # FIXME: Are we sure this is the only error possible?
                 raise PostgresqlConnectionError(f'connection refused on {self._url}')
 
+    # These 2 methods create or drop all the tables for registered models.
+    #
+    # With SQLAlchemy, a model is registered if it inherits from Base, and the model class has been
+    # imported. In Azafea, the model classes are imported when the queue config imports their
+    # handlers.
     def create_all(self) -> None:
-        # This creates all the tables for registered models. A model is registered if it inherits
-        # from Base, and the model class has been imported.
-        #
-        # In Azafea, the model classes are imported when the queue config imports their handlers.
-        #
-        # So if models are written correctly, inheriting from Base, then their tables will be
-        # created here.
         Base.metadata.create_all(self._engine)
+
+    def drop_all(self) -> None:
+        Base.metadata.drop_all(self._engine)
 
 
 class PostgresqlConnectionError(Exception):
