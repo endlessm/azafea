@@ -8,6 +8,17 @@ import toml
 from azafea.config import Config
 
 
+def pytest_collection_modifyitems(items):
+    for item in items:
+        markers = [m for m in item.own_markers if m.name in ('flake8', 'mypy')]
+
+        if markers:
+            continue
+
+        if item.nodeid.startswith('azafea/tests/integration/'):
+            item.add_marker(pytest.mark.integration)
+
+
 class MockSqlAlchemySession:
     def __init__(self):
         self.open = True

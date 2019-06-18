@@ -21,4 +21,5 @@ toml = "*"
 
 [scripts]
 azafea = "python ./bin/azafea"
-test = "py.test --cov=azafea --flake8 --mypy --no-cov-on-fail"
+test = "py.test --cov=azafea --flake8 --mypy --no-cov-on-fail -m 'not integration'"
+test-all = "py.test --cov=azafea --flake8 --mypy --no-cov-on-fail"
