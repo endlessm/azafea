@@ -42,4 +42,8 @@ def setup_logging(*, verbose: bool = False) -> None:
     logging.basicConfig(level=level, handlers=[out, err], format=format_, style='{')
 
     if verbose:
+        # Increase verbosity
         logging.getLogger('sqlalchemy').setLevel(logging.DEBUG)
+
+        # Decrease verbosity
+        logging.getLogger('flake8').setLevel(logging.WARNING)
