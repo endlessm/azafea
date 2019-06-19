@@ -6,7 +6,7 @@ from azafea.model import Base
 
 
 class Event(Base):
-    __tablename__ = 'event'
+    __tablename__ = 'managedb_event'
 
     id = Column(Integer, primary_key=True)
     name = Column(Unicode, nullable=False)

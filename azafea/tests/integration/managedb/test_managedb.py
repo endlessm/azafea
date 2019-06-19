@@ -23,7 +23,7 @@ def test_initdb(make_config_file):
     with pytest.raises(ProgrammingError) as exc_info:
         with db as dbsession:
             dbsession.query(Event).all()
-    assert 'relation "event" does not exist' in str(exc_info.value)
+    assert 'relation "managedb_event" does not exist' in str(exc_info.value)
 
     # Create the table
     args = cli.parse_args([
@@ -56,7 +56,7 @@ def test_reinitdb(make_config_file):
     with pytest.raises(ProgrammingError) as exc_info:
         with db as dbsession:
             dbsession.query(Event).all()
-    assert 'relation "event" does not exist' in str(exc_info.value)
+    assert 'relation "managedb_event" does not exist' in str(exc_info.value)
 
     # Create the table
     args = cli.parse_args([
@@ -85,7 +85,7 @@ def test_reinitdb(make_config_file):
     with pytest.raises(ProgrammingError) as exc_info:
         with db as dbsession:
             dbsession.query(Event).all()
-    assert 'relation "event" does not exist' in str(exc_info.value)
+    assert 'relation "managedb_event" does not exist' in str(exc_info.value)
 
     # Recreate the table
     args = cli.parse_args([
