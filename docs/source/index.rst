@@ -14,3 +14,5 @@ PostgreSQL, where they can be queried and visualized.
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
+   configuration
