@@ -8,6 +8,7 @@ pytest = "*"
 pytest-cov = "*"
 pytest-flake8 = "*"
 pytest-mypy = "*"
+sphinx = "*"
 # Waiting for 0.2, master got lots of fixes and improvements since the last
 # release: https://github.com/dropbox/sqlalchemy-stubs/issues/78
 sqlalchemy-stubs = {git = "https://github.com/dropbox/sqlalchemy-stubs.git"}
@@ -21,5 +22,6 @@ toml = "*"
 
 [scripts]
 azafea = "python ./bin/azafea"
+doc = "make -C docs html"
 test = "py.test --cov=azafea --cov-fail-under=89 --flake8 --mypy --no-cov-on-fail -m 'not integration'"
 test-all = "py.test --cov=azafea --cov-fail-under=99 --flake8 --mypy --no-cov-on-fail"
