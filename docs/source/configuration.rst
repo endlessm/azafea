@@ -110,6 +110,8 @@ stores its data.
 
   The default is ``"azafea"``
 
+.. _queue-config:
+
 The ``queues`` table
 ====================
 

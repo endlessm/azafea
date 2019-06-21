@@ -16,3 +16,4 @@ PostgreSQL, where they can be queried and visualized.
    :caption: Contents:
 
    configuration
+   event-handlers
