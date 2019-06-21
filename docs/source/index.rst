@@ -15,5 +15,6 @@ PostgreSQL, where they can be queried and visualized.
    :maxdepth: 2
    :caption: Contents:
 
+   design
    configuration
    event-handlers
