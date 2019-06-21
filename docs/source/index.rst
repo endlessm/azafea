@@ -16,5 +16,6 @@ PostgreSQL, where they can be queried and visualized.
    :caption: Contents:
 
    design
+   install
    configuration
    event-handlers
