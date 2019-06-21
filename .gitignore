@@ -1,4 +1,6 @@
 /.coverage
 /.mypy_cache/
+/azafea.egg-info/
+/dist/
 /docs/build/
 __pycache__/

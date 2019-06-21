@@ -1,0 +1,6 @@
+recursive-include bin *
+include COPYING
+include docs/make.bat docs/Makefile
+recursive-include docs/source *.png *.py *.rst
+include Pipfile* pyproject.toml
+recursive-include stubs *.pyi
