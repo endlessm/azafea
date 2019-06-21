@@ -39,7 +39,8 @@ class Processor(Process):
         return db
 
     def _get_redis(self) -> Redis:
-        redis = Redis(host=self.config.redis.host, port=self.config.redis.port)
+        redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
+                      password=self.config.redis.password)
 
         # Try to connect, to fail early if the Redis server can't be reached. The connection
         # disconnects automatically when garbage collected.
