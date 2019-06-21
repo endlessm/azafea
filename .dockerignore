@@ -1,0 +1,11 @@
+/.coverage
+/.dockerignore
+/.git
+/.gitignore
+/.mypy_cache
+/.pytest_cache
+/azafea.egg-info
+/build
+/dist
+/Dockerfile
+/docs
