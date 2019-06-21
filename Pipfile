@@ -21,7 +21,7 @@ sqlalchemy = "*"
 toml = "*"
 
 [scripts]
-azafea = "python ./bin/azafea"
+azafea = "python -m azafea"
 doc = "make -C docs html"
 test = "py.test --cov=azafea --cov-fail-under=89 --flake8 --mypy --no-cov-on-fail -m 'not integration'"
 test-all = "py.test --cov=azafea --cov-fail-under=99 --flake8 --mypy --no-cov-on-fail"

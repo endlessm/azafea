@@ -1,6 +1,3 @@
-#!/usr/bin/python3
-
-
 # Copyright (c) 2019 - Endless
 #
 # This file is part of Azafea
@@ -19,18 +16,9 @@
 # along with Azafea.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import os
 import sys
 
-
-if os.environ.get('PIPENV_ACTIVE', '0') == '1':
-    parent = os.path.dirname(os.path.dirname(__file__))
-
-    if os.path.exists(os.path.join(parent, 'Pipfile')):
-        # Running in a venv from a development tree
-        sys.path.insert(0, parent)
-
-from azafea.cli import parse_args
+from .cli import parse_args
 
 
 args = parse_args(sys.argv[1:])

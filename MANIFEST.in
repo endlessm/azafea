@@ -1,4 +1,3 @@
-recursive-include bin *
 include COPYING
 include docs/make.bat docs/Makefile
 recursive-include docs/source *.png *.py *.rst
