@@ -1,0 +1,47 @@
+---
+# vim:ff=unix:ts=2:sw=2:ai:expandtab
+version: '3'
+services:
+  postgres:
+    image: postgres:alpine
+    environment:
+      POSTGRES_DB: azafea
+      POSTGRES_PASSWORD: "CHANGE ME!!"
+      POSTGRES_USER: azafea
+    healthcheck:
+      test: |-
+        PGPASSWORD="$$POSTGRES_PASSWORD" psql --host localhost --username "$$POSTGRES_USER" --dbname "$$POSTGRES_DB" --command "SELECT 1;" || exit 1
+    volumes:
+      - postgres:/var/lib/postgresql/data
+  redis:
+    command: ["redis-server", "--requirepass", "CHANGE ME!!"]
+    image: redis:alpine
+    healthcheck:
+      test: |-
+        redis-cli PING || exit 1
+  azafea:
+    build:
+      context: ./
+    command: ["-c", "/etc/azafea/config.toml", "run"]
+    depends_on:
+      - redis
+      - postgres
+    healthcheck:
+      test: |-
+        pgrep python3 || exit 1
+    restart: always
+    volumes:
+      - ./config.toml.dev:/etc/azafea/config.toml:ro
+  initdb:
+    build:
+      context: ./
+    command: ["-c", "/etc/azafea/config.toml", "initdb"]
+    depends_on:
+      - redis
+      - postgres
+    restart: on-failure
+    volumes:
+      - ./config.toml.dev:/etc/azafea/config.toml:ro
+
+volumes:
+  postgres:

@@ -1,0 +1,15 @@
+[main]
+verbose = true
+number_of_workers = 1
+
+[redis]
+host = "redis"
+
+[postgresql]
+host = "postgres"
+
+[queues.activation-1]
+handler = "azafea.event_processors.activation.v1"
+
+[queues.ping-1]
+handler = "azafea.event_processors.ping.v1"
