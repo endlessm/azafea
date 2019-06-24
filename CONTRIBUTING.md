@@ -103,6 +103,25 @@ can run. They have the same requirements as
 [running Azafea in production](docs/source/install.rst) so see that
 documentation to install things like PostgreSQL and Redis.
 
+A key difference from the production deployment is the PostgreSQL database
+which must be named `azafea-tests`. The PostgreSQL user must be named
+`azafea`, and Redis and PostgreSQL are both expecting to connect with the
+default password, `CHANGE ME!!`.
+
+So with PostgreSQL running, create the test database as follows (enter a
+password when prompted) :
+
+```
+$ sudo docker run --env=PGDATA=/var/lib/postgresql/azafea/data/pgdata \
+                  --env=POSTGRES_PASSWORD=S3cretPgAdminP@ssw0rd \
+                  --volume=/var/lib/postgresql/azafea/data:/var/lib/postgresql/azafea/data:rw \
+                  --interactive --tty --rm \
+                  postgres:latest bash
+[docker]# su - postgres
+[docker]$ createuser -h [container-ip] --pwprompt azafea
+[docker]$ createdb -h [container-ip] --owner=azafea azafea-tests
+```
+
 Once you have everything set up, you can run all the tests, unit and
 integration, with a single command:
 
@@ -126,13 +145,17 @@ Running a local instance has the same requirement as running Azafea in
 production or running the integration tests (see above). If you managed to have
 all the integration tests passing, then the local instance should run properly.
 
+We recommend you run Azafea with a different database from the one used by the
+integration tests (`azafea-tests`). You could simply call it `azafea`, as that
+is the name in the default configuration.
+
 One additional thing you will need to do is
 [write a configuration file](docs/source/configuration.rst). In particular, you
 will at the very least want to:
 
 * change the Redis and PostgreSQL hosts, to point them to the IP addresses of
   their respective containers;
-* change the Redis and PostgreSQL passwords;
+* change the Redis and PostgreSQL user and passwords;
 * add at least one queue configuration.
 
 Once you're ready, you can ensure that Azafea loads your configuration
