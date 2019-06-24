@@ -82,13 +82,13 @@ class Processor(Process):
                 continue
 
             queue, value = result
-            queue = queue.decode('utf-8')
+            queue_name = queue.decode('utf-8')
 
-            log.debug('{%s} Pulled %s from the %s queue', self.name, value, queue)
+            log.debug('{%s} Pulled %s from the %s queue', self.name, value, queue_name)
 
-            queue_handler = self.config.queues[queue].handler
+            queue_handler = self.config.queues[queue_name].handler
             log.debug('{%s} Processing event from the %s queue with %s',
-                      self.name, queue, get_fqdn(queue_handler))
+                      self.name, queue_name, get_fqdn(queue_handler))
 
             try:
                 with self._db as dbsession:
@@ -97,5 +97,5 @@ class Processor(Process):
             except Exception:
                 log.exception('{%s} An error occured while processing an event from the %s queue '
                               'with %s\nDetails:',
-                              self.name, queue, get_fqdn(queue_handler))
-                self._redis.lpush(f'errors-{queue}', value)
+                              self.name, queue_name, get_fqdn(queue_handler))
+                self._redis.lpush(f'errors-{queue_name}', value)
