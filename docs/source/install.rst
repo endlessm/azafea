@@ -61,10 +61,10 @@ it::
 
 We can now run PostgreSQL, telling it to use that directory::
 
-    $ sudo docker run --env=PGDATA=/var/lib/pgsql/azafea/data \
+    $ sudo docker run --env=PGDATA=/var/lib/postgresql/azafea/data/pgdata \
                       --env=POSTGRES_PASSWORD=S3cretPgAdminP@ssw0rd \
                       --publish=5432:5432 \
-                      --volume /var/lib/pgsql/azafea/data/pgdata:/var/lib/pgsql/azafea/data:rw \
+                      --volume=/var/lib/postgresql/azafea/data:/var/lib/postgresql/azafea/data:rw \
                       postgres:latest
 
 .. note::
@@ -75,10 +75,9 @@ We can now run PostgreSQL, telling it to use that directory::
 With PostgreSQL running, we can now create the user and database for Azafea
 (enter a password when prompted) ::
 
-    $ sudo docker run --env=PGDATA=/var/lib/pgsql/azafea/data \
+    $ sudo docker run --env=PGDATA=/var/lib/postgresql/azafea/data/pgdata \
                       --env=POSTGRES_PASSWORD=S3cretPgAdminP@ssw0rd \
-                      --publish=5432:5432 \
-                      --volume /var/lib/pgsql/azafea/data/pgdata:/var/lib/pgsql/azafea/data:rw \
+                      --volume=/var/lib/postgresql/azafea/data:/var/lib/postgresql/azafea/data:rw \
                       --interactive --tty --rm \
                       postgres:latest bash
     [docker]# su - postgres
