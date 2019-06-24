@@ -1,4 +1,4 @@
-include COPYING
+include CONTRIBUTING.md COPYING
 include Dockerfile .dockerignore
 include docs/make.bat docs/Makefile
 recursive-include docs/source *.png *.py *.rst

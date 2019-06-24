@@ -19,3 +19,4 @@ PostgreSQL, where they can be queried and visualized.
    install
    configuration
    event-handlers
+   contribute
