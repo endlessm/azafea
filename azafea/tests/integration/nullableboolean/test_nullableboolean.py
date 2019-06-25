@@ -22,27 +22,25 @@ from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.sql import text
 
 from azafea import cli
-from azafea.config import Config
 from azafea.model import Db
 
+from .. import IntegrationTest
 
-class TestNullableBoolean:
+
+class TestNullableBoolean(IntegrationTest):
+    handler_module = 'azafea.tests.integration.nullableboolean.handler_module'
+
     @pytest.mark.parametrize('name, value', [
         pytest.param('true', True, id='true'),
         pytest.param('false', False, id='false'),
         pytest.param('unknown', None, id='unknown'),
     ])
-    def test_nullableboolean(self, make_config_file, name, value):
+    def test_nullableboolean(self, name, value):
         from .handler_module import Event
 
-        config_file = make_config_file({
-            'main': {'verbose': True},
-            'postgresql': {'database': 'azafea-tests'},
-            'queues': {'event': {'handler': 'azafea.tests.integration.managedb.handler_module'}},
-        })
-        config = Config.from_file(str(config_file))
-        db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-                config.postgresql.password, config.postgresql.database)
+        db = Db(self.config.postgresql.host, self.config.postgresql.port,
+                self.config.postgresql.user, self.config.postgresql.password,
+                self.config.postgresql.database)
 
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
@@ -52,7 +50,7 @@ class TestNullableBoolean:
 
         # Create the table
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'initdb',
         ])
         assert args.subcommand(args) == cli.ExitCode.OK

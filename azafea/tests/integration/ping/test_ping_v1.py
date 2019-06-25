@@ -30,24 +30,22 @@ from redis import Redis
 from sqlalchemy.exc import ProgrammingError
 
 from azafea import cli
-from azafea.config import Config
 from azafea.model import Db
 
+from .. import IntegrationTest
 
-class TestPing:
-    def test_ping_v1(self, make_config_file):
+
+class TestPing(IntegrationTest):
+    handler_module = 'azafea.event_processors.ping.v1'
+
+    def test_ping_v1(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
 
-        config_file = make_config_file({
-            'main': {'verbose': True, 'number_of_workers': 1},
-            'postgresql': {'database': 'azafea-tests'},
-            'queues': {'ping-1-tests': {'handler': 'azafea.event_processors.ping.v1'}},
-        })
-        config = Config.from_file(str(config_file))
-        db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-                config.postgresql.password, config.postgresql.database)
-        redis = Redis(host=config.redis.host, port=config.redis.port,
-                      password=config.redis.password)
+        db = Db(self.config.postgresql.host, self.config.postgresql.port,
+                self.config.postgresql.user, self.config.postgresql.password,
+                self.config.postgresql.database)
+        redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
+                      password=self.config.redis.password)
 
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
@@ -60,18 +58,18 @@ class TestPing:
         assert 'relation "ping_configuration_v1" does not exist' in str(exc_info.value)
 
         # Ensure Redis is empty
-        assert redis.llen('ping-1-tests') == 0
+        assert redis.llen('test_ping_v1') == 0
 
         # Create the tables
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'initdb',
         ])
         args.subcommand(args)
 
         # Run Azafea in the background
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'run',
         ])
         proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
@@ -80,7 +78,7 @@ class TestPing:
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        redis.lpush('ping-1-tests', json.dumps({
+        redis.lpush('test_ping_v1', json.dumps({
             'image': 'image',
             'vendor': 'vendor',
             'product': 'product',
@@ -115,24 +113,19 @@ class TestPing:
             assert ping.updated_at == updated_at
 
         # Ensure Redis is empty
-        assert redis.llen('ping-1-tests') == 0
+        assert redis.llen('test_ping_v1') == 0
 
         # Drop all tables to avoid side-effects between tests
         db.drop_all()
 
-    def test_ping_v1_valid_country(self, make_config_file):
+    def test_ping_v1_valid_country(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
 
-        config_file = make_config_file({
-            'main': {'verbose': True, 'number_of_workers': 1},
-            'postgresql': {'database': 'azafea-tests'},
-            'queues': {'ping-1-tests': {'handler': 'azafea.event_processors.ping.v1'}},
-        })
-        config = Config.from_file(str(config_file))
-        db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-                config.postgresql.password, config.postgresql.database)
-        redis = Redis(host=config.redis.host, port=config.redis.port,
-                      password=config.redis.password)
+        db = Db(self.config.postgresql.host, self.config.postgresql.port,
+                self.config.postgresql.user, self.config.postgresql.password,
+                self.config.postgresql.database)
+        redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
+                      password=self.config.redis.password)
 
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
@@ -145,18 +138,18 @@ class TestPing:
         assert 'relation "ping_configuration_v1" does not exist' in str(exc_info.value)
 
         # Ensure Redis is empty
-        assert redis.llen('ping-1-tests') == 0
+        assert redis.llen('test_ping_v1_valid_country') == 0
 
         # Create the tables
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'initdb',
         ])
         args.subcommand(args)
 
         # Run Azafea in the background
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'run',
         ])
         proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
@@ -165,7 +158,7 @@ class TestPing:
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        redis.lpush('ping-1-tests', json.dumps({
+        redis.lpush('test_ping_v1_valid_country', json.dumps({
             'image': 'image',
             'vendor': 'vendor',
             'product': 'product',
@@ -202,24 +195,19 @@ class TestPing:
             assert ping.updated_at == updated_at
 
         # Ensure Redis is empty
-        assert redis.llen('ping-1-tests') == 0
+        assert redis.llen('test_ping_v1_valid_country') == 0
 
         # Drop all tables to avoid side-effects between tests
         db.drop_all()
 
-    def test_ping_v1_empty_country(self, make_config_file):
+    def test_ping_v1_empty_country(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
 
-        config_file = make_config_file({
-            'main': {'verbose': True, 'number_of_workers': 1},
-            'postgresql': {'database': 'azafea-tests'},
-            'queues': {'ping-1-tests': {'handler': 'azafea.event_processors.ping.v1'}},
-        })
-        config = Config.from_file(str(config_file))
-        db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-                config.postgresql.password, config.postgresql.database)
-        redis = Redis(host=config.redis.host, port=config.redis.port,
-                      password=config.redis.password)
+        db = Db(self.config.postgresql.host, self.config.postgresql.port,
+                self.config.postgresql.user, self.config.postgresql.password,
+                self.config.postgresql.database)
+        redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
+                      password=self.config.redis.password)
 
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
@@ -232,18 +220,18 @@ class TestPing:
         assert 'relation "ping_configuration_v1" does not exist' in str(exc_info.value)
 
         # Ensure Redis is empty
-        assert redis.llen('ping-1-tests') == 0
+        assert redis.llen('test_ping_v1_empty_country') == 0
 
         # Create the tables
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'initdb',
         ])
         args.subcommand(args)
 
         # Run Azafea in the background
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'run',
         ])
         proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
@@ -252,7 +240,7 @@ class TestPing:
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        redis.lpush('ping-1-tests', json.dumps({
+        redis.lpush('test_ping_v1_empty_country', json.dumps({
             'image': 'image',
             'vendor': 'vendor',
             'product': 'product',
@@ -289,24 +277,19 @@ class TestPing:
             assert ping.updated_at == updated_at
 
         # Ensure Redis is empty
-        assert redis.llen('ping-1-tests') == 0
+        assert redis.llen('test_ping_v1_empty_country') == 0
 
         # Drop all tables to avoid side-effects between tests
         db.drop_all()
 
-    def test_ping_v1_invalid_country(self, make_config_file):
+    def test_ping_v1_invalid_country(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
 
-        config_file = make_config_file({
-            'main': {'verbose': True, 'number_of_workers': 1},
-            'postgresql': {'database': 'azafea-tests'},
-            'queues': {'ping-1-tests': {'handler': 'azafea.event_processors.ping.v1'}},
-        })
-        config = Config.from_file(str(config_file))
-        db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-                config.postgresql.password, config.postgresql.database)
-        redis = Redis(host=config.redis.host, port=config.redis.port,
-                      password=config.redis.password)
+        db = Db(self.config.postgresql.host, self.config.postgresql.port,
+                self.config.postgresql.user, self.config.postgresql.password,
+                self.config.postgresql.database)
+        redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
+                      password=self.config.redis.password)
 
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
@@ -319,18 +302,18 @@ class TestPing:
         assert 'relation "ping_configuration_v1" does not exist' in str(exc_info.value)
 
         # Ensure Redis is empty
-        assert redis.llen('ping-1-tests') == 0
+        assert redis.llen('test_ping_v1_invalid_country') == 0
 
         # Create the tables
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'initdb',
         ])
         args.subcommand(args)
 
         # Run Azafea in the background
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'run',
         ])
         proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
@@ -350,7 +333,7 @@ class TestPing:
             'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
             'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         })
-        redis.lpush('ping-1-tests', record)
+        redis.lpush('test_ping_v1_invalid_country', record)
 
         # Stop Azafea. Give the process a bit of time to register its signal handler and process the
         # event from the Redis queue
@@ -364,26 +347,21 @@ class TestPing:
             assert dbsession.query(Ping).count() == 0
 
         # Ensure Redis has the record back into the error queue
-        assert redis.llen('ping-1-tests') == 0
-        assert redis.llen('errors-ping-1-tests') == 1
-        assert redis.rpop('errors-ping-1-tests').decode('utf-8') == record
+        assert redis.llen('test_ping_v1_invalid_country') == 0
+        assert redis.llen('errors-test_ping_v1_invalid_country') == 1
+        assert redis.rpop('errors-test_ping_v1_invalid_country').decode('utf-8') == record
 
         # Drop all tables to avoid side-effects between tests
         db.drop_all()
 
-    def test_ping_configuration_v1_dualboot_unicity(self, make_config_file):
+    def test_ping_configuration_v1_dualboot_unicity(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
 
-        config_file = make_config_file({
-            'main': {'verbose': True},
-            'postgresql': {'database': 'azafea-tests'},
-            'queues': {'ping-1-tests': {'handler': 'azafea.event_processors.ping.v1'}},
-        })
-        config = Config.from_file(str(config_file))
-        db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-                config.postgresql.password, config.postgresql.database)
-        redis = Redis(host=config.redis.host, port=config.redis.port,
-                      password=config.redis.password)
+        db = Db(self.config.postgresql.host, self.config.postgresql.port,
+                self.config.postgresql.user, self.config.postgresql.password,
+                self.config.postgresql.database)
+        redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
+                      password=self.config.redis.password)
 
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
@@ -396,18 +374,18 @@ class TestPing:
         assert 'relation "ping_configuration_v1" does not exist' in str(exc_info.value)
 
         # Ensure Redis is empty
-        assert redis.llen('ping-1-tests') == 0
+        assert redis.llen('test_ping_configuration_v1_dualboot_unicity') == 0
 
         # Create the tables
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'initdb',
         ])
         args.subcommand(args)
 
         # Run Azafea in the background
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'run',
         ])
         proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
@@ -417,7 +395,7 @@ class TestPing:
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         for i in range(10):
-            redis.lpush('ping-1-tests', json.dumps({
+            redis.lpush('test_ping_configuration_v1_dualboot_unicity', json.dumps({
                 'image': 'image',
                 'vendor': 'vendor',
                 'product': 'product',
@@ -454,7 +432,7 @@ class TestPing:
             assert pings.count() == 10
 
         # Ensure Redis is empty
-        assert redis.llen('ping-1-tests') == 0
+        assert redis.llen('test_ping_configuration_v1_dualboot_unicity') == 0
 
         # Drop all tables to avoid side-effects between tests
         db.drop_all()

@@ -21,22 +21,20 @@ import pytest
 from sqlalchemy.exc import ProgrammingError
 
 from azafea import cli
-from azafea.config import Config
 from azafea.model import Db
 
+from .. import IntegrationTest
 
-class TestManageDb:
-    def test_initdb(self, make_config_file):
+
+class TestManageDb(IntegrationTest):
+    handler_module = 'azafea.tests.integration.managedb.handler_module'
+
+    def test_initdb(self):
         from .handler_module import Event
 
-        config_file = make_config_file({
-            'main': {'verbose': True},
-            'postgresql': {'database': 'azafea-tests'},
-            'queues': {'event': {'handler': 'azafea.tests.integration.managedb.handler_module'}},
-        })
-        config = Config.from_file(str(config_file))
-        db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-                config.postgresql.password, config.postgresql.database)
+        db = Db(self.config.postgresql.host, self.config.postgresql.port,
+                self.config.postgresql.user, self.config.postgresql.password,
+                self.config.postgresql.database)
 
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
@@ -46,7 +44,7 @@ class TestManageDb:
 
         # Create the table
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'initdb',
         ])
         assert args.subcommand(args) == cli.ExitCode.OK
@@ -58,17 +56,12 @@ class TestManageDb:
         # Drop all tables to avoid side-effects between tests
         db.drop_all()
 
-    def test_reinitdb(self, make_config_file):
+    def test_reinitdb(self):
         from .handler_module import Event
 
-        config_file = make_config_file({
-            'main': {'verbose': True},
-            'postgresql': {'database': 'azafea-tests'},
-            'queues': {'event': {'handler': 'azafea.tests.integration.managedb.handler_module'}},
-        })
-        config = Config.from_file(str(config_file))
-        db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-                config.postgresql.password, config.postgresql.database)
+        db = Db(self.config.postgresql.host, self.config.postgresql.port,
+                self.config.postgresql.user, self.config.postgresql.password,
+                self.config.postgresql.database)
 
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
@@ -78,23 +71,23 @@ class TestManageDb:
 
         # Create the table
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'initdb',
         ])
         assert args.subcommand(args) == cli.ExitCode.OK
 
-        # Add some events
+        # Add an event
         with db as dbsession:
             dbsession.add(Event(name='hi!'))
 
-        # Ensure the element was inserted
+        # Ensure the event was inserted
         with db as dbsession:
             event = dbsession.query(Event).one()
             assert event.name == 'hi!'
 
         # Drop the table
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'dropdb'
         ])
         assert args.subcommand(args) == cli.ExitCode.OK
@@ -107,7 +100,7 @@ class TestManageDb:
 
         # Recreate the table
         args = cli.parse_args([
-            '-c', str(config_file),
+            '-c', self.config_file,
             'initdb',
         ])
         assert args.subcommand(args) == cli.ExitCode.OK
