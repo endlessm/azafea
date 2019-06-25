@@ -18,7 +18,6 @@
 
 import pytest
 
-from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.sql import text
 
 from azafea import cli
@@ -36,12 +35,6 @@ class TestNullableBoolean(IntegrationTest):
     ])
     def test_nullableboolean(self, name, value):
         from .handler_module import Event
-
-        # Ensure there is no table at the start
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(Event).all()
-        assert 'relation "nullableboolean_event" does not exist' in str(exc_info.value)
 
         # Create the table
         args = cli.parse_args([

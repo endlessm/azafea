@@ -23,11 +23,7 @@ import os
 from signal import SIGTERM
 import time
 
-import pytest
-
 from redis import Redis
-
-from sqlalchemy.exc import ProgrammingError
 
 from azafea import cli
 
@@ -42,16 +38,6 @@ class TestPing(IntegrationTest):
 
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
-
-        # Ensure there is no table at the start
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(Ping).all()
-        assert 'relation "ping_v1" does not exist' in str(exc_info.value)
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(PingConfiguration).all()
-        assert 'relation "ping_configuration_v1" does not exist' in str(exc_info.value)
 
         # Ensure Redis is empty
         assert redis.llen('test_ping_v1') == 0
@@ -119,16 +105,6 @@ class TestPing(IntegrationTest):
 
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
-
-        # Ensure there is no table at the start
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(Ping).all()
-        assert 'relation "ping_v1" does not exist' in str(exc_info.value)
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(PingConfiguration).all()
-        assert 'relation "ping_configuration_v1" does not exist' in str(exc_info.value)
 
         # Ensure Redis is empty
         assert redis.llen('test_ping_v1_valid_country') == 0
@@ -199,16 +175,6 @@ class TestPing(IntegrationTest):
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
 
-        # Ensure there is no table at the start
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(Ping).all()
-        assert 'relation "ping_v1" does not exist' in str(exc_info.value)
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(PingConfiguration).all()
-        assert 'relation "ping_configuration_v1" does not exist' in str(exc_info.value)
-
         # Ensure Redis is empty
         assert redis.llen('test_ping_v1_empty_country') == 0
 
@@ -273,20 +239,10 @@ class TestPing(IntegrationTest):
         self.db.drop_all()
 
     def test_ping_v1_invalid_country(self):
-        from azafea.event_processors.ping.v1 import PingConfiguration, Ping
+        from azafea.event_processors.ping.v1 import Ping
 
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
-
-        # Ensure there is no table at the start
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(Ping).all()
-        assert 'relation "ping_v1" does not exist' in str(exc_info.value)
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(PingConfiguration).all()
-        assert 'relation "ping_configuration_v1" does not exist' in str(exc_info.value)
 
         # Ensure Redis is empty
         assert redis.llen('test_ping_v1_invalid_country') == 0
@@ -346,16 +302,6 @@ class TestPing(IntegrationTest):
 
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
-
-        # Ensure there is no table at the start
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(Ping).all()
-        assert 'relation "ping_v1" does not exist' in str(exc_info.value)
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(PingConfiguration).all()
-        assert 'relation "ping_configuration_v1" does not exist' in str(exc_info.value)
 
         # Ensure Redis is empty
         assert redis.llen('test_ping_configuration_v1_dualboot_unicity') == 0

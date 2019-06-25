@@ -16,10 +16,6 @@
 # along with Azafea.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import pytest
-
-from sqlalchemy.exc import ProgrammingError
-
 from azafea import cli
 
 from .. import IntegrationTest
@@ -30,12 +26,6 @@ class TestManageDb(IntegrationTest):
 
     def test_initdb(self):
         from .handler_module import Event
-
-        # Ensure there is no table at the start
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(Event).all()
-        assert 'relation "managedb_event" does not exist' in str(exc_info.value)
 
         # Create the table
         args = cli.parse_args([
@@ -53,12 +43,6 @@ class TestManageDb(IntegrationTest):
 
     def test_reinitdb(self):
         from .handler_module import Event
-
-        # Ensure there is no table at the start
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(Event).all()
-        assert 'relation "managedb_event" does not exist' in str(exc_info.value)
 
         # Create the table
         args = cli.parse_args([
@@ -84,10 +68,7 @@ class TestManageDb(IntegrationTest):
         assert args.subcommand(args) == cli.ExitCode.OK
 
         # Ensure the table was dropped
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(Event).all()
-        assert 'relation "managedb_event" does not exist' in str(exc_info.value)
+        self.ensure_no_tables()
 
         # Recreate the table
         args = cli.parse_args([

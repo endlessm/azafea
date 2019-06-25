@@ -23,11 +23,7 @@ import os
 from signal import SIGTERM
 import time
 
-import pytest
-
 from redis import Redis
-
-from sqlalchemy.exc import ProgrammingError
 
 from azafea import cli
 
@@ -42,12 +38,6 @@ class TestActivation(IntegrationTest):
 
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
-
-        # Ensure there is no table at the start
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(Activation).all()
-        assert 'relation "activation_v1" does not exist' in str(exc_info.value)
 
         # Ensure Redis is empty
         assert redis.llen('test_activation_v1') == 0
@@ -107,12 +97,6 @@ class TestActivation(IntegrationTest):
 
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
-
-        # Ensure there is no table at the start
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(Activation).all()
-        assert 'relation "activation_v1" does not exist' in str(exc_info.value)
 
         # Ensure Redis is empty
         assert redis.llen('test_activation_v1_valid_country') == 0
@@ -175,12 +159,6 @@ class TestActivation(IntegrationTest):
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
 
-        # Ensure there is no table at the start
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(Activation).all()
-        assert 'relation "activation_v1" does not exist' in str(exc_info.value)
-
         # Ensure Redis is empty
         assert redis.llen('test_activation_v1_empty_country') == 0
 
@@ -241,12 +219,6 @@ class TestActivation(IntegrationTest):
 
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
-
-        # Ensure there is no table at the start
-        with pytest.raises(ProgrammingError) as exc_info:
-            with self.db as dbsession:
-                dbsession.query(Activation).all()
-        assert 'relation "activation_v1" does not exist' in str(exc_info.value)
 
         # Ensure Redis is empty
         assert redis.llen('test_activation_v1_invalid_country') == 0
