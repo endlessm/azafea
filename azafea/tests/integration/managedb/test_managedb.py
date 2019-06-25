@@ -25,96 +25,96 @@ from azafea.config import Config
 from azafea.model import Db
 
 
-def test_initdb(make_config_file):
-    from .handler_module import Event
+class TestManageDb:
+    def test_initdb(self, make_config_file):
+        from .handler_module import Event
 
-    config_file = make_config_file({
-        'main': {'verbose': True},
-        'postgresql': {'database': 'azafea-tests'},
-        'queues': {'event': {'handler': 'azafea.tests.integration.managedb.handler_module'}},
-    })
-    config = Config.from_file(str(config_file))
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
+        config_file = make_config_file({
+            'main': {'verbose': True},
+            'postgresql': {'database': 'azafea-tests'},
+            'queues': {'event': {'handler': 'azafea.tests.integration.managedb.handler_module'}},
+        })
+        config = Config.from_file(str(config_file))
+        db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
+                config.postgresql.password, config.postgresql.database)
 
-    # Ensure there is no table at the start
-    with pytest.raises(ProgrammingError) as exc_info:
+        # Ensure there is no table at the start
+        with pytest.raises(ProgrammingError) as exc_info:
+            with db as dbsession:
+                dbsession.query(Event).all()
+        assert 'relation "managedb_event" does not exist' in str(exc_info.value)
+
+        # Create the table
+        args = cli.parse_args([
+            '-c', str(config_file),
+            'initdb',
+        ])
+        assert args.subcommand(args) == cli.ExitCode.OK
+
+        # Ensure the table exists
         with db as dbsession:
             dbsession.query(Event).all()
-    assert 'relation "managedb_event" does not exist' in str(exc_info.value)
 
-    # Create the table
-    args = cli.parse_args([
-        '-c', str(config_file),
-        'initdb',
-    ])
-    assert args.subcommand(args) == cli.ExitCode.OK
+        # Drop all tables to avoid side-effects between tests
+        db.drop_all()
 
-    # Ensure the table exists
-    with db as dbsession:
-        dbsession.query(Event).all()
+    def test_reinitdb(self, make_config_file):
+        from .handler_module import Event
 
-    # Drop all tables to avoid side-effects between tests
-    db.drop_all()
+        config_file = make_config_file({
+            'main': {'verbose': True},
+            'postgresql': {'database': 'azafea-tests'},
+            'queues': {'event': {'handler': 'azafea.tests.integration.managedb.handler_module'}},
+        })
+        config = Config.from_file(str(config_file))
+        db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
+                config.postgresql.password, config.postgresql.database)
 
+        # Ensure there is no table at the start
+        with pytest.raises(ProgrammingError) as exc_info:
+            with db as dbsession:
+                dbsession.query(Event).all()
+        assert 'relation "managedb_event" does not exist' in str(exc_info.value)
 
-def test_reinitdb(make_config_file):
-    from .handler_module import Event
+        # Create the table
+        args = cli.parse_args([
+            '-c', str(config_file),
+            'initdb',
+        ])
+        assert args.subcommand(args) == cli.ExitCode.OK
 
-    config_file = make_config_file({
-        'main': {'verbose': True},
-        'postgresql': {'database': 'azafea-tests'},
-        'queues': {'event': {'handler': 'azafea.tests.integration.managedb.handler_module'}},
-    })
-    config = Config.from_file(str(config_file))
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
-
-    # Ensure there is no table at the start
-    with pytest.raises(ProgrammingError) as exc_info:
+        # Add some events
         with db as dbsession:
-            dbsession.query(Event).all()
-    assert 'relation "managedb_event" does not exist' in str(exc_info.value)
+            dbsession.add(Event(name='hi!'))
 
-    # Create the table
-    args = cli.parse_args([
-        '-c', str(config_file),
-        'initdb',
-    ])
-    assert args.subcommand(args) == cli.ExitCode.OK
-
-    # Add some events
-    with db as dbsession:
-        dbsession.add(Event(name='hi!'))
-
-    # Ensure the element was inserted
-    with db as dbsession:
-        event = dbsession.query(Event).one()
-        assert event.name == 'hi!'
-
-    # Drop the table
-    args = cli.parse_args([
-        '-c', str(config_file),
-        'dropdb'
-    ])
-    assert args.subcommand(args) == cli.ExitCode.OK
-
-    # Ensure the table was dropped
-    with pytest.raises(ProgrammingError) as exc_info:
+        # Ensure the element was inserted
         with db as dbsession:
-            dbsession.query(Event).all()
-    assert 'relation "managedb_event" does not exist' in str(exc_info.value)
+            event = dbsession.query(Event).one()
+            assert event.name == 'hi!'
 
-    # Recreate the table
-    args = cli.parse_args([
-        '-c', str(config_file),
-        'initdb',
-    ])
-    assert args.subcommand(args) == cli.ExitCode.OK
+        # Drop the table
+        args = cli.parse_args([
+            '-c', str(config_file),
+            'dropdb'
+        ])
+        assert args.subcommand(args) == cli.ExitCode.OK
 
-    # Ensure the old events were cleared by the drop
-    with db as dbsession:
-        assert dbsession.query(Event).all() == []
+        # Ensure the table was dropped
+        with pytest.raises(ProgrammingError) as exc_info:
+            with db as dbsession:
+                dbsession.query(Event).all()
+        assert 'relation "managedb_event" does not exist' in str(exc_info.value)
 
-    # Drop all tables to avoid side-effects between tests
-    db.drop_all()
+        # Recreate the table
+        args = cli.parse_args([
+            '-c', str(config_file),
+            'initdb',
+        ])
+        assert args.subcommand(args) == cli.ExitCode.OK
+
+        # Ensure the old events were cleared by the drop
+        with db as dbsession:
+            assert dbsession.query(Event).all() == []
+
+        # Drop all tables to avoid side-effects between tests
+        db.drop_all()
