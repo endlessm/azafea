@@ -4,6 +4,7 @@ import tempfile
 import toml
 
 from azafea.config import Config
+from azafea.model import Db
 
 
 class IntegrationTest:
@@ -29,6 +30,10 @@ class IntegrationTest:
 
         self.config_file = config_file
         self.config = Config.from_file(self.config_file)
+
+        self.db = Db(self.config.postgresql.host, self.config.postgresql.port,
+                     self.config.postgresql.user, self.config.postgresql.password,
+                     self.config.postgresql.database)
 
     def teardown_method(self):
         os.unlink(self.config_file)

@@ -22,7 +22,6 @@ from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.sql import text
 
 from azafea import cli
-from azafea.model import Db
 
 from .. import IntegrationTest
 
@@ -38,13 +37,9 @@ class TestNullableBoolean(IntegrationTest):
     def test_nullableboolean(self, name, value):
         from .handler_module import Event
 
-        db = Db(self.config.postgresql.host, self.config.postgresql.port,
-                self.config.postgresql.user, self.config.postgresql.password,
-                self.config.postgresql.database)
-
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
-            with db as dbsession:
+            with self.db as dbsession:
                 dbsession.query(Event).all()
         assert 'relation "nullableboolean_event" does not exist' in str(exc_info.value)
 
@@ -56,11 +51,11 @@ class TestNullableBoolean(IntegrationTest):
         assert args.subcommand(args) == cli.ExitCode.OK
 
         # Insert a True value
-        with db as dbsession:
+        with self.db as dbsession:
             dbsession.add(Event(name=name, value=value))
 
         # Ensure the value is correct
-        with db as dbsession:
+        with self.db as dbsession:
             event = dbsession.query(Event).one()
             assert event.name == name
             assert event.value == value
@@ -73,4 +68,4 @@ class TestNullableBoolean(IntegrationTest):
             assert result.fetchone()[0] == name
 
         # Drop all tables to avoid side-effects between tests
-        db.drop_all()
+        self.db.drop_all()

@@ -21,7 +21,6 @@ import pytest
 from sqlalchemy.exc import ProgrammingError
 
 from azafea import cli
-from azafea.model import Db
 
 from .. import IntegrationTest
 
@@ -32,13 +31,9 @@ class TestManageDb(IntegrationTest):
     def test_initdb(self):
         from .handler_module import Event
 
-        db = Db(self.config.postgresql.host, self.config.postgresql.port,
-                self.config.postgresql.user, self.config.postgresql.password,
-                self.config.postgresql.database)
-
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
-            with db as dbsession:
+            with self.db as dbsession:
                 dbsession.query(Event).all()
         assert 'relation "managedb_event" does not exist' in str(exc_info.value)
 
@@ -50,22 +45,18 @@ class TestManageDb(IntegrationTest):
         assert args.subcommand(args) == cli.ExitCode.OK
 
         # Ensure the table exists
-        with db as dbsession:
+        with self.db as dbsession:
             dbsession.query(Event).all()
 
         # Drop all tables to avoid side-effects between tests
-        db.drop_all()
+        self.db.drop_all()
 
     def test_reinitdb(self):
         from .handler_module import Event
 
-        db = Db(self.config.postgresql.host, self.config.postgresql.port,
-                self.config.postgresql.user, self.config.postgresql.password,
-                self.config.postgresql.database)
-
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
-            with db as dbsession:
+            with self.db as dbsession:
                 dbsession.query(Event).all()
         assert 'relation "managedb_event" does not exist' in str(exc_info.value)
 
@@ -77,11 +68,11 @@ class TestManageDb(IntegrationTest):
         assert args.subcommand(args) == cli.ExitCode.OK
 
         # Add an event
-        with db as dbsession:
+        with self.db as dbsession:
             dbsession.add(Event(name='hi!'))
 
         # Ensure the event was inserted
-        with db as dbsession:
+        with self.db as dbsession:
             event = dbsession.query(Event).one()
             assert event.name == 'hi!'
 
@@ -94,7 +85,7 @@ class TestManageDb(IntegrationTest):
 
         # Ensure the table was dropped
         with pytest.raises(ProgrammingError) as exc_info:
-            with db as dbsession:
+            with self.db as dbsession:
                 dbsession.query(Event).all()
         assert 'relation "managedb_event" does not exist' in str(exc_info.value)
 
@@ -106,8 +97,8 @@ class TestManageDb(IntegrationTest):
         assert args.subcommand(args) == cli.ExitCode.OK
 
         # Ensure the old events were cleared by the drop
-        with db as dbsession:
+        with self.db as dbsession:
             assert dbsession.query(Event).all() == []
 
         # Drop all tables to avoid side-effects between tests
-        db.drop_all()
+        self.db.drop_all()

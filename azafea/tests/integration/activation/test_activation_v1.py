@@ -30,7 +30,6 @@ from redis import Redis
 from sqlalchemy.exc import ProgrammingError
 
 from azafea import cli
-from azafea.model import Db
 
 from .. import IntegrationTest
 
@@ -41,15 +40,12 @@ class TestActivation(IntegrationTest):
     def test_activation_v1(self):
         from azafea.event_processors.activation.v1 import Activation
 
-        db = Db(self.config.postgresql.host, self.config.postgresql.port,
-                self.config.postgresql.user, self.config.postgresql.password,
-                self.config.postgresql.database)
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
 
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
-            with db as dbsession:
+            with self.db as dbsession:
                 dbsession.query(Activation).all()
         assert 'relation "activation_v1" does not exist' in str(exc_info.value)
 
@@ -91,7 +87,7 @@ class TestActivation(IntegrationTest):
         proc.join()
 
         # Ensure the record was inserted into the DB
-        with db as dbsession:
+        with self.db as dbsession:
             activation = dbsession.query(Activation).one()
             assert activation.image == 'image'
             assert activation.vendor == 'vendor'
@@ -104,20 +100,17 @@ class TestActivation(IntegrationTest):
         assert redis.llen('test_activation_v1') == 0
 
         # Drop all tables to avoid side-effects between tests
-        db.drop_all()
+        self.db.drop_all()
 
     def test_activation_v1_valid_country(self):
         from azafea.event_processors.activation.v1 import Activation
 
-        db = Db(self.config.postgresql.host, self.config.postgresql.port,
-                self.config.postgresql.user, self.config.postgresql.password,
-                self.config.postgresql.database)
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
 
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
-            with db as dbsession:
+            with self.db as dbsession:
                 dbsession.query(Activation).all()
         assert 'relation "activation_v1" does not exist' in str(exc_info.value)
 
@@ -160,7 +153,7 @@ class TestActivation(IntegrationTest):
         proc.join()
 
         # Ensure the record was inserted into the DB
-        with db as dbsession:
+        with self.db as dbsession:
             activation = dbsession.query(Activation).one()
             assert activation.image == 'image'
             assert activation.vendor == 'vendor'
@@ -174,20 +167,17 @@ class TestActivation(IntegrationTest):
         assert redis.llen('test_activation_v1_valid_country') == 0
 
         # Drop all tables to avoid side-effects between tests
-        db.drop_all()
+        self.db.drop_all()
 
     def test_activation_v1_empty_country(self):
         from azafea.event_processors.activation.v1 import Activation
 
-        db = Db(self.config.postgresql.host, self.config.postgresql.port,
-                self.config.postgresql.user, self.config.postgresql.password,
-                self.config.postgresql.database)
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
 
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
-            with db as dbsession:
+            with self.db as dbsession:
                 dbsession.query(Activation).all()
         assert 'relation "activation_v1" does not exist' in str(exc_info.value)
 
@@ -230,7 +220,7 @@ class TestActivation(IntegrationTest):
         proc.join()
 
         # Ensure the record was inserted into the DB
-        with db as dbsession:
+        with self.db as dbsession:
             activation = dbsession.query(Activation).one()
             assert activation.image == 'image'
             assert activation.vendor == 'vendor'
@@ -244,20 +234,17 @@ class TestActivation(IntegrationTest):
         assert redis.llen('test_activation_v1_empty_country') == 0
 
         # Drop all tables to avoid side-effects between tests
-        db.drop_all()
+        self.db.drop_all()
 
     def test_activation_v1_invalid_country(self):
         from azafea.event_processors.activation.v1 import Activation
 
-        db = Db(self.config.postgresql.host, self.config.postgresql.port,
-                self.config.postgresql.user, self.config.postgresql.password,
-                self.config.postgresql.database)
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
 
         # Ensure there is no table at the start
         with pytest.raises(ProgrammingError) as exc_info:
-            with db as dbsession:
+            with self.db as dbsession:
                 dbsession.query(Activation).all()
         assert 'relation "activation_v1" does not exist' in str(exc_info.value)
 
@@ -301,7 +288,7 @@ class TestActivation(IntegrationTest):
         proc.join()
 
         # Ensure the record was not inserted into the DB
-        with db as dbsession:
+        with self.db as dbsession:
             assert dbsession.query(Activation).count() == 0
 
         # Ensure Redis has the record back into the error queue
@@ -310,4 +297,4 @@ class TestActivation(IntegrationTest):
         assert redis.rpop('errors-test_activation_v1_invalid_country').decode('utf-8') == record
 
         # Drop all tables to avoid side-effects between tests
-        db.drop_all()
+        self.db.drop_all()
