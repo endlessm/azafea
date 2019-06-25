@@ -39,7 +39,6 @@ def test_ping_v1(make_config_file):
 
     config_file = make_config_file({
         'main': {'verbose': True, 'number_of_workers': 1},
-        'redis': {'password': ''},
         'postgresql': {'database': 'azafea-tests'},
         'queues': {'ping-1-tests': {'handler': 'azafea.event_processors.ping.v1'}},
     })
@@ -125,7 +124,6 @@ def test_ping_v1_valid_country(make_config_file):
 
     config_file = make_config_file({
         'main': {'verbose': True, 'number_of_workers': 1},
-        'redis': {'password': ''},
         'postgresql': {'database': 'azafea-tests'},
         'queues': {'ping-1-tests': {'handler': 'azafea.event_processors.ping.v1'}},
     })
@@ -213,7 +211,6 @@ def test_ping_v1_empty_country(make_config_file):
 
     config_file = make_config_file({
         'main': {'verbose': True, 'number_of_workers': 1},
-        'redis': {'password': ''},
         'postgresql': {'database': 'azafea-tests'},
         'queues': {'ping-1-tests': {'handler': 'azafea.event_processors.ping.v1'}},
     })
@@ -301,7 +298,6 @@ def test_ping_v1_invalid_country(make_config_file):
 
     config_file = make_config_file({
         'main': {'verbose': True, 'number_of_workers': 1},
-        'redis': {'password': ''},
         'postgresql': {'database': 'azafea-tests'},
         'queues': {'ping-1-tests': {'handler': 'azafea.event_processors.ping.v1'}},
     })
@@ -379,7 +375,6 @@ def test_ping_configuration_v1_dualboot_unicity(make_config_file):
 
     config_file = make_config_file({
         'main': {'verbose': True},
-        'redis': {'password': ''},
         'postgresql': {'database': 'azafea-tests'},
         'queues': {'ping-1-tests': {'handler': 'azafea.event_processors.ping.v1'}},
     })

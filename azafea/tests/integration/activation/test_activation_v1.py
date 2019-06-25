@@ -39,7 +39,6 @@ def test_activation_v1(make_config_file):
 
     config_file = make_config_file({
         'main': {'verbose': True, 'number_of_workers': 1},
-        'redis': {'password': ''},
         'postgresql': {'database': 'azafea-tests'},
         'queues': {'activation-1-tests': {'handler': 'azafea.event_processors.activation.v1'}},
     })
@@ -113,7 +112,6 @@ def test_activation_v1_valid_country(make_config_file):
 
     config_file = make_config_file({
         'main': {'verbose': True, 'number_of_workers': 1},
-        'redis': {'password': ''},
         'postgresql': {'database': 'azafea-tests'},
         'queues': {'activation-1-tests': {'handler': 'azafea.event_processors.activation.v1'}},
     })
@@ -189,7 +187,6 @@ def test_activation_v1_empty_country(make_config_file):
 
     config_file = make_config_file({
         'main': {'verbose': True, 'number_of_workers': 1},
-        'redis': {'password': ''},
         'postgresql': {'database': 'azafea-tests'},
         'queues': {'activation-1-tests': {'handler': 'azafea.event_processors.activation.v1'}},
     })
@@ -265,7 +262,6 @@ def test_activation_v1_invalid_country(make_config_file):
 
     config_file = make_config_file({
         'main': {'verbose': True, 'number_of_workers': 1},
-        'redis': {'password': ''},
         'postgresql': {'database': 'azafea-tests'},
         'queues': {'activation-1-tests': {'handler': 'azafea.event_processors.activation.v1'}},
     })
