@@ -23,8 +23,6 @@ import os
 from signal import SIGTERM
 import time
 
-from redis import Redis
-
 from azafea import cli
 
 from .. import IntegrationTest
@@ -35,12 +33,6 @@ class TestPing(IntegrationTest):
 
     def test_ping_v1(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
-
-        redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
-                      password=self.config.redis.password)
-
-        # Ensure Redis is empty
-        assert redis.llen('test_ping_v1') == 0
 
         # Create the tables
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
@@ -53,7 +45,7 @@ class TestPing(IntegrationTest):
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        redis.lpush('test_ping_v1', json.dumps({
+        self.redis.lpush('test_ping_v1', json.dumps({
             'image': 'image',
             'vendor': 'vendor',
             'product': 'product',
@@ -87,17 +79,8 @@ class TestPing(IntegrationTest):
             assert ping.created_at == created_at
             assert ping.updated_at == updated_at
 
-        # Ensure Redis is empty
-        assert redis.llen('test_ping_v1') == 0
-
     def test_ping_v1_valid_country(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
-
-        redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
-                      password=self.config.redis.password)
-
-        # Ensure Redis is empty
-        assert redis.llen('test_ping_v1_valid_country') == 0
 
         # Create the tables
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
@@ -110,7 +93,7 @@ class TestPing(IntegrationTest):
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        redis.lpush('test_ping_v1_valid_country', json.dumps({
+        self.redis.lpush('test_ping_v1_valid_country', json.dumps({
             'image': 'image',
             'vendor': 'vendor',
             'product': 'product',
@@ -146,17 +129,8 @@ class TestPing(IntegrationTest):
             assert ping.created_at == created_at
             assert ping.updated_at == updated_at
 
-        # Ensure Redis is empty
-        assert redis.llen('test_ping_v1_valid_country') == 0
-
     def test_ping_v1_empty_country(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
-
-        redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
-                      password=self.config.redis.password)
-
-        # Ensure Redis is empty
-        assert redis.llen('test_ping_v1_empty_country') == 0
 
         # Create the tables
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
@@ -169,7 +143,7 @@ class TestPing(IntegrationTest):
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        redis.lpush('test_ping_v1_empty_country', json.dumps({
+        self.redis.lpush('test_ping_v1_empty_country', json.dumps({
             'image': 'image',
             'vendor': 'vendor',
             'product': 'product',
@@ -205,17 +179,8 @@ class TestPing(IntegrationTest):
             assert ping.created_at == created_at
             assert ping.updated_at == updated_at
 
-        # Ensure Redis is empty
-        assert redis.llen('test_ping_v1_empty_country') == 0
-
     def test_ping_v1_invalid_country(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
-
-        redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
-                      password=self.config.redis.password)
-
-        # Ensure Redis is empty
-        assert redis.llen('test_ping_v1_invalid_country') == 0
 
         # Create the tables
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
@@ -239,7 +204,7 @@ class TestPing(IntegrationTest):
             'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
             'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         })
-        redis.lpush('test_ping_v1_invalid_country', record)
+        self.redis.lpush('test_ping_v1_invalid_country', record)
 
         # Stop Azafea. Give the process a bit of time to register its signal handler and process the
         # event from the Redis queue
@@ -253,18 +218,12 @@ class TestPing(IntegrationTest):
             assert dbsession.query(Ping).count() == 0
 
         # Ensure Redis has the record back into the error queue
-        assert redis.llen('test_ping_v1_invalid_country') == 0
-        assert redis.llen('errors-test_ping_v1_invalid_country') == 1
-        assert redis.rpop('errors-test_ping_v1_invalid_country').decode('utf-8') == record
+        assert self.redis.llen('test_ping_v1_invalid_country') == 0
+        assert self.redis.llen('errors-test_ping_v1_invalid_country') == 1
+        assert self.redis.rpop('errors-test_ping_v1_invalid_country').decode('utf-8') == record
 
     def test_ping_configuration_v1_dualboot_unicity(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
-
-        redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
-                      password=self.config.redis.password)
-
-        # Ensure Redis is empty
-        assert redis.llen('test_ping_configuration_v1_dualboot_unicity') == 0
 
         # Create the tables
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
@@ -278,7 +237,7 @@ class TestPing(IntegrationTest):
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         for i in range(10):
-            redis.lpush('test_ping_configuration_v1_dualboot_unicity', json.dumps({
+            self.redis.lpush('test_ping_configuration_v1_dualboot_unicity', json.dumps({
                 'image': 'image',
                 'vendor': 'vendor',
                 'product': 'product',
@@ -313,6 +272,3 @@ class TestPing(IntegrationTest):
 
             pings = dbsession.query(Ping)
             assert pings.count() == 10
-
-        # Ensure Redis is empty
-        assert redis.llen('test_ping_configuration_v1_dualboot_unicity') == 0

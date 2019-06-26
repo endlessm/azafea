@@ -4,6 +4,8 @@ import tempfile
 
 import pytest
 
+from redis import Redis
+
 from sqlalchemy.exc import ProgrammingError
 
 import toml
@@ -31,6 +33,17 @@ class IntegrationTest:
                     dbsession.query(model).all()
 
             assert f'relation "{model.__tablename__}" does not exist' in str(exc_info.value)
+
+    def clear_queues(self):
+        queues = self.redis.keys()
+
+        if queues:
+            self.redis.delete(*queues)
+
+    def ensure_no_queues(self):
+        for queue_name in self.config.queues:
+            assert self.redis.llen(queue_name) == 0
+            assert self.redis.llen(f'errors-{queue_name}') == 0
 
     def run_subcommand(self, *cmd):
         args = cli.parse_args([
@@ -67,7 +80,11 @@ class IntegrationTest:
                      self.config.postgresql.user, self.config.postgresql.password,
                      self.config.postgresql.database)
 
-        # Ensure we start with a clean DB
+        self.redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
+                           password=self.config.redis.password)
+
+        # Ensure we start with a clean slate
+        self.ensure_no_queues()
         self.ensure_no_tables()
 
     def teardown_method(self):
@@ -83,6 +100,10 @@ class IntegrationTest:
         # confuses SQLAlchemy, leading to the tables only being created for the first test. :(
         for queue_config in self.config.queues.values():
             sys.modules.pop(queue_config.handler.__module__)
+
+        # Ensure we finish with clean a Redis
+        self.clear_queues()
+        self.ensure_no_queues()
 
         # And remove the configuration file
         os.unlink(self.config_file)
