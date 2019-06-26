@@ -18,10 +18,6 @@
 
 from datetime import datetime, timezone
 import json
-import multiprocessing
-import os
-from signal import SIGTERM
-import time
 
 from azafea import cli
 
@@ -38,10 +34,6 @@ class TestActivation(IntegrationTest):
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Activation)
 
-        # Run Azafea in the background
-        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
-        proc.start()
-
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -54,12 +46,8 @@ class TestActivation(IntegrationTest):
             'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
-        # Stop Azafea. Give the process a bit of time to register its signal handler and process the
-        # event from the Redis queue
-        time.sleep(0.2)
-        os.kill(proc.pid, SIGTERM)
-
-        proc.join()
+        # Run Azafea so it processes the event
+        self.run_azafea()
 
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
@@ -78,10 +66,6 @@ class TestActivation(IntegrationTest):
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Activation)
 
-        # Run Azafea in the background
-        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
-        proc.start()
-
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -95,12 +79,8 @@ class TestActivation(IntegrationTest):
             'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
-        # Stop Azafea. Give the process a bit of time to register its signal handler and process the
-        # event from the Redis queue
-        time.sleep(0.2)
-        os.kill(proc.pid, SIGTERM)
-
-        proc.join()
+        # Run Azafea so it processes the event
+        self.run_azafea()
 
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
@@ -120,10 +100,6 @@ class TestActivation(IntegrationTest):
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Activation)
 
-        # Run Azafea in the background
-        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
-        proc.start()
-
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -137,12 +113,8 @@ class TestActivation(IntegrationTest):
             'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
-        # Stop Azafea. Give the process a bit of time to register its signal handler and process the
-        # event from the Redis queue
-        time.sleep(0.2)
-        os.kill(proc.pid, SIGTERM)
-
-        proc.join()
+        # Run Azafea so it processes the event
+        self.run_azafea()
 
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
@@ -162,10 +134,6 @@ class TestActivation(IntegrationTest):
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Activation)
 
-        # Run Azafea in the background
-        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
-        proc.start()
-
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -180,12 +148,8 @@ class TestActivation(IntegrationTest):
         })
         self.redis.lpush('test_activation_v1_invalid_country', record)
 
-        # Stop Azafea. Give the process a bit of time to register its signal handler and process the
-        # event from the Redis queue
-        time.sleep(0.2)
-        os.kill(proc.pid, SIGTERM)
-
-        proc.join()
+        # Run Azafea so it processes the event
+        self.run_azafea()
 
         # Ensure the record was not inserted into the DB
         with self.db as dbsession:

@@ -18,10 +18,6 @@
 
 from datetime import datetime, timezone
 import json
-import multiprocessing
-import os
-from signal import SIGTERM
-import time
 
 from azafea import cli
 
@@ -38,10 +34,6 @@ class TestPing(IntegrationTest):
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Ping, PingConfiguration)
 
-        # Run Azafea in the background
-        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
-        proc.start()
-
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -56,12 +48,8 @@ class TestPing(IntegrationTest):
             'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
-        # Stop Azafea. Give the process a bit of time to register its signal handler and process the
-        # event from the Redis queue
-        time.sleep(0.2)
-        os.kill(proc.pid, SIGTERM)
-
-        proc.join()
+        # Run Azafea so it processes the event
+        self.run_azafea()
 
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
@@ -86,10 +74,6 @@ class TestPing(IntegrationTest):
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Ping, PingConfiguration)
 
-        # Run Azafea in the background
-        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
-        proc.start()
-
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -105,12 +89,8 @@ class TestPing(IntegrationTest):
             'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
-        # Stop Azafea. Give the process a bit of time to register its signal handler and process the
-        # event from the Redis queue
-        time.sleep(0.2)
-        os.kill(proc.pid, SIGTERM)
-
-        proc.join()
+        # Run Azafea so it processes the event
+        self.run_azafea()
 
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
@@ -136,10 +116,6 @@ class TestPing(IntegrationTest):
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Ping, PingConfiguration)
 
-        # Run Azafea in the background
-        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
-        proc.start()
-
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -155,12 +131,8 @@ class TestPing(IntegrationTest):
             'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
-        # Stop Azafea. Give the process a bit of time to register its signal handler and process the
-        # event from the Redis queue
-        time.sleep(0.2)
-        os.kill(proc.pid, SIGTERM)
-
-        proc.join()
+        # Run Azafea so it processes the event
+        self.run_azafea()
 
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
@@ -186,10 +158,6 @@ class TestPing(IntegrationTest):
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Ping, PingConfiguration)
 
-        # Run Azafea in the background
-        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
-        proc.start()
-
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -206,12 +174,8 @@ class TestPing(IntegrationTest):
         })
         self.redis.lpush('test_ping_v1_invalid_country', record)
 
-        # Stop Azafea. Give the process a bit of time to register its signal handler and process the
-        # event from the Redis queue
-        time.sleep(0.2)
-        os.kill(proc.pid, SIGTERM)
-
-        proc.join()
+        # Run Azafea so it processes the event
+        self.run_azafea()
 
         # Ensure the record was not inserted into the DB
         with self.db as dbsession:
@@ -229,10 +193,6 @@ class TestPing(IntegrationTest):
         assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Ping, PingConfiguration)
 
-        # Run Azafea in the background
-        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
-        proc.start()
-
         # Send events to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -248,12 +208,8 @@ class TestPing(IntegrationTest):
                 'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
             }))
 
-        # Stop Azafea. Give the process a bit of time to register its signal handler and process the
-        # event from the Redis queue
-        time.sleep(0.6)
-        os.kill(proc.pid, SIGTERM)
-
-        proc.join()
+        # Run Azafea so it processes the events
+        self.run_azafea(sleep_time=0.6)
 
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
