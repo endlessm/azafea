@@ -48,6 +48,7 @@ class TestActivation(IntegrationTest):
             'initdb',
         ])
         args.subcommand(args)
+        self.ensure_tables(Activation)
 
         # Run Azafea in the background
         args = cli.parse_args([
@@ -104,6 +105,7 @@ class TestActivation(IntegrationTest):
             'initdb',
         ])
         args.subcommand(args)
+        self.ensure_tables(Activation)
 
         # Run Azafea in the background
         args = cli.parse_args([
@@ -162,6 +164,7 @@ class TestActivation(IntegrationTest):
             'initdb',
         ])
         args.subcommand(args)
+        self.ensure_tables(Activation)
 
         # Run Azafea in the background
         args = cli.parse_args([
@@ -220,6 +223,7 @@ class TestActivation(IntegrationTest):
             'initdb',
         ])
         args.subcommand(args)
+        self.ensure_tables(Activation)
 
         # Run Azafea in the background
         args = cli.parse_args([

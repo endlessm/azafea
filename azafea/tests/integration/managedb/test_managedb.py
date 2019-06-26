@@ -33,10 +33,7 @@ class TestManageDb(IntegrationTest):
             'initdb',
         ])
         assert args.subcommand(args) == cli.ExitCode.OK
-
-        # Ensure the table exists
-        with self.db as dbsession:
-            dbsession.query(Event).all()
+        self.ensure_tables(Event)
 
     def test_reinitdb(self):
         from .handler_module import Event
@@ -47,6 +44,7 @@ class TestManageDb(IntegrationTest):
             'initdb',
         ])
         assert args.subcommand(args) == cli.ExitCode.OK
+        self.ensure_tables(Event)
 
         # Add an event
         with self.db as dbsession:
@@ -73,6 +71,7 @@ class TestManageDb(IntegrationTest):
             'initdb',
         ])
         assert args.subcommand(args) == cli.ExitCode.OK
+        self.ensure_tables(Event)
 
         # Ensure the old events were cleared by the drop
         with self.db as dbsession:

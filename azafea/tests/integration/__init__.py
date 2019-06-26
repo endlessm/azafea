@@ -13,6 +13,12 @@ from azafea.model import Base, Db
 
 
 class IntegrationTest:
+    def ensure_tables(self, *models):
+        for model in models:
+            with self.db as dbsession:
+                # Just check the query succeeds
+                dbsession.query(model).count()
+
     def ensure_no_tables(self):
         for model in Base._decl_class_registry.values():
             if not isinstance(model, type) or not issubclass(model, Base):

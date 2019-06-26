@@ -42,8 +42,9 @@ class TestNullableBoolean(IntegrationTest):
             'initdb',
         ])
         assert args.subcommand(args) == cli.ExitCode.OK
+        self.ensure_tables(Event)
 
-        # Insert a True value
+        # Insert a value
         with self.db as dbsession:
             dbsession.add(Event(name=name, value=value))
 

@@ -48,6 +48,7 @@ class TestPing(IntegrationTest):
             'initdb',
         ])
         args.subcommand(args)
+        self.ensure_tables(Ping, PingConfiguration)
 
         # Run Azafea in the background
         args = cli.parse_args([
@@ -112,6 +113,7 @@ class TestPing(IntegrationTest):
             'initdb',
         ])
         args.subcommand(args)
+        self.ensure_tables(Ping, PingConfiguration)
 
         # Run Azafea in the background
         args = cli.parse_args([
@@ -178,6 +180,7 @@ class TestPing(IntegrationTest):
             'initdb',
         ])
         args.subcommand(args)
+        self.ensure_tables(Ping, PingConfiguration)
 
         # Run Azafea in the background
         args = cli.parse_args([
@@ -230,7 +233,7 @@ class TestPing(IntegrationTest):
         assert redis.llen('test_ping_v1_empty_country') == 0
 
     def test_ping_v1_invalid_country(self):
-        from azafea.event_processors.ping.v1 import Ping
+        from azafea.event_processors.ping.v1 import PingConfiguration, Ping
 
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                       password=self.config.redis.password)
@@ -244,6 +247,7 @@ class TestPing(IntegrationTest):
             'initdb',
         ])
         args.subcommand(args)
+        self.ensure_tables(Ping, PingConfiguration)
 
         # Run Azafea in the background
         args = cli.parse_args([
@@ -300,6 +304,7 @@ class TestPing(IntegrationTest):
             'initdb',
         ])
         args.subcommand(args)
+        self.ensure_tables(Ping, PingConfiguration)
 
         # Run Azafea in the background
         args = cli.parse_args([
