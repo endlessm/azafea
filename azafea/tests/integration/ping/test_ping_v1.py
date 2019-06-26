@@ -43,19 +43,11 @@ class TestPing(IntegrationTest):
         assert redis.llen('test_ping_v1') == 0
 
         # Create the tables
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'initdb',
-        ])
-        args.subcommand(args)
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Ping, PingConfiguration)
 
         # Run Azafea in the background
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'run',
-        ])
-        proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
+        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
         proc.start()
 
         # Send an event to the Redis queue
@@ -108,19 +100,11 @@ class TestPing(IntegrationTest):
         assert redis.llen('test_ping_v1_valid_country') == 0
 
         # Create the tables
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'initdb',
-        ])
-        args.subcommand(args)
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Ping, PingConfiguration)
 
         # Run Azafea in the background
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'run',
-        ])
-        proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
+        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
         proc.start()
 
         # Send an event to the Redis queue
@@ -175,19 +159,11 @@ class TestPing(IntegrationTest):
         assert redis.llen('test_ping_v1_empty_country') == 0
 
         # Create the tables
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'initdb',
-        ])
-        args.subcommand(args)
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Ping, PingConfiguration)
 
         # Run Azafea in the background
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'run',
-        ])
-        proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
+        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
         proc.start()
 
         # Send an event to the Redis queue
@@ -242,19 +218,11 @@ class TestPing(IntegrationTest):
         assert redis.llen('test_ping_v1_invalid_country') == 0
 
         # Create the tables
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'initdb',
-        ])
-        args.subcommand(args)
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Ping, PingConfiguration)
 
         # Run Azafea in the background
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'run',
-        ])
-        proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
+        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
         proc.start()
 
         # Send an event to the Redis queue
@@ -299,19 +267,11 @@ class TestPing(IntegrationTest):
         assert redis.llen('test_ping_configuration_v1_dualboot_unicity') == 0
 
         # Create the tables
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'initdb',
-        ])
-        args.subcommand(args)
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Ping, PingConfiguration)
 
         # Run Azafea in the background
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'run',
-        ])
-        proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
+        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
         proc.start()
 
         # Send events to the Redis queue

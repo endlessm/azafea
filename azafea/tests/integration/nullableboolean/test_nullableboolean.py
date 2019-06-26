@@ -37,11 +37,7 @@ class TestNullableBoolean(IntegrationTest):
         from .handler_module import Event
 
         # Create the table
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'initdb',
-        ])
-        assert args.subcommand(args) == cli.ExitCode.OK
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Event)
 
         # Insert a value

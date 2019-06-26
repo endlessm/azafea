@@ -8,6 +8,7 @@ from sqlalchemy.exc import ProgrammingError
 
 import toml
 
+from azafea import cli
 from azafea.config import Config
 from azafea.model import Base, Db
 
@@ -30,6 +31,14 @@ class IntegrationTest:
                     dbsession.query(model).all()
 
             assert f'relation "{model.__tablename__}" does not exist' in str(exc_info.value)
+
+    def run_subcommand(self, *cmd):
+        args = cli.parse_args([
+            '-c', self.config_file,
+            *cmd,
+        ])
+
+        return args.subcommand(args)
 
     def setup_method(self, method):
         # Create a config file for the test, with a common base and some per-test options

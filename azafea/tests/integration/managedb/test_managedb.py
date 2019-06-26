@@ -28,22 +28,14 @@ class TestManageDb(IntegrationTest):
         from .handler_module import Event
 
         # Create the table
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'initdb',
-        ])
-        assert args.subcommand(args) == cli.ExitCode.OK
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Event)
 
     def test_reinitdb(self):
         from .handler_module import Event
 
         # Create the table
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'initdb',
-        ])
-        assert args.subcommand(args) == cli.ExitCode.OK
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Event)
 
         # Add an event
@@ -56,21 +48,11 @@ class TestManageDb(IntegrationTest):
             assert event.name == 'hi!'
 
         # Drop the table
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'dropdb'
-        ])
-        assert args.subcommand(args) == cli.ExitCode.OK
-
-        # Ensure the table was dropped
+        assert self.run_subcommand('dropdb') == cli.ExitCode.OK
         self.ensure_no_tables()
 
         # Recreate the table
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'initdb',
-        ])
-        assert args.subcommand(args) == cli.ExitCode.OK
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Event)
 
         # Ensure the old events were cleared by the drop

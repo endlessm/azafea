@@ -43,19 +43,11 @@ class TestActivation(IntegrationTest):
         assert redis.llen('test_activation_v1') == 0
 
         # Create the table
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'initdb',
-        ])
-        args.subcommand(args)
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Activation)
 
         # Run Azafea in the background
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'run',
-        ])
-        proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
+        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
         proc.start()
 
         # Send an event to the Redis queue
@@ -100,19 +92,11 @@ class TestActivation(IntegrationTest):
         assert redis.llen('test_activation_v1_valid_country') == 0
 
         # Create the table
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'initdb',
-        ])
-        args.subcommand(args)
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Activation)
 
         # Run Azafea in the background
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'run',
-        ])
-        proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
+        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
         proc.start()
 
         # Send an event to the Redis queue
@@ -159,19 +143,11 @@ class TestActivation(IntegrationTest):
         assert redis.llen('test_activation_v1_empty_country') == 0
 
         # Create the table
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'initdb',
-        ])
-        args.subcommand(args)
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Activation)
 
         # Run Azafea in the background
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'run',
-        ])
-        proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
+        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
         proc.start()
 
         # Send an event to the Redis queue
@@ -218,19 +194,11 @@ class TestActivation(IntegrationTest):
         assert redis.llen('test_activation_v1_invalid_country') == 0
 
         # Create the table
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'initdb',
-        ])
-        args.subcommand(args)
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
         self.ensure_tables(Activation)
 
         # Run Azafea in the background
-        args = cli.parse_args([
-            '-c', self.config_file,
-            'run',
-        ])
-        proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
+        proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
         proc.start()
 
         # Send an event to the Redis queue
