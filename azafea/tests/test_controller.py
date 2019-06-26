@@ -88,7 +88,7 @@ def test_sigint_handler(capfd, make_config):
     with pytest.raises(SystemExit) as exc_info:
         controller = azafea.controller.Controller(config)
         controller._processors = [MockProcessor('test-worker', config)]
-        controller._exit_cleanly(SIGINT, None)
+        controller._handle_exit_signals(SIGINT, None)
 
     for proc in controller._processors:
         assert proc.joined
@@ -108,7 +108,7 @@ def test_sigterm_handler(capfd, make_config):
     with pytest.raises(SystemExit) as exc_info:
         controller = azafea.controller.Controller(config)
         controller._processors = [MockProcessor('test-worker', config)]
-        controller._exit_cleanly(SIGTERM, None)
+        controller._handle_exit_signals(SIGTERM, None)
 
     for proc in controller._processors:
         assert proc.joined
