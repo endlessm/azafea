@@ -38,9 +38,6 @@ class TestManageDb(IntegrationTest):
         with self.db as dbsession:
             dbsession.query(Event).all()
 
-        # Drop all tables to avoid side-effects between tests
-        self.db.drop_all()
-
     def test_reinitdb(self):
         from .handler_module import Event
 
@@ -80,6 +77,3 @@ class TestManageDb(IntegrationTest):
         # Ensure the old events were cleared by the drop
         with self.db as dbsession:
             assert dbsession.query(Event).all() == []
-
-        # Drop all tables to avoid side-effects between tests
-        self.db.drop_all()

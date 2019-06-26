@@ -89,9 +89,6 @@ class TestActivation(IntegrationTest):
         # Ensure Redis is empty
         assert redis.llen('test_activation_v1') == 0
 
-        # Drop all tables to avoid side-effects between tests
-        self.db.drop_all()
-
     def test_activation_v1_valid_country(self):
         from azafea.event_processors.activation.v1 import Activation
 
@@ -149,9 +146,6 @@ class TestActivation(IntegrationTest):
 
         # Ensure Redis is empty
         assert redis.llen('test_activation_v1_valid_country') == 0
-
-        # Drop all tables to avoid side-effects between tests
-        self.db.drop_all()
 
     def test_activation_v1_empty_country(self):
         from azafea.event_processors.activation.v1 import Activation
@@ -211,9 +205,6 @@ class TestActivation(IntegrationTest):
         # Ensure Redis is empty
         assert redis.llen('test_activation_v1_empty_country') == 0
 
-        # Drop all tables to avoid side-effects between tests
-        self.db.drop_all()
-
     def test_activation_v1_invalid_country(self):
         from azafea.event_processors.activation.v1 import Activation
 
@@ -267,6 +258,3 @@ class TestActivation(IntegrationTest):
         assert redis.llen('test_activation_v1_invalid_country') == 0
         assert redis.llen('errors-test_activation_v1_invalid_country') == 1
         assert redis.rpop('errors-test_activation_v1_invalid_country').decode('utf-8') == record
-
-        # Drop all tables to avoid side-effects between tests
-        self.db.drop_all()

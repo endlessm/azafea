@@ -59,6 +59,3 @@ class TestNullableBoolean(IntegrationTest):
             result = dbsession.execute(text('SELECT value FROM nullableboolean_event'))
             assert result.rowcount == 1
             assert result.fetchone()[0] == name
-
-        # Drop all tables to avoid side-effects between tests
-        self.db.drop_all()

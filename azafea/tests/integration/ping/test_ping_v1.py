@@ -97,9 +97,6 @@ class TestPing(IntegrationTest):
         # Ensure Redis is empty
         assert redis.llen('test_ping_v1') == 0
 
-        # Drop all tables to avoid side-effects between tests
-        self.db.drop_all()
-
     def test_ping_v1_valid_country(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
 
@@ -165,9 +162,6 @@ class TestPing(IntegrationTest):
 
         # Ensure Redis is empty
         assert redis.llen('test_ping_v1_valid_country') == 0
-
-        # Drop all tables to avoid side-effects between tests
-        self.db.drop_all()
 
     def test_ping_v1_empty_country(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
@@ -235,9 +229,6 @@ class TestPing(IntegrationTest):
         # Ensure Redis is empty
         assert redis.llen('test_ping_v1_empty_country') == 0
 
-        # Drop all tables to avoid side-effects between tests
-        self.db.drop_all()
-
     def test_ping_v1_invalid_country(self):
         from azafea.event_processors.ping.v1 import Ping
 
@@ -293,9 +284,6 @@ class TestPing(IntegrationTest):
         assert redis.llen('test_ping_v1_invalid_country') == 0
         assert redis.llen('errors-test_ping_v1_invalid_country') == 1
         assert redis.rpop('errors-test_ping_v1_invalid_country').decode('utf-8') == record
-
-        # Drop all tables to avoid side-effects between tests
-        self.db.drop_all()
 
     def test_ping_configuration_v1_dualboot_unicity(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
@@ -363,6 +351,3 @@ class TestPing(IntegrationTest):
 
         # Ensure Redis is empty
         assert redis.llen('test_ping_configuration_v1_dualboot_unicity') == 0
-
-        # Drop all tables to avoid side-effects between tests
-        self.db.drop_all()

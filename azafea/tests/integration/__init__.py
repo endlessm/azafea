@@ -1,4 +1,5 @@
 import os
+import sys
 import tempfile
 
 import pytest
@@ -55,4 +56,18 @@ class IntegrationTest:
         self.ensure_no_tables()
 
     def teardown_method(self):
+        # Ensure we finish with a clean DB
+        self.db.drop_all()
+        self.ensure_no_tables()
+
+        # Deregister the models and tables from SQLAlchemy
+        Base._decl_class_registry.clear()
+        Base.metadata.clear()
+
+        # Deregister the handler modules so the next tests reimport them completely; not doing so
+        # confuses SQLAlchemy, leading to the tables only being created for the first test. :(
+        for queue_config in self.config.queues.values():
+            sys.modules.pop(queue_config.handler.__module__)
+
+        # And remove the configuration file
         os.unlink(self.config_file)
