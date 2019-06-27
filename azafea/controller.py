@@ -38,10 +38,17 @@ class Controller:
 
         log.debug('Loaded the following configuration:\n%s', config)
 
-        intercept_signal(SIGINT, self._exit_cleanly)
-        intercept_signal(SIGTERM, self._exit_cleanly)
+        intercept_signal(SIGINT, self._handle_exit_signals)
+        intercept_signal(SIGTERM, self._handle_exit_signals)
 
-    def _exit_cleanly(self, signum: int, _: Any) -> None:
+    def _exit_cleanly(self) -> None:
+        for proc in self._processors:
+            proc.join()
+
+        log.info('All workers finished, exiting')
+        sys.exit(0)
+
+    def _handle_exit_signals(self, signum: int, _: Any) -> None:
         signal_name = Signals(signum).name
         log.info('Received %s, waiting for workers to finish…', signal_name)
 
@@ -50,11 +57,7 @@ class Controller:
             for proc in self._processors:
                 proc.terminate()
 
-        for proc in self._processors:
-            proc.join()
-
-        log.info('All workers finished, exiting')
-        sys.exit(0)
+        self._exit_cleanly()
 
     def start(self) -> None:
         log.info('Starting the controller with %s worker%s',
@@ -69,4 +72,9 @@ class Controller:
         self.start()
 
         while True:
+            active_processors = [p for p in self._processors if p.is_alive()]
+
+            if not active_processors:
+                self._exit_cleanly()
+
             time.sleep(1)

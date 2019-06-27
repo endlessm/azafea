@@ -70,6 +70,7 @@ class _Base:
 class Main(_Base):
     verbose: bool = False
     number_of_workers: int = dataclasses.field(default_factory=get_cpu_count)
+    exit_on_empty_queues: bool = False
 
     @validator('verbose', pre=True)
     def verbose_is_boolean(cls, value: Any) -> bool:

@@ -180,6 +180,7 @@ def test_print_config(capfd, monkeypatch, make_config_file):
         '[main]',
         'verbose = false',
         'number_of_workers = 1',
+        'exit_on_empty_queues = false',
         '',
         '[redis]',
         'host = "redis-server"',

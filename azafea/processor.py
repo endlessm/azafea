@@ -79,6 +79,11 @@ class Processor(Process):
             result = self._redis.brpop(queues, timeout=5)
 
             if result is None:
+                if self.config.main.exit_on_empty_queues:
+                    log.info('{%s} Event queues are empty, exiting', self.name)
+                    break
+
+                log.debug('{%s} Pulled nothing from the queues and timed out', self.name)
                 continue
 
             queue, value = result

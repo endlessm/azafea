@@ -20,6 +20,7 @@ the default options:
    [main]
    verbose = true
    number_of_workers = 4
+   exit_on_empty_queues = false
 
    [redis]
    host = "localhost"
@@ -54,6 +55,14 @@ This section controls the general behaviour of Azafea.
 
   The default is to spawn as many processes as there are CPU cores on the
   machine.
+
+``exit_on_empty_queues`` (boolean)
+  This option tells Azafea to exit when the configured queues are all empty and
+  not event can be pulled from them.
+
+  It is mostly useful in the integration tests, or for debugging purpose.
+
+  The default is ``false``.
 
 
 The ``redis`` table
