@@ -18,60 +18,41 @@
 
 import pytest
 
-from sqlalchemy.exc import ProgrammingError
 from sqlalchemy.sql import text
 
 from azafea import cli
-from azafea.config import Config
-from azafea.model import Db
+
+from .. import IntegrationTest
 
 
-@pytest.mark.parametrize('name, value', [
-    pytest.param('true', True, id='true'),
-    pytest.param('false', False, id='false'),
-    pytest.param('unknown', None, id='unknown'),
-])
-def test_nullableboolean(make_config_file, name, value):
-    from .handler_module import Event
+class TestNullableBoolean(IntegrationTest):
+    handler_module = 'azafea.tests.integration.nullableboolean.handler_module'
 
-    config_file = make_config_file({
-        'main': {'verbose': True},
-        'postgresql': {'database': 'azafea-tests'},
-        'queues': {'event': {'handler': 'azafea.tests.integration.managedb.handler_module'}},
-    })
-    config = Config.from_file(str(config_file))
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
-
-    # Ensure there is no table at the start
-    with pytest.raises(ProgrammingError) as exc_info:
-        with db as dbsession:
-            dbsession.query(Event).all()
-    assert 'relation "nullableboolean_event" does not exist' in str(exc_info.value)
-
-    # Create the table
-    args = cli.parse_args([
-        '-c', str(config_file),
-        'initdb',
+    @pytest.mark.parametrize('name, value', [
+        pytest.param('true', True, id='true'),
+        pytest.param('false', False, id='false'),
+        pytest.param('unknown', None, id='unknown'),
     ])
-    assert args.subcommand(args) == cli.ExitCode.OK
+    def test_nullableboolean(self, name, value):
+        from .handler_module import Event
 
-    # Insert a True value
-    with db as dbsession:
-        dbsession.add(Event(name=name, value=value))
+        # Create the table
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.ensure_tables(Event)
 
-    # Ensure the value is correct
-    with db as dbsession:
-        event = dbsession.query(Event).one()
-        assert event.name == name
-        assert event.value == value
+        # Insert a value
+        with self.db as dbsession:
+            dbsession.add(Event(name=name, value=value))
 
-        # Also Check the value in the DB, bypassing the ORM
-        # Note: this only works because the param passed as name is what gets stored in the DB, but
-        # that's just something done on purpose for this test
-        result = dbsession.execute(text('SELECT value FROM nullableboolean_event'))
-        assert result.rowcount == 1
-        assert result.fetchone()[0] == name
+        # Ensure the value is correct
+        with self.db as dbsession:
+            event = dbsession.query(Event).one()
+            assert event.name == name
+            assert event.value == value
 
-    # Drop all tables to avoid side-effects between tests
-    db.drop_all()
+            # Also Check the value in the DB, bypassing the ORM
+            # Note: this only works because the param passed as name is what gets stored in the DB,
+            # but that's just something done on purpose for this test
+            result = dbsession.execute(text('SELECT value FROM nullableboolean_event'))
+            assert result.rowcount == 1
+            assert result.fetchone()[0] == name

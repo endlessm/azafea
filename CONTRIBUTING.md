@@ -133,8 +133,13 @@ Integration tests consist of directories under `azafea/tests/integration/`.
 There should be at least one file named `test_*.py` in each of them, as that is
 how Pytest finds the tests to run.
 
+Such test files should contain a class inheriting from
+`azafea.tests.integration.IntegrationTest` which handles a lot of the setup and
+teardown necessary for the tests, like getting a configuration file, a
+connection to the dabase, or running Azafea.
+
 You can add additional setup in the directory like event handler modules or
-TOML configuration files, to help writing your tests.
+data files, to help writing your tests.
 
 Look at existing integration tests for examples.
 

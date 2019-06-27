@@ -18,315 +18,145 @@
 
 from datetime import datetime, timezone
 import json
-import multiprocessing
-import os
-from signal import SIGTERM
-import time
-
-import pytest
-
-from redis import Redis
-
-from sqlalchemy.exc import ProgrammingError
 
 from azafea import cli
-from azafea.config import Config
-from azafea.model import Db
+
+from .. import IntegrationTest
 
 
-def test_activation_v1(make_config_file):
-    from azafea.event_processors.activation.v1 import Activation
+class TestActivation(IntegrationTest):
+    handler_module = 'azafea.event_processors.activation.v1'
 
-    config_file = make_config_file({
-        'main': {'verbose': True, 'number_of_workers': 1},
-        'redis': {'password': ''},
-        'postgresql': {'database': 'azafea-tests'},
-        'queues': {'activation-1-tests': {'handler': 'azafea.event_processors.activation.v1'}},
-    })
-    config = Config.from_file(str(config_file))
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
-    redis = Redis(host=config.redis.host, port=config.redis.port, password=config.redis.password)
+    def test_activation_v1(self):
+        from azafea.event_processors.activation.v1 import Activation
 
-    # Ensure there is no table at the start
-    with pytest.raises(ProgrammingError) as exc_info:
-        with db as dbsession:
-            dbsession.query(Activation).all()
-    assert 'relation "activation_v1" does not exist' in str(exc_info.value)
+        # Create the table
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.ensure_tables(Activation)
 
-    # Ensure Redis is empty
-    assert redis.llen('activation-1-tests') == 0
+        # Send an event to the Redis queue
+        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        self.redis.lpush('test_activation_v1', json.dumps({
+            'image': 'image',
+            'vendor': 'vendor',
+            'product': 'product',
+            'release': 'release',
+            'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
+            'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
+        }))
 
-    # Create the table
-    args = cli.parse_args([
-        '-c', str(config_file),
-        'initdb',
-    ])
-    args.subcommand(args)
+        # Run Azafea so it processes the event
+        self.run_azafea()
 
-    # Run Azafea in the background
-    args = cli.parse_args([
-        '-c', str(config_file),
-        'run',
-    ])
-    proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
-    proc.start()
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            activation = dbsession.query(Activation).one()
+            assert activation.image == 'image'
+            assert activation.vendor == 'vendor'
+            assert activation.product == 'product'
+            assert activation.release == 'release'
+            assert activation.created_at == created_at
+            assert activation.updated_at == updated_at
 
-    # Send an event to the Redis queue
-    created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-    updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-    redis.lpush('activation-1-tests', json.dumps({
-        'image': 'image',
-        'vendor': 'vendor',
-        'product': 'product',
-        'release': 'release',
-        'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-        'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-    }))
+    def test_activation_v1_valid_country(self):
+        from azafea.event_processors.activation.v1 import Activation
 
-    # Stop Azafea. Give the process a bit of time to register its signal handler and process the
-    # event from the Redis queue
-    time.sleep(0.2)
-    os.kill(proc.pid, SIGTERM)
+        # Create the table
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.ensure_tables(Activation)
 
-    proc.join()
+        # Send an event to the Redis queue
+        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        self.redis.lpush('test_activation_v1_valid_country', json.dumps({
+            'image': 'image',
+            'vendor': 'vendor',
+            'product': 'product',
+            'release': 'release',
+            'country': 'FRA',
+            'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
+            'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
+        }))
 
-    # Ensure the record was inserted into the DB
-    with db as dbsession:
-        activation = dbsession.query(Activation).one()
-        assert activation.image == 'image'
-        assert activation.vendor == 'vendor'
-        assert activation.product == 'product'
-        assert activation.release == 'release'
-        assert activation.created_at == created_at
-        assert activation.updated_at == updated_at
+        # Run Azafea so it processes the event
+        self.run_azafea()
 
-    # Ensure Redis is empty
-    assert redis.llen('activation-1-tests') == 0
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            activation = dbsession.query(Activation).one()
+            assert activation.image == 'image'
+            assert activation.vendor == 'vendor'
+            assert activation.product == 'product'
+            assert activation.release == 'release'
+            assert activation.country == 'FRA'
+            assert activation.created_at == created_at
+            assert activation.updated_at == updated_at
 
-    # Drop all tables to avoid side-effects between tests
-    db.drop_all()
+    def test_activation_v1_empty_country(self):
+        from azafea.event_processors.activation.v1 import Activation
 
+        # Create the table
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.ensure_tables(Activation)
 
-def test_activation_v1_valid_country(make_config_file):
-    from azafea.event_processors.activation.v1 import Activation
+        # Send an event to the Redis queue
+        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        self.redis.lpush('test_activation_v1_empty_country', json.dumps({
+            'image': 'image',
+            'vendor': 'vendor',
+            'product': 'product',
+            'release': 'release',
+            'country': '',
+            'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
+            'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
+        }))
 
-    config_file = make_config_file({
-        'main': {'verbose': True, 'number_of_workers': 1},
-        'redis': {'password': ''},
-        'postgresql': {'database': 'azafea-tests'},
-        'queues': {'activation-1-tests': {'handler': 'azafea.event_processors.activation.v1'}},
-    })
-    config = Config.from_file(str(config_file))
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
-    redis = Redis(host=config.redis.host, port=config.redis.port, password=config.redis.password)
+        # Run Azafea so it processes the event
+        self.run_azafea()
 
-    # Ensure there is no table at the start
-    with pytest.raises(ProgrammingError) as exc_info:
-        with db as dbsession:
-            dbsession.query(Activation).all()
-    assert 'relation "activation_v1" does not exist' in str(exc_info.value)
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            activation = dbsession.query(Activation).one()
+            assert activation.image == 'image'
+            assert activation.vendor == 'vendor'
+            assert activation.product == 'product'
+            assert activation.release == 'release'
+            assert activation.country is None
+            assert activation.created_at == created_at
+            assert activation.updated_at == updated_at
 
-    # Ensure Redis is empty
-    assert redis.llen('activation-1-tests') == 0
+    def test_activation_v1_invalid_country(self):
+        from azafea.event_processors.activation.v1 import Activation
 
-    # Create the table
-    args = cli.parse_args([
-        '-c', str(config_file),
-        'initdb',
-    ])
-    args.subcommand(args)
+        # Create the table
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.ensure_tables(Activation)
 
-    # Run Azafea in the background
-    args = cli.parse_args([
-        '-c', str(config_file),
-        'run',
-    ])
-    proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
-    proc.start()
+        # Send an event to the Redis queue
+        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        record = json.dumps({
+            'image': 'image',
+            'vendor': 'vendor',
+            'product': 'product',
+            'release': 'release',
+            'country': 'FR',
+            'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
+            'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
+        })
+        self.redis.lpush('test_activation_v1_invalid_country', record)
 
-    # Send an event to the Redis queue
-    created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-    updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-    redis.lpush('activation-1-tests', json.dumps({
-        'image': 'image',
-        'vendor': 'vendor',
-        'product': 'product',
-        'release': 'release',
-        'country': 'FRA',
-        'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-        'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-    }))
+        # Run Azafea so it processes the event
+        self.run_azafea()
 
-    # Stop Azafea. Give the process a bit of time to register its signal handler and process the
-    # event from the Redis queue
-    time.sleep(0.2)
-    os.kill(proc.pid, SIGTERM)
+        # Ensure the record was not inserted into the DB
+        with self.db as dbsession:
+            assert dbsession.query(Activation).count() == 0
 
-    proc.join()
-
-    # Ensure the record was inserted into the DB
-    with db as dbsession:
-        activation = dbsession.query(Activation).one()
-        assert activation.image == 'image'
-        assert activation.vendor == 'vendor'
-        assert activation.product == 'product'
-        assert activation.release == 'release'
-        assert activation.country == 'FRA'
-        assert activation.created_at == created_at
-        assert activation.updated_at == updated_at
-
-    # Ensure Redis is empty
-    assert redis.llen('activation-1-tests') == 0
-
-    # Drop all tables to avoid side-effects between tests
-    db.drop_all()
-
-
-def test_activation_v1_empty_country(make_config_file):
-    from azafea.event_processors.activation.v1 import Activation
-
-    config_file = make_config_file({
-        'main': {'verbose': True, 'number_of_workers': 1},
-        'redis': {'password': ''},
-        'postgresql': {'database': 'azafea-tests'},
-        'queues': {'activation-1-tests': {'handler': 'azafea.event_processors.activation.v1'}},
-    })
-    config = Config.from_file(str(config_file))
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
-    redis = Redis(host=config.redis.host, port=config.redis.port, password=config.redis.password)
-
-    # Ensure there is no table at the start
-    with pytest.raises(ProgrammingError) as exc_info:
-        with db as dbsession:
-            dbsession.query(Activation).all()
-    assert 'relation "activation_v1" does not exist' in str(exc_info.value)
-
-    # Ensure Redis is empty
-    assert redis.llen('activation-1-tests') == 0
-
-    # Create the table
-    args = cli.parse_args([
-        '-c', str(config_file),
-        'initdb',
-    ])
-    args.subcommand(args)
-
-    # Run Azafea in the background
-    args = cli.parse_args([
-        '-c', str(config_file),
-        'run',
-    ])
-    proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
-    proc.start()
-
-    # Send an event to the Redis queue
-    created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-    updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-    redis.lpush('activation-1-tests', json.dumps({
-        'image': 'image',
-        'vendor': 'vendor',
-        'product': 'product',
-        'release': 'release',
-        'country': '',
-        'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-        'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-    }))
-
-    # Stop Azafea. Give the process a bit of time to register its signal handler and process the
-    # event from the Redis queue
-    time.sleep(0.2)
-    os.kill(proc.pid, SIGTERM)
-
-    proc.join()
-
-    # Ensure the record was inserted into the DB
-    with db as dbsession:
-        activation = dbsession.query(Activation).one()
-        assert activation.image == 'image'
-        assert activation.vendor == 'vendor'
-        assert activation.product == 'product'
-        assert activation.release == 'release'
-        assert activation.country is None
-        assert activation.created_at == created_at
-        assert activation.updated_at == updated_at
-
-    # Ensure Redis is empty
-    assert redis.llen('activation-1-tests') == 0
-
-    # Drop all tables to avoid side-effects between tests
-    db.drop_all()
-
-
-def test_activation_v1_invalid_country(make_config_file):
-    from azafea.event_processors.activation.v1 import Activation
-
-    config_file = make_config_file({
-        'main': {'verbose': True, 'number_of_workers': 1},
-        'redis': {'password': ''},
-        'postgresql': {'database': 'azafea-tests'},
-        'queues': {'activation-1-tests': {'handler': 'azafea.event_processors.activation.v1'}},
-    })
-    config = Config.from_file(str(config_file))
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
-    redis = Redis(host=config.redis.host, port=config.redis.port, password=config.redis.password)
-
-    # Ensure there is no table at the start
-    with pytest.raises(ProgrammingError) as exc_info:
-        with db as dbsession:
-            dbsession.query(Activation).all()
-    assert 'relation "activation_v1" does not exist' in str(exc_info.value)
-
-    # Ensure Redis is empty
-    assert redis.llen('activation-1-tests') == 0
-
-    # Create the table
-    args = cli.parse_args([
-        '-c', str(config_file),
-        'initdb',
-    ])
-    args.subcommand(args)
-
-    # Run Azafea in the background
-    args = cli.parse_args([
-        '-c', str(config_file),
-        'run',
-    ])
-    proc = multiprocessing.Process(target=args.subcommand, args=(args, ))
-    proc.start()
-
-    # Send an event to the Redis queue
-    created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-    updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-    record = json.dumps({
-        'image': 'image',
-        'vendor': 'vendor',
-        'product': 'product',
-        'release': 'release',
-        'country': 'FR',
-        'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-        'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-    })
-    redis.lpush('activation-1-tests', record)
-
-    # Stop Azafea. Give the process a bit of time to register its signal handler and process the
-    # event from the Redis queue
-    time.sleep(0.2)
-    os.kill(proc.pid, SIGTERM)
-
-    proc.join()
-
-    # Ensure the record was not inserted into the DB
-    with db as dbsession:
-        assert dbsession.query(Activation).count() == 0
-
-    # Ensure Redis has the record back into the error queue
-    assert redis.llen('activation-1-tests') == 0
-    assert redis.llen('errors-activation-1-tests') == 1
-    assert redis.rpop('errors-activation-1-tests').decode('utf-8') == record
-
-    # Drop all tables to avoid side-effects between tests
-    db.drop_all()
+        # Ensure Redis has the record back into the error queue
+        assert self.redis.llen('test_activation_v1_invalid_country') == 0
+        assert self.redis.llen('errors-test_activation_v1_invalid_country') == 1
+        assert self.redis.rpop('errors-test_activation_v1_invalid_country').decode('utf-8') \
+            == record

@@ -7,7 +7,7 @@ mypy = {editable = true,git = "https://github.com/HashBangCoop/mypy.git",ref = "
 pytest = "*"
 pytest-cov = "*"
 pytest-flake8 = "*"
-pytest-mypy = "*"
+pytest-mypy = ">=0.3.3"
 sphinx = "*"
 # Waiting for 0.2, master got lots of fixes and improvements since the last
 # release: https://github.com/dropbox/sqlalchemy-stubs/issues/78
