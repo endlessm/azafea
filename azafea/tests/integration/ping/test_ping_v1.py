@@ -209,7 +209,7 @@ class TestPing(IntegrationTest):
             }))
 
         # Run Azafea so it processes the events
-        self.run_azafea(sleep_time=0.6)
+        self.run_azafea()
 
         # Ensure the record was inserted into the DB
         with self.db as dbsession:

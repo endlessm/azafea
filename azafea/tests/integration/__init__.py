@@ -1,9 +1,7 @@
 import multiprocessing
 import os
-from signal import SIGTERM, SIGKILL
 import sys
 import tempfile
-import time
 
 import pytest
 
@@ -48,20 +46,10 @@ class IntegrationTest:
             assert self.redis.llen(queue_name) == 0
             assert self.redis.llen(f'errors-{queue_name}') == 0
 
-    def run_azafea(self, sleep_time=0.4):
+    def run_azafea(self):
         proc = multiprocessing.Process(target=self.run_subcommand, args=('run', ))
         proc.start()
-
-        # Give Azafea enough time to process events
-        time.sleep(sleep_time)
-
-        # Now stop Azafea
-        os.kill(proc.pid, SIGTERM)
-        proc.join(5)
-
-        if proc.exitcode is None:
-            # FIXME: This leaves children hanging
-            os.kill(proc.pid, SIGKILL)
+        proc.join()
 
     def run_subcommand(self, *cmd):
         args = cli.parse_args([
@@ -80,6 +68,7 @@ class IntegrationTest:
                 'main': {
                     'verbose': True,
                     'number_of_workers': 2,
+                    'exit_on_empty_queues': True,
                 },
                 'postgresql': {
                     'database': 'azafea-tests',
