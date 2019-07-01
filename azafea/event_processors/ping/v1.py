@@ -16,7 +16,6 @@
 # along with Azafea.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from datetime import datetime
 import json
 import logging
 from typing import Optional
@@ -127,6 +126,3 @@ def process(dbsession: DbSession, record: bytes) -> None:
     ping.config = ping_config
     dbsession.add(ping)
     log.debug('Inserting ping record:\n%s', ping)
-
-    dt = datetime.now()
-    log.info('  -> %s', dt)
