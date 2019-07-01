@@ -18,6 +18,11 @@ setup(
     long_description_content_type='text/markdown',
     url='https://github.com/endlessm/azafea',
     packages=find_packages(),
+    package_data={
+        'azafea': [
+            'py.typed',
+        ],
+    },
     classifiers=[
         'Environment :: No Input/Output (Daemon)',
         'License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)',
