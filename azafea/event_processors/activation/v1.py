@@ -52,7 +52,7 @@ class Activation(Base):
     latitude = Column(Numeric)
     longitude = Column(Numeric)
 
-    created_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, index=True)
     updated_at = Column(DateTime(timezone=True), nullable=False)
 
     __table_args__ = (

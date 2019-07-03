@@ -43,7 +43,7 @@ class PingConfiguration(Base):
     product = Column(Unicode, nullable=False)
     dualboot = Column(NullableBoolean, nullable=False, server_default='unknown')
 
-    created_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, index=True)
     updated_at = Column(DateTime(timezone=True), nullable=False)
 
     __table_args__ = (
@@ -79,14 +79,14 @@ class Ping(Base):
     __tablename__ = 'ping_v1'
 
     id = Column(Integer, primary_key=True)
-    config_id = Column(Integer, ForeignKey('ping_configuration_v1.id'), nullable=False)
+    config_id = Column(Integer, ForeignKey('ping_configuration_v1.id'), nullable=False, index=True)
     release = Column(Unicode, nullable=False)
     count = Column(Integer, nullable=False)
     country = Column(Unicode(length=3))
     metrics_enabled = Column(Boolean)
     metrics_environment = Column(Unicode)
 
-    created_at = Column(DateTime(timezone=True), index=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, index=True)
     updated_at = Column(DateTime(timezone=True), nullable=False)
 
     __table_args__ = (
