@@ -1,0 +1,25 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+steps:
+- script: docker-compose build --pull
+  displayName: Build containers
+
+- script: |
+    docker-compose up --detach
+    while [ "$(docker container inspect azafea_initdb_1 --format '{{ .State.Status }}-{{ .State.ExitCode }}')" != "exited-0" ]
+    do
+      sleep 1
+    done
+  displayName: Start containers
+
+- script: docker-compose exec -T azafea pipenv run test-all
+  displayName: Run test-all
+
+- script: docker-compose rm -fv
+  displayName: Cleanup
