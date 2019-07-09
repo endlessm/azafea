@@ -42,9 +42,7 @@ class PingConfiguration(Base):
     vendor = Column(Unicode, nullable=False)
     product = Column(Unicode, nullable=False)
     dualboot = Column(NullableBoolean, nullable=False, server_default='unknown')
-
     created_at = Column(DateTime(timezone=True), nullable=False, index=True)
-    updated_at = Column(DateTime(timezone=True), nullable=False)
 
     __table_args__ = (
         UniqueConstraint(image, vendor, product, dualboot,
@@ -64,9 +62,13 @@ class PingConfiguration(Base):
         # drop down to the SQL layer
         stmt = insert(PingConfiguration.__table__).values(**record)
         stmt = stmt.returning(PingConfiguration.__table__.c.id)
+
+        # We have to use 'ON CONFLICT … DO UPDATE …' because 'ON CONFLICT DO NOTHING' does not
+        # return anything, and we need to get the id back; in addition we have to actually
+        # update something, anything, so let's arbitrarily update the image to its existing value
         stmt = stmt.on_conflict_do_update(
             constraint='uq_ping_configuration_v1_image_vendor_product_dualboot',
-            set_={'updated_at': record['updated_at']}
+            set_={'image': record['image']}
         )
         result = dbsession.connection().execute(stmt)
         dbsession.commit()
@@ -85,9 +87,7 @@ class Ping(Base):
     country = Column(Unicode(length=3))
     metrics_enabled = Column(Boolean)
     metrics_environment = Column(Unicode)
-
     created_at = Column(DateTime(timezone=True), nullable=False, index=True)
-    updated_at = Column(DateTime(timezone=True), nullable=False)
 
     __table_args__ = (
         CheckConstraint('char_length(country) = 3', name='country_code_3_chars'),
