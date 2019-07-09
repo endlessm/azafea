@@ -50,7 +50,7 @@ class PingConfiguration(Base):
     )
 
     @classmethod
-    def from_serialized(cls, serialized: bytes, dbsession: DbSession) -> 'PingConfiguration':
+    def id_from_serialized(cls, serialized: bytes, dbsession: DbSession) -> int:
         record = json.loads(serialized.decode('utf-8'))
 
         columns = inspect(cls).attrs
@@ -72,9 +72,8 @@ class PingConfiguration(Base):
         )
         result = dbsession.connection().execute(stmt)
         dbsession.commit()
-        upserted_id = result.first()[0]
 
-        return dbsession.query(cls).get(upserted_id)
+        return result.first()[0]
 
 
 class Ping(Base):
@@ -118,11 +117,9 @@ class Ping(Base):
 def process(dbsession: DbSession, record: bytes) -> None:
     log.debug('Processing ping v1 record: %s', record)
 
-    ping_config = PingConfiguration.from_serialized(record, dbsession)
-    dbsession.add(ping_config)
-    log.debug('Upserting ping configuration record:\n%s', ping_config)
+    ping_config_id = PingConfiguration.id_from_serialized(record, dbsession)
 
     ping = Ping.from_serialized(record)
-    ping.config = ping_config
+    ping.config_id = ping_config_id
     dbsession.add(ping)
     log.debug('Inserting ping record:\n%s', ping)
