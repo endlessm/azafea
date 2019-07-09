@@ -53,7 +53,6 @@ class Activation(Base):
     longitude = Column(Numeric)
 
     created_at = Column(DateTime(timezone=True), nullable=False, index=True)
-    updated_at = Column(DateTime(timezone=True), nullable=False)
 
     __table_args__ = (
         CheckConstraint('char_length(country) = 3', name='country_code_3_chars'),
