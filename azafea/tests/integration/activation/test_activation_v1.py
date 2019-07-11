@@ -36,14 +36,12 @@ class TestActivation(IntegrationTest):
 
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         self.redis.lpush('test_activation_v1', json.dumps({
             'image': 'image',
             'vendor': 'vendor',
             'product': 'product',
             'release': 'release',
             'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-            'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
         # Run Azafea so it processes the event
@@ -57,7 +55,6 @@ class TestActivation(IntegrationTest):
             assert activation.product == 'product'
             assert activation.release == 'release'
             assert activation.created_at == created_at
-            assert activation.updated_at == updated_at
 
     def test_activation_v1_valid_country(self):
         from azafea.event_processors.activation.v1 import Activation
@@ -68,7 +65,6 @@ class TestActivation(IntegrationTest):
 
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         self.redis.lpush('test_activation_v1_valid_country', json.dumps({
             'image': 'image',
             'vendor': 'vendor',
@@ -76,7 +72,6 @@ class TestActivation(IntegrationTest):
             'release': 'release',
             'country': 'FRA',
             'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-            'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
         # Run Azafea so it processes the event
@@ -91,7 +86,6 @@ class TestActivation(IntegrationTest):
             assert activation.release == 'release'
             assert activation.country == 'FRA'
             assert activation.created_at == created_at
-            assert activation.updated_at == updated_at
 
     def test_activation_v1_empty_country(self):
         from azafea.event_processors.activation.v1 import Activation
@@ -102,7 +96,6 @@ class TestActivation(IntegrationTest):
 
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         self.redis.lpush('test_activation_v1_empty_country', json.dumps({
             'image': 'image',
             'vendor': 'vendor',
@@ -110,7 +103,6 @@ class TestActivation(IntegrationTest):
             'release': 'release',
             'country': '',
             'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-            'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
         # Run Azafea so it processes the event
@@ -125,7 +117,6 @@ class TestActivation(IntegrationTest):
             assert activation.release == 'release'
             assert activation.country is None
             assert activation.created_at == created_at
-            assert activation.updated_at == updated_at
 
     def test_activation_v1_invalid_country(self):
         from azafea.event_processors.activation.v1 import Activation
@@ -136,7 +127,6 @@ class TestActivation(IntegrationTest):
 
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         record = json.dumps({
             'image': 'image',
             'vendor': 'vendor',
@@ -144,7 +134,6 @@ class TestActivation(IntegrationTest):
             'release': 'release',
             'country': 'FR',
             'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-            'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         })
         self.redis.lpush('test_activation_v1_invalid_country', record)
 

@@ -42,9 +42,7 @@ class PingConfiguration(Base):
     vendor = Column(Unicode, nullable=False)
     product = Column(Unicode, nullable=False)
     dualboot = Column(NullableBoolean, nullable=False, server_default='unknown')
-
-    created_at = Column(DateTime(timezone=True), nullable=False)
-    updated_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, index=True)
 
     __table_args__ = (
         UniqueConstraint(image, vendor, product, dualboot,
@@ -52,7 +50,7 @@ class PingConfiguration(Base):
     )
 
     @classmethod
-    def from_serialized(cls, serialized: bytes, dbsession: DbSession) -> 'PingConfiguration':
+    def id_from_serialized(cls, serialized: bytes, dbsession: DbSession) -> int:
         record = json.loads(serialized.decode('utf-8'))
 
         columns = inspect(cls).attrs
@@ -64,30 +62,31 @@ class PingConfiguration(Base):
         # drop down to the SQL layer
         stmt = insert(PingConfiguration.__table__).values(**record)
         stmt = stmt.returning(PingConfiguration.__table__.c.id)
+
+        # We have to use 'ON CONFLICT … DO UPDATE …' because 'ON CONFLICT DO NOTHING' does not
+        # return anything, and we need to get the id back; in addition we have to actually
+        # update something, anything, so let's arbitrarily update the image to its existing value
         stmt = stmt.on_conflict_do_update(
             constraint='uq_ping_configuration_v1_image_vendor_product_dualboot',
-            set_={'updated_at': record['updated_at']}
+            set_={'image': record['image']}
         )
         result = dbsession.connection().execute(stmt)
         dbsession.commit()
-        upserted_id = result.first()[0]
 
-        return dbsession.query(cls).get(upserted_id)
+        return result.first()[0]
 
 
 class Ping(Base):
     __tablename__ = 'ping_v1'
 
     id = Column(Integer, primary_key=True)
-    config_id = Column(Integer, ForeignKey('ping_configuration_v1.id'), nullable=False)
+    config_id = Column(Integer, ForeignKey('ping_configuration_v1.id'), nullable=False, index=True)
     release = Column(Unicode, nullable=False)
     count = Column(Integer, nullable=False)
     country = Column(Unicode(length=3))
     metrics_enabled = Column(Boolean)
     metrics_environment = Column(Unicode)
-
-    created_at = Column(DateTime(timezone=True), index=True, nullable=False)
-    updated_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, index=True)
 
     __table_args__ = (
         CheckConstraint('char_length(country) = 3', name='country_code_3_chars'),
@@ -118,11 +117,9 @@ class Ping(Base):
 def process(dbsession: DbSession, record: bytes) -> None:
     log.debug('Processing ping v1 record: %s', record)
 
-    ping_config = PingConfiguration.from_serialized(record, dbsession)
-    dbsession.add(ping_config)
-    log.debug('Upserting ping configuration record:\n%s', ping_config)
+    ping_config_id = PingConfiguration.id_from_serialized(record, dbsession)
 
     ping = Ping.from_serialized(record)
-    ping.config = ping_config
+    ping.config_id = ping_config_id
     dbsession.add(ping)
     log.debug('Inserting ping record:\n%s', ping)

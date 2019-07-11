@@ -36,7 +36,6 @@ class TestPing(IntegrationTest):
 
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         self.redis.lpush('test_ping_v1', json.dumps({
             'image': 'image',
             'vendor': 'vendor',
@@ -45,7 +44,6 @@ class TestPing(IntegrationTest):
             'release': 'release',
             'count': 0,
             'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-            'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
         # Run Azafea so it processes the event
@@ -59,13 +57,11 @@ class TestPing(IntegrationTest):
             assert config.product == 'product'
             assert config.dualboot is True
             assert config.created_at == created_at
-            assert config.updated_at == updated_at
 
             ping = dbsession.query(Ping).one()
             assert ping.release == 'release'
             assert ping.count == 0
             assert ping.created_at == created_at
-            assert ping.updated_at == updated_at
 
     def test_ping_v1_valid_country(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
@@ -76,7 +72,6 @@ class TestPing(IntegrationTest):
 
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         self.redis.lpush('test_ping_v1_valid_country', json.dumps({
             'image': 'image',
             'vendor': 'vendor',
@@ -86,7 +81,6 @@ class TestPing(IntegrationTest):
             'count': 0,
             'country': 'FRA',
             'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-            'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
         # Run Azafea so it processes the event
@@ -100,14 +94,12 @@ class TestPing(IntegrationTest):
             assert config.product == 'product'
             assert config.dualboot is True
             assert config.created_at == created_at
-            assert config.updated_at == updated_at
 
             ping = dbsession.query(Ping).one()
             assert ping.release == 'release'
             assert ping.count == 0
             assert ping.country == 'FRA'
             assert ping.created_at == created_at
-            assert ping.updated_at == updated_at
 
     def test_ping_v1_empty_country(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
@@ -118,7 +110,6 @@ class TestPing(IntegrationTest):
 
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         self.redis.lpush('test_ping_v1_empty_country', json.dumps({
             'image': 'image',
             'vendor': 'vendor',
@@ -128,7 +119,6 @@ class TestPing(IntegrationTest):
             'count': 0,
             'country': '',
             'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-            'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
         # Run Azafea so it processes the event
@@ -142,14 +132,12 @@ class TestPing(IntegrationTest):
             assert config.product == 'product'
             assert config.dualboot is True
             assert config.created_at == created_at
-            assert config.updated_at == updated_at
 
             ping = dbsession.query(Ping).one()
             assert ping.release == 'release'
             assert ping.count == 0
             assert ping.country is None
             assert ping.created_at == created_at
-            assert ping.updated_at == updated_at
 
     def test_ping_v1_invalid_country(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
@@ -160,7 +148,6 @@ class TestPing(IntegrationTest):
 
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         record = json.dumps({
             'image': 'image',
             'vendor': 'vendor',
@@ -170,7 +157,6 @@ class TestPing(IntegrationTest):
             'count': 0,
             'country': 'FR',
             'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-            'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         })
         self.redis.lpush('test_ping_v1_invalid_country', record)
 
@@ -195,7 +181,6 @@ class TestPing(IntegrationTest):
 
         # Send events to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        updated_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         for i in range(10):
             self.redis.lpush('test_ping_configuration_v1_dualboot_unicity', json.dumps({
                 'image': 'image',
@@ -205,7 +190,6 @@ class TestPing(IntegrationTest):
                 'release': 'release',
                 'count': 0,
                 'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
-                'updated_at': updated_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
             }))
 
         # Run Azafea so it processes the events
@@ -224,7 +208,6 @@ class TestPing(IntegrationTest):
                 assert config.product == 'product'
                 assert config.dualboot == (True, False, None)[i % 3]
                 assert config.created_at == created_at
-                assert config.updated_at == updated_at
 
             pings = dbsession.query(Ping)
             assert pings.count() == 10
