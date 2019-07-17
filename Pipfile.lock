@@ -33,15 +33,15 @@
         },
         "pydantic": {
             "hashes": [
-                "sha256:098ffe36047a35f78dbc0d8f7c2d40da053e35158b6f4326c50d669c56e48ea7",
-                "sha256:549c5d05138b7e0f33bd24d4313783c90342d0595d824e02ceb562a992c78239",
-                "sha256:6901572483a00d53aaba9121c6261017334511c44864b00b36714b32cc7af712",
-                "sha256:70a5cbab8b52ac3e5f9660a8ad028581095e48abc4a0fc67d1b2bf69e8a51d03",
-                "sha256:9d34421072a7df679638e5896a4a15f48ffbbfb8a57eb5fac6c45806269d0dc0",
-                "sha256:e4968f16f448d7c3026b0197bd29e78b5f39a7d27dbe22d5b3f07fb8602a2dc1"
+                "sha256:1b567378e80d08b0b431c6676483e2c05db730e6f0098ea24b5e6f04a9e42244",
+                "sha256:52fc77d29a16edc7964a44890552a9817f82263b4832195ee278b0604928b743",
+                "sha256:6c6b17093fa7ce058b552fa7d24e0d03aff9a2f04cb7e0e0174e4a37dc9fd9b4",
+                "sha256:77e1ea62c6b8ace4a0fa7b3c22e3d99dfd3ef048a6a439ea4cb155230ae342af",
+                "sha256:9eb2749f0a8bfe7816d429985cd32b274182b91f835dd5a2eefc8a01944fdf42",
+                "sha256:d3452a5697d78744b2e2c485b0990b3a2ca8d69521203dd41a5d67338fb148a5"
             ],
             "index": "pypi",
-            "version": "==0.29"
+            "version": "==0.30.1"
         },
         "redis": {
             "hashes": [
