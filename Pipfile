@@ -1,9 +1,6 @@
 [dev-packages]
 flake8-bugbear = "*"
-# Using my fork temporarily, to have the Python 3 stubs for Redis
-# https://github.com/python/typeshed/pull/3015
-# https://github.com/python/typeshed/pull/3055
-mypy = {editable = true,git = "https://github.com/HashBangCoop/mypy.git",ref = "bochecha/typeshed-redis"}
+mypy = ">=0.720"
 pytest = "*"
 pytest-cov = "*"
 pytest-flake8 = "*"
