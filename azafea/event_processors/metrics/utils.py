@@ -7,6 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+from datetime import datetime, timezone
 from threading import RLock
 from typing import Generator
 
@@ -80,3 +81,15 @@ def get_bytes(value: GLib.Variant) -> bytes:
 # This assumes value is an array/tuple variant, verify before calling this
 def get_child_values(value: GLib.Variant) -> Generator[GLib.Variant, None, None]:
     return (value.get_child_value(i) for i in range(value.n_children()))
+
+
+# See the timestamp-algorithm.rst file in this directory for details
+def get_event_datetime(request_absolute_timestamp: int, request_relative_timestamp: int,
+                       event_relative_timestamp: int) -> datetime:
+    origin_boot_absolute_timestamp = request_absolute_timestamp - request_relative_timestamp
+    event_absolute_timestamp = origin_boot_absolute_timestamp + event_relative_timestamp
+
+    # The timestamps we receive are in nanoseconds
+    event_absolute_timestamp_sec = event_absolute_timestamp / 1000000000
+
+    return datetime.fromtimestamp(event_absolute_timestamp_sec, tz=timezone.utc)
