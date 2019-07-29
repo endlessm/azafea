@@ -123,8 +123,17 @@ class IntegrationTest:
 
         # Deregister the handler modules so the next tests reimport them completely; not doing so
         # confuses SQLAlchemy, leading to the tables only being created for the first test. :(
+        modules_to_deregister = []
+
         for queue_config in self.config.queues.values():
-            sys.modules.pop(queue_config.handler.__module__)
+            handler_root = queue_config.handler.__module__.rsplit('.', 1)[0]
+
+            for module in sys.modules:
+                if module.startswith(handler_root):
+                    modules_to_deregister.append(module)
+
+        for module in modules_to_deregister:
+            sys.modules.pop(module)
 
         # Ensure we finish with clean a Redis
         self.clear_queues()
