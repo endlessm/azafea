@@ -7,14 +7,22 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+from typing import Any, Dict
+from uuid import UUID
+
+from gi.repository import GLib
+
+from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm.session import Session as DbSession
 from sqlalchemy.schema import Column, ForeignKey
-from sqlalchemy.types import BigInteger, Integer
+from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary
 
 from azafea.model import Base
 
 from ..request import Request
+from ..utils import get_bytes, get_event_datetime
 
 
 class MetricEvent(Base):
@@ -33,9 +41,40 @@ class MetricEvent(Base):
     # This comes in as a uint32, but PostgreSQL only has signed types so we need a BIGINT (int64)
     user_id = Column(BigInteger, nullable=False)
 
+    def __init__(self, payload: GLib.Variant, **kwargs: Dict[str, Any]) -> None:
+        payload_fields = self._parse_payload(payload)
+        kwargs.update(payload_fields)
+
+        super().__init__(**kwargs)
+
+    def _parse_payload(self, maybe_payload: GLib.Variant) -> Dict[str, Any]:
+        raise NotImplementedError('Implement this method in final event models')  # pragma: no cover
+
 
 class SingularEvent(MetricEvent):
     __abstract__ = True
+
+    occured_at = Column(DateTime(timezone=True), nullable=False)
+
+
+class UnknownSingularEvent(SingularEvent):
+    __tablename__ = 'unknown_singular_event'
+
+    event_id = Column(postgresql.UUID(as_uuid=True), nullable=False)
+    payload_data = Column(LargeBinary, nullable=False)
+
+    def _parse_payload(self, maybe_payload: GLib.Variant) -> Dict[str, Any]:
+        # Workaround an issue in GLib < 2.62
+        #        https://gitlab.gnome.org/GNOME/glib/issues/1865
+        as_bytes = maybe_payload.get_data_as_bytes()
+
+        if as_bytes is None:
+            payload_data = b''
+
+        else:
+            payload_data = as_bytes.get_data()
+
+        return {'payload_data': payload_data}
 
 
 class AggregateEvent(MetricEvent):
@@ -44,3 +83,23 @@ class AggregateEvent(MetricEvent):
 
 class SequenceEvent(MetricEvent):
     __abstract__ = True
+
+
+def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession: DbSession
+                       ) -> SingularEvent:
+    user_id = event_variant.get_child_value(0).get_uint32()
+    event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(1))))
+    event_relative_timestamp = event_variant.get_child_value(2).get_int64()
+    payload = event_variant.get_child_value(3)
+
+    event_date = get_event_datetime(request.absolute_timestamp, request.relative_timestamp,
+                                    event_relative_timestamp)
+
+    # Mypy complains here, even though this should be fine:
+    # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+    event = UnknownSingularEvent(request=request, user_id=user_id,  # type: ignore
+                                 occured_at=event_date, event_id=event_id, payload=payload)
+
+    dbsession.add(event)
+
+    return event

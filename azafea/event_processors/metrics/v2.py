@@ -12,6 +12,7 @@ import logging
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.session import Session as DbSession
 
+from .events import new_singular_event
 from .request import RequestBuilder
 
 
@@ -38,6 +39,9 @@ def process(dbsession: DbSession, record: bytes) -> None:
         # absolutely need an integration test
         raise  # pragma: no cover
 
-    # TODO: Handle singular events
+    for event_variant in request_builder.singulars:
+        singular_event = new_singular_event(request, event_variant, dbsession)
+        log.debug('Inserting singular metric:\n%s', singular_event)
+
     # TODO: Handle aggregate events
     # TODO: Handle sequence events
