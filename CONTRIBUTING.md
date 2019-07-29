@@ -68,10 +68,10 @@ community.
 We also use type checking with [mypy](http://www.mypy-lang.org/), which
 prevents a lot of problems inherent to dynamically typed languages like Python.
 
-Both are run automatically with the tests:
+Both are run automatically with the following command:
 
 ```
-$ pipenv run test
+$ pipenv run lint
 ```
 
 
