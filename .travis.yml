@@ -17,7 +17,7 @@ before_install:
 - sudo apt --yes --quiet install postgresql-11 postgresql-client-11
 
 install:
-- pipenv install --dev
+- pipenv install --deploy --dev
 
 before_script:
 # Create the PostgreSQL role and database
