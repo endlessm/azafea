@@ -7,7 +7,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-from typing import Any, Dict, Tuple, Type, cast
+import logging
+from typing import Any, Dict, Optional, Tuple, Type, cast
 from uuid import UUID
 
 from gi.repository import GLib
@@ -23,8 +24,10 @@ from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary
 from azafea.model import Base
 
 from ..request import Request
-from ..utils import get_bytes, get_event_datetime
+from ..utils import get_bytes, get_event_datetime, get_variant
 
+
+log = logging.getLogger(__name__)
 
 SINGULAR_EVENT_MODELS: Dict[str, Type['SingularEvent']] = {}
 
@@ -49,6 +52,9 @@ class MetricMeta(DeclarativeMeta):
 class MetricEvent(Base, metaclass=MetricMeta):
     __abstract__ = True
 
+    __event_uuid__: str
+    __payload_type__: Optional[str]
+
     id = Column(Integer, primary_key=True)
 
     @declared_attr
@@ -69,6 +75,30 @@ class MetricEvent(Base, metaclass=MetricMeta):
         super().__init__(**kwargs)
 
     def _parse_payload(self, maybe_payload: GLib.Variant) -> Dict[str, Any]:
+        payload = maybe_payload.get_maybe()
+
+        if self.__payload_type__ is None:
+            if payload is not None:
+                log.error('Metric event %s takes no payload, but got %s',
+                          self.__event_uuid__, payload)
+
+            return {}
+
+        if payload is None:
+            raise ValueError(f'Metric event {self.__event_uuid__} needs a {self.__payload_type__} '
+                             'payload, but got none')
+
+        payload = get_variant(payload)
+        payload_type = payload.get_type_string()
+
+        if payload_type != self.__payload_type__:
+            raise ValueError(f'Metric event {self.__event_uuid__} needs a {self.__payload_type__} '
+                             f'payload, but got {payload} ({payload_type})')
+
+        return self._get_fields_from_payload(payload)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         raise NotImplementedError('Implement this method in final event models')  # pragma: no cover
 
 
