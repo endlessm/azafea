@@ -7,13 +7,14 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-from typing import Any, Dict
+from typing import Any, Dict, Tuple, Type, cast
 from uuid import UUID
 
 from gi.repository import GLib
 
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.declarative import declared_attr
+from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.session import Session as DbSession
 from sqlalchemy.schema import Column, ForeignKey
@@ -25,7 +26,27 @@ from ..request import Request
 from ..utils import get_bytes, get_event_datetime
 
 
-class MetricEvent(Base):
+SINGULAR_EVENT_MODELS: Dict[str, Type['SingularEvent']] = {}
+
+
+class MetricMeta(DeclarativeMeta):
+    def __new__(mcl: Type[type], name: str, bases: Tuple[type, ...], attrs: Dict[str, Any],
+                **kwargs: Any) -> Type['MetricEvent']:
+        cls = super().__new__(mcl, name, bases, attrs)
+        event_uuid = attrs.get('__event_uuid__')
+
+        if event_uuid is not None:
+            # Register the event model
+            if SingularEvent in bases:
+                SINGULAR_EVENT_MODELS[event_uuid] = cast(Type[SingularEvent], cls)
+
+            else:  # pragma: no cover
+                raise NotImplementedError(f"Can't handle class {name} with bases {bases}")
+
+        return cls
+
+
+class MetricEvent(Base, metaclass=MetricMeta):
     __abstract__ = True
 
     id = Column(Integer, primary_key=True)
@@ -95,10 +116,19 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
     event_date = get_event_datetime(request.absolute_timestamp, request.relative_timestamp,
                                     event_relative_timestamp)
 
-    # Mypy complains here, even though this should be fine:
-    # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-    event = UnknownSingularEvent(request=request, user_id=user_id,  # type: ignore
-                                 occured_at=event_date, event_id=event_id, payload=payload)
+    try:
+        event_model = SINGULAR_EVENT_MODELS[event_id]
+
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        event = event_model(request=request, user_id=user_id, occured_at=event_date,  # type: ignore
+                            payload=payload)
+
+    except KeyError:
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        event = UnknownSingularEvent(request=request, user_id=user_id,  # type: ignore
+                                     occured_at=event_date, event_id=event_id, payload=payload)
 
     dbsession.add(event)
 
