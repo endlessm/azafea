@@ -19,11 +19,11 @@
 import dataclasses
 import logging
 import os
-from typing import Any, Callable, Mapping, MutableMapping, Sequence, Union
+from typing import Any, Callable, Dict, List, Mapping, MutableMapping
 
 from pydantic.class_validators import validator
 from pydantic.dataclasses import dataclass
-from pydantic.error_wrappers import ErrorWrapper, ValidationError
+from pydantic.error_wrappers import ValidationError
 
 from sqlalchemy.orm.session import Session as DbSession
 
@@ -39,7 +39,7 @@ DEFAULT_PASSWORD = 'CHANGE ME!!'
 
 
 class InvalidConfigurationError(Exception):
-    def __init__(self, section: str, errors: Sequence[Union[Sequence[Any], ErrorWrapper]]) -> None:
+    def __init__(self, section: str, errors: List[Dict[str, Any]]) -> None:
         self.section = section
         self.errors = errors
 
@@ -47,12 +47,8 @@ class InvalidConfigurationError(Exception):
         msg = [f'Invalid [{self.section}] configuration:']
 
         for e in self.errors:
-            if isinstance(e, ErrorWrapper):
-                for loc in e.loc:
-                    msg.append(f'* {loc}: {e.msg}')
-
-            else:
-                msg.append(str(e))
+            for loc in e['loc']:
+                msg.append(f"* {loc}: {e['msg']}")
 
         return '\n'.join(msg)
 
@@ -161,23 +157,23 @@ class Config(_Base):
         try:
             main = Main(**overrides.get('main', {}))
         except ValidationError as e:
-            raise InvalidConfigurationError('main', e.raw_errors)
+            raise InvalidConfigurationError('main', e.errors())
 
         try:
             redis = Redis(**overrides.get('redis', {}))
         except ValidationError as e:
-            raise InvalidConfigurationError('redis', e.raw_errors)
+            raise InvalidConfigurationError('redis', e.errors())
 
         try:
             postgresql = PostgreSQL(**overrides.get('postgresql', {}))
         except ValidationError as e:
-            raise InvalidConfigurationError('postgresql', e.raw_errors)
+            raise InvalidConfigurationError('postgresql', e.errors())
 
         try:
             for name, queue_options in overrides.get('queues', {}).items():
                 queues[name] = Queue(**queue_options)
         except ValidationError as e:
-            raise InvalidConfigurationError('queues', e.raw_errors)
+            raise InvalidConfigurationError('queues', e.errors())
 
         return cls(main=main, redis=redis, postgresql=postgresql, queues=queues)
 
