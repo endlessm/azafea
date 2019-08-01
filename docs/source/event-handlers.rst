@@ -68,8 +68,8 @@ if you copy-paste it:
 
        # Create the event, and add it to the transaction; it will be automatically
        # committed by Azafea if no error is raised
-       event = Activation(**record)
-       dbsession.add(activation)
+       event = MyEvent(**record)
+       dbsession.add(event)
 
        # Models can be pretty-printed, to make debugging easier
        log.debug('Inserting event record:\n%s', event)
@@ -114,8 +114,8 @@ for more details on defining models.
 
        # Create the event, and add it to the transaction; it will be automatically
        # committed by Azafea if no error is raised
-       event = Activation(**record)
-       dbsession.add(activation)
+       event = MyEvent(**record)
+       dbsession.add(event)
 
        # Models can be pretty-printed, to make debugging easier
        log.debug('Inserting event record:\n%s', event)
