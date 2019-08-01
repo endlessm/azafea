@@ -102,14 +102,8 @@ class MetricEvent(Base, metaclass=MetricMeta):
         raise NotImplementedError('Implement this method in final event models')  # pragma: no cover
 
 
-class SingularEvent(MetricEvent):
+class UnknownEvent(MetricEvent):
     __abstract__ = True
-
-    occured_at = Column(DateTime(timezone=True), nullable=False)
-
-
-class UnknownSingularEvent(SingularEvent):
-    __tablename__ = 'unknown_singular_event'
 
     event_id = Column(postgresql.UUID(as_uuid=True), nullable=False)
     payload_data = Column(LargeBinary, nullable=False)
@@ -126,6 +120,16 @@ class UnknownSingularEvent(SingularEvent):
             payload_data = as_bytes.get_data()
 
         return {'payload_data': payload_data}
+
+
+class SingularEvent(MetricEvent):
+    __abstract__ = True
+
+    occured_at = Column(DateTime(timezone=True), nullable=False)
+
+
+class UnknownSingularEvent(SingularEvent, UnknownEvent):
+    __tablename__ = 'unknown_singular_event'
 
 
 class AggregateEvent(MetricEvent):
