@@ -1,3 +1,21 @@
+# Copyright (c) 2019 - Endless
+#
+# This file is part of Azafea
+#
+# Azafea is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Azafea is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with Azafea.  If not, see <http://www.gnu.org/licenses/>.
+
+
 import multiprocessing
 import os
 import sys
@@ -105,8 +123,17 @@ class IntegrationTest:
 
         # Deregister the handler modules so the next tests reimport them completely; not doing so
         # confuses SQLAlchemy, leading to the tables only being created for the first test. :(
+        modules_to_deregister = []
+
         for queue_config in self.config.queues.values():
-            sys.modules.pop(queue_config.handler.__module__)
+            handler_root = queue_config.handler.__module__.rsplit('.', 1)[0]
+
+            for module in sys.modules:
+                if module.startswith(handler_root):
+                    modules_to_deregister.append(module)
+
+        for module in modules_to_deregister:
+            sys.modules.pop(module)
 
         # Ensure we finish with clean a Redis
         self.clear_queues()

@@ -17,7 +17,7 @@ before_install:
 - sudo apt --yes --quiet install postgresql-11 postgresql-client-11
 
 install:
-- pipenv install --dev
+- pipenv install --deploy --dev
 
 before_script:
 # Create the PostgreSQL role and database
@@ -28,5 +28,11 @@ before_script:
 - sudo -u postgres psql --command="ALTER USER azafea WITH PASSWORD 'CHANGE ME!!';"
 - redis-cli config set requirepass 'CHANGE ME!!'
 
-script:
-- pipenv run test-all
+matrix:
+  include:
+  - name: "Integration Tests"
+    script:
+    - pipenv run test-all
+  - name: "Lint and Type Checking"
+    script:
+    - pipenv run lint
