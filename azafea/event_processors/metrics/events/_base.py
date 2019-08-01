@@ -30,6 +30,7 @@ from ..utils import get_bytes, get_event_datetime, get_variant
 log = logging.getLogger(__name__)
 
 SINGULAR_EVENT_MODELS: Dict[str, Type['SingularEvent']] = {}
+AGGREGATE_EVENT_MODELS: Dict[str, Type['AggregateEvent']] = {}
 
 
 class MetricMeta(DeclarativeMeta):
@@ -42,6 +43,9 @@ class MetricMeta(DeclarativeMeta):
             # Register the event model
             if SingularEvent in bases:
                 SINGULAR_EVENT_MODELS[event_uuid] = cast(Type[SingularEvent], cls)
+
+            elif AggregateEvent in bases:
+                AGGREGATE_EVENT_MODELS[event_uuid] = cast(Type[AggregateEvent], cls)
 
             else:  # pragma: no cover
                 raise NotImplementedError(f"Can't handle class {name} with bases {bases}")
@@ -145,6 +149,17 @@ class UnknownSingularEvent(SingularEvent, UnknownEvent):
 class AggregateEvent(MetricEvent):
     __abstract__ = True
 
+    occured_at = Column(DateTime(timezone=True), nullable=False)
+    count = Column(BigInteger, nullable=False)
+
+
+class InvalidAggregateEvent(AggregateEvent, InvalidEvent):
+    __tablename__ = 'invalid_aggregate_event'
+
+
+class UnknownAggregateEvent(AggregateEvent, UnknownEvent):
+    __tablename__ = 'unknown_aggregate_event'
+
 
 class SequenceEvent(MetricEvent):
     __abstract__ = True
@@ -182,6 +197,46 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
         event = InvalidSingularEvent(request=request, user_id=user_id,  # type: ignore
                                      occured_at=event_date, event_id=event_id, payload=payload,
                                      error=str(e))
+
+    dbsession.add(event)
+
+    return event
+
+
+def new_aggregate_event(request: Request, event_variant: GLib.Variant, dbsession: DbSession
+                        ) -> AggregateEvent:
+    user_id = event_variant.get_child_value(0).get_uint32()
+    event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(1))))
+    count = event_variant.get_child_value(2).get_int64()
+    event_relative_timestamp = event_variant.get_child_value(3).get_int64()
+    payload = event_variant.get_child_value(4)
+
+    event_date = get_event_datetime(request.absolute_timestamp, request.relative_timestamp,
+                                    event_relative_timestamp)
+
+    try:
+        event_model = AGGREGATE_EVENT_MODELS[event_id]
+
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        event = event_model(request=request, user_id=user_id, occured_at=event_date,  # type: ignore
+                            count=count, payload=payload)
+
+    except KeyError:
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        event = UnknownAggregateEvent(request=request, user_id=user_id,  # type: ignore
+                                      occured_at=event_date, count=count, event_id=event_id,
+                                      payload=payload)
+
+    except Exception as e:
+        log.exception('An error occured while processing the aggregate:')
+
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        event = InvalidAggregateEvent(request=request, user_id=user_id,  # type: ignore
+                                      occured_at=event_date, count=count, event_id=event_id,
+                                      payload=payload, error=str(e))
 
     dbsession.add(event)
 
