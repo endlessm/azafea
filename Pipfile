@@ -11,6 +11,7 @@ sqlalchemy-stubs = ">=0.2"
 [packages]
 psycopg2 = "*"
 pydantic = "*"
+pygobject = "*"
 redis = "*"
 sqlalchemy = "*"
 toml = "*"

@@ -1,4 +1,16 @@
+# Copyright (c) 2019 - Endless
+#
+# This file is part of Azafea
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
+
 from threading import RLock
+from typing import Generator
+
+from gi.repository import GLib
 
 
 # This was copy-pasted from the cpython master source code, and can thus be used under the same
@@ -58,3 +70,13 @@ class cached_property:  # pragma: no cover
                         raise TypeError(msg) from None
         return val
 # End of the copy-pasted code
+
+
+# This assumes value is a `ay` variant, verify before calling this
+def get_bytes(value: GLib.Variant) -> bytes:
+    return bytes(v.get_byte() for v in get_child_values(value))
+
+
+# This assumes value is an array/tuple variant, verify before calling this
+def get_child_values(value: GLib.Variant) -> Generator[GLib.Variant, None, None]:
+    return (value.get_child_value(i) for i in range(value.n_children()))

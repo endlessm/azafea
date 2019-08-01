@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "6b91a1715a7e539bbe468311d65c25b0cf8c2dbd67b970653bedbca14783d824"
+            "sha256": "b7125d4aaa5168dae18c14c765b7faaab44ec5ce111f9f592dffd8c4aa07e435"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -31,6 +31,12 @@
             "index": "pypi",
             "version": "==2.8.3"
         },
+        "pycairo": {
+            "hashes": [
+                "sha256:70172e58b6bad7572a3518c26729b074acdde15e6fee6cbab6d3528ad552b786"
+            ],
+            "version": "==1.18.1"
+        },
         "pydantic": {
             "hashes": [
                 "sha256:08dd1503f0524b78d03df76daf8b66ae213b9eaa0f072ad89d05a981e7aeaad2",
@@ -42,6 +48,13 @@
             ],
             "index": "pypi",
             "version": "==0.31.1"
+        },
+        "pygobject": {
+            "hashes": [
+                "sha256:fa82746df059b9e0dcf473e0a9ff0693aa5e064f1ca1e2c46b5ac815bceda1ad"
+            ],
+            "index": "pypi",
+            "version": "==3.32.2"
         },
         "redis": {
             "hashes": [

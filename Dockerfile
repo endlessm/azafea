@@ -9,6 +9,13 @@ COPY Pipfile.lock .
 RUN apt --quiet --assume-yes update \
     && apt --quiet --assume-yes --no-install-recommends install \
         gcc \
+        gir1.2-glib-2.0 \
+        gobject-introspection \
+        libcairo2-dev \
+        libffi-dev \
+        libgirepository-1.0-1 \
+        libgirepository1.0-dev \
+        libglib2.0-dev \
         libpq5 \
         libpq-dev \
         python3 \
