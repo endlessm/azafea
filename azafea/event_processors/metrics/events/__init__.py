@@ -12,9 +12,10 @@ from typing import Any, Dict
 from gi.repository import GLib
 
 from sqlalchemy.schema import Column
-from sqlalchemy.types import BigInteger
+from sqlalchemy.types import BigInteger, Unicode
 
 from ._base import (  # noqa: F401
+    SequenceEvent,
     SingularEvent,
     # Reexport some symbols
     new_aggregate_event,
@@ -54,4 +55,13 @@ class Uptime(SingularEvent):
 
 # -- Sequence events ----------------------------------------------------------
 
-# TODO: Add sequence event implementations here
+class ShellAppIsOpen(SequenceEvent):
+    __tablename__ = 'shell_app_is_open'
+    __event_uuid__ = 'b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0'
+    __payload_type__ = 's'
+
+    app_id = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'app_id': payload.get_string()}

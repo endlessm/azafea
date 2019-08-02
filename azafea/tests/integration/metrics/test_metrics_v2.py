@@ -555,6 +555,102 @@ class TestMetrics(IntegrationTest):
                                                GLib.Bytes.new(event.payload_data),
                                                False).unpack() == (1, 2)
 
+    def test_sequence_events(self):
+        from azafea.event_processors.metrics.events import ShellAppIsOpen
+        from azafea.event_processors.metrics.request import Request
+
+        # Create the table
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.ensure_tables(Request, ShellAppIsOpen)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        user_id = 2000
+        event_id = UUID('b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0')
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                  # network send number
+                2000000000,                         # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),  # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [],                                 # singular events
+                [],                                 # aggregate events
+                [                                   # sequence events
+                    (
+                        user_id,
+                        event_id.bytes,
+                        [                           # events in the sequence
+                            (
+                                3000000000,         # event relative timestamp (3 secs)
+                                GLib.Variant('s',   # app id
+                                             'org.gnome.Podcasts'),
+                            ),
+                            (
+                                120000000000,       # event relative timestamp (2 mins)
+                                None,               # no payload on stop event
+                            ),
+                        ]
+                    ),
+                    (
+                        user_id,
+                        event_id.bytes,
+                        [                           # events in the sequence
+                            (
+                                4000000000,         # event relative timestamp (4 secs)
+                                GLib.Variant('s',   # app id
+                                             'org.gnome.Fractal'),
+                            ),
+                            (
+                                3600000000000,      # event relative timestamp (1 hour)
+                                None,               # no payload on stop event
+                            ),
+                        ]
+                    ),
+                ]
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_sequence_events', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).one()
+            assert request.send_number == 0
+            assert request.machine_id == machine_id
+
+            events = dbsession.query(ShellAppIsOpen).order_by(ShellAppIsOpen.started_at)
+            assert events.count() == 2
+
+            events = events.all()
+
+            podcasts = events[0]
+            assert podcasts.request_id == request.id
+            assert podcasts.user_id == user_id
+            assert podcasts.started_at == now - timedelta(seconds=2) + timedelta(seconds=3)
+            assert podcasts.stopped_at == now - timedelta(seconds=2) + timedelta(minutes=2)
+            assert podcasts.app_id == 'org.gnome.Podcasts'
+
+            fractal = events[1]
+            assert fractal.request_id == request.id
+            assert fractal.user_id == user_id
+            assert fractal.started_at == now - timedelta(seconds=2) + timedelta(seconds=4)
+            assert fractal.stopped_at == now - timedelta(seconds=2) + timedelta(hours=1)
+            assert fractal.app_id == 'org.gnome.Fractal'
+
     def test_unknown_sequence(self):
         from azafea.event_processors.metrics.events._base import UnknownSequence
         from azafea.event_processors.metrics.request import Request
@@ -634,7 +730,7 @@ class TestMetrics(IntegrationTest):
                                                                    (120000000000, None),
                                                                    (180000000000, None)]
 
-    def test_invalid_sequence(self):
+    def test_invalid_sequence(self, capfd):
         from azafea.event_processors.metrics.events._base import InvalidSequence
         from azafea.event_processors.metrics.request import Request
 
@@ -667,6 +763,20 @@ class TestMetrics(IntegrationTest):
                             )
                         ]
                     ),
+                    (
+                        user_id,
+                        event_id.bytes,
+                        [                                  # events in the sequence
+                            (
+                                3000000000,                # event relative timestamp (3 secs)
+                                GLib.Variant('u', 42),     # INVALID: Should be an app id ('s')
+                            ),
+                            (
+                                120000000000,              # event relative timestamp (2 mins)
+                                None,                      # no payload on stop event
+                            ),
+                        ]
+                    ),
                 ]
             )
         )
@@ -692,9 +802,30 @@ class TestMetrics(IntegrationTest):
             assert request.send_number == 0
             assert request.machine_id == machine_id
 
-            sequence = dbsession.query(InvalidSequence).one()
+            sequences = dbsession.query(InvalidSequence).order_by(InvalidSequence.event_id)
+            assert sequences.count() == 2
+
+            sequences = sequences.all()
+
+            sequence = sequences[0]
             assert sequence.request_id == request.id
             assert sequence.user_id == user_id
             assert GLib.Variant.new_from_bytes(GLib.VariantType('a(xmv)'),
                                                GLib.Bytes.new(sequence.payload_data),
                                                False).unpack() == [(3000000000, 'foo')]
+
+            sequence = sequences[1]
+            assert sequence.request_id == request.id
+            assert sequence.user_id == user_id
+            assert GLib.Variant.new_from_bytes(GLib.VariantType('a(xmv)'),
+                                               GLib.Bytes.new(sequence.payload_data),
+                                               False).unpack() == [(3000000000, 42),
+                                                                   (120000000000, None)]
+            assert sequence.error == (
+                'Metric event b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0 needs a s payload, '
+                "but got uint32 42 (u)")
+
+        capture = capfd.readouterr()
+        assert 'An error occured while processing the sequence:' in capture.err
+        assert ('ValueError: Metric event b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0 needs a s '
+                "payload, but got uint32 42 (u)") in capture.err
