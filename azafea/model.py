@@ -62,7 +62,8 @@ class BaseModel:
             name = column.key
 
             if isinstance(column, RelationshipProperty):
-                value = getattr(self, name).id
+                related = getattr(self, name)
+                value = related.id if related is not None else None
 
             else:
                 value = getattr(self, column.key)
