@@ -8,7 +8,7 @@
 
 
 import logging
-from typing import Any, Dict, Optional, Tuple, Type, cast
+from typing import Any, Dict, Optional, Tuple, Type, Union, cast
 from uuid import UUID
 
 from gi.repository import GLib
@@ -24,13 +24,14 @@ from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary, Unicode
 from azafea.model import Base
 
 from ..request import Request
-from ..utils import get_bytes, get_event_datetime, get_variant
+from ..utils import get_bytes, get_child_values, get_event_datetime, get_variant
 
 
 log = logging.getLogger(__name__)
 
 SINGULAR_EVENT_MODELS: Dict[str, Type['SingularEvent']] = {}
 AGGREGATE_EVENT_MODELS: Dict[str, Type['AggregateEvent']] = {}
+SEQUENCE_EVENT_MODELS: Dict[str, Type['SequenceEvent']] = {}
 
 
 class MetricMeta(DeclarativeMeta):
@@ -46,6 +47,9 @@ class MetricMeta(DeclarativeMeta):
 
             elif AggregateEvent in bases:
                 AGGREGATE_EVENT_MODELS[event_uuid] = cast(Type[AggregateEvent], cls)
+
+            elif SequenceEvent in bases:
+                SEQUENCE_EVENT_MODELS[event_uuid] = cast(Type[SequenceEvent], cls)
 
             else:  # pragma: no cover
                 raise NotImplementedError(f"Can't handle class {name} with bases {bases}")
@@ -164,6 +168,21 @@ class UnknownAggregateEvent(AggregateEvent, UnknownEvent):
 class SequenceEvent(MetricEvent):
     __abstract__ = True
 
+    started_at = Column(DateTime(timezone=True), nullable=False)
+    stopped_at = Column(DateTime(timezone=True), nullable=False)
+
+
+# This is not an event part of an unknown sequence: it is the whole sequence with start, progress
+# and stop events in its payload_data
+class InvalidSequence(InvalidEvent):
+    __tablename__ = 'invalid_sequence'
+
+
+# This is not an event part of an unknown sequence: it is the whole sequence with start, progress
+# and stop events in its payload_data
+class UnknownSequence(UnknownEvent):
+    __tablename__ = 'unknown_sequence'
+
 
 def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession: DbSession
                        ) -> SingularEvent:
@@ -241,3 +260,63 @@ def new_aggregate_event(request: Request, event_variant: GLib.Variant, dbsession
     dbsession.add(event)
 
     return event
+
+
+def new_sequence_event(request: Request, sequence_variant: GLib.Variant, dbsession: DbSession
+                       ) -> Union[SequenceEvent, InvalidSequence, UnknownSequence]:
+    user_id = sequence_variant.get_child_value(0).get_uint32()
+    event_id = str(UUID(bytes=get_bytes(sequence_variant.get_child_value(1))))
+    events = sequence_variant.get_child_value(2)
+    num_events = events.n_children()
+
+    if num_events < 2:
+        error = f'Sequence must have at least 2 elements, but only had {num_events}'
+
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        sequence = InvalidSequence(request=request, user_id=user_id,  # type: ignore
+                                   event_id=event_id, payload=events, error=error)
+        dbsession.add(sequence)
+
+        return sequence
+
+    start_variant, *_progress_variants, stop_variant = get_child_values(events)
+
+    # For now, we ignore progress events entirely. We also assume the stop event always has a null
+    # payload. This works for most sequence events we care about in priority.
+    # TODO: Figure this out for the more complex events
+
+    start_relative_timestamp = start_variant.get_child_value(0).get_int64()
+    payload = start_variant.get_child_value(1)
+    started_at = get_event_datetime(request.absolute_timestamp, request.relative_timestamp,
+                                    start_relative_timestamp)
+
+    stop_relative_timestamp = stop_variant.get_child_value(0).get_int64()
+    stopped_at = get_event_datetime(request.absolute_timestamp, request.relative_timestamp,
+                                    stop_relative_timestamp)
+
+    try:
+        event_model = SEQUENCE_EVENT_MODELS[event_id]
+
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        sequence = event_model(request=request, user_id=user_id,  # type: ignore
+                               started_at=started_at, stopped_at=stopped_at, payload=payload)
+
+    except KeyError:
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        sequence = UnknownSequence(request=request, user_id=user_id,  # type: ignore
+                                   event_id=event_id, payload=events)
+
+    except Exception as e:
+        log.exception('An error occured while processing the sequence:')
+
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        sequence = InvalidSequence(request=request, user_id=user_id,  # type: ignore
+                                   event_id=event_id, payload=events, error=str(e))
+
+    dbsession.add(sequence)
+
+    return sequence

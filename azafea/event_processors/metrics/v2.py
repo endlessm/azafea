@@ -12,7 +12,7 @@ import logging
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.session import Session as DbSession
 
-from .events import new_aggregate_event, new_singular_event
+from .events import new_aggregate_event, new_sequence_event, new_singular_event
 from .request import RequestBuilder
 
 
@@ -47,4 +47,6 @@ def process(dbsession: DbSession, record: bytes) -> None:
         aggregate_event = new_aggregate_event(request, event_variant, dbsession)
         log.debug('Inserting aggregate metric:\n%s', aggregate_event)
 
-    # TODO: Handle sequence events
+    for event_variant in request_builder.sequences:
+        sequence_event = new_sequence_event(request, event_variant, dbsession)
+        log.debug('Inserting sequence event:\n%s', sequence_event)

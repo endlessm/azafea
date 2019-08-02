@@ -18,6 +18,7 @@ from ._base import (  # noqa: F401
     SingularEvent,
     # Reexport some symbols
     new_aggregate_event,
+    new_sequence_event,
     new_singular_event,
 )
 

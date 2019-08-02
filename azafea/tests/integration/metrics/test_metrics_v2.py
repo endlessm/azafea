@@ -554,3 +554,147 @@ class TestMetrics(IntegrationTest):
             assert GLib.Variant.new_from_bytes(GLib.VariantType('mv'),
                                                GLib.Bytes.new(event.payload_data),
                                                False).unpack() == (1, 2)
+
+    def test_unknown_sequence(self):
+        from azafea.event_processors.metrics.events._base import UnknownSequence
+        from azafea.event_processors.metrics.request import Request
+
+        # Create the table
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.ensure_tables(Request, UnknownSequence)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        user_id = 2000
+        event_id = UUID('d3863909-8eff-43b6-9a33-ef7eda266195')
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                         # network send number
+                2000000000,                                # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),         # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [],                                        # singular events
+                [],                                        # aggregate events
+                [                                          # sequence events
+                    (
+                        user_id,
+                        event_id.bytes,
+                        [                                  # events in the sequence
+                            (
+                                3000000000,                # event relative timestamp (3 secs)
+                                GLib.Variant('s', 'foo'),  # app id
+                            ),
+                            (
+                                60000000000,               # event relative timestamp (1 min)
+                                None,                      # no payload on progress event
+                            ),
+                            (
+                                120000000000,              # event relative timestamp (2 mins)
+                                None,                      # no payload on progress event
+                            ),
+                            (
+                                180000000000,              # event relative timestamp (3 mins)
+                                None,                      # no payload on stop event
+                            ),
+                        ]
+                    ),
+                ]
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_unknown_sequence', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).one()
+            assert request.send_number == 0
+            assert request.machine_id == machine_id
+
+            sequence = dbsession.query(UnknownSequence).one()
+            assert sequence.request_id == request.id
+            assert sequence.user_id == user_id
+            assert GLib.Variant.new_from_bytes(GLib.VariantType('a(xmv)'),
+                                               GLib.Bytes.new(sequence.payload_data),
+                                               False).unpack() == [(3000000000, 'foo'),
+                                                                   (60000000000, None),
+                                                                   (120000000000, None),
+                                                                   (180000000000, None)]
+
+    def test_invalid_sequence(self):
+        from azafea.event_processors.metrics.events._base import InvalidSequence
+        from azafea.event_processors.metrics.request import Request
+
+        # Create the table
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.ensure_tables(Request, InvalidSequence)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        user_id = 2000
+        event_id = UUID('b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0')
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                         # network send number
+                2000000000,                                # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),         # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [],                                        # singular events
+                [],                                        # aggregate events
+                [                                          # sequence events
+                    (
+                        user_id,
+                        event_id.bytes,
+                        [                                  # INVALID: a single event in the sequence
+                            (
+                                3000000000,                # event relative timestamp (3 secs)
+                                GLib.Variant('s', 'foo'),  # app id
+                            )
+                        ]
+                    ),
+                ]
+            )
+        )
+
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_invalid_sequence', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).one()
+            assert request.send_number == 0
+            assert request.machine_id == machine_id
+
+            sequence = dbsession.query(InvalidSequence).one()
+            assert sequence.request_id == request.id
+            assert sequence.user_id == user_id
+            assert GLib.Variant.new_from_bytes(GLib.VariantType('a(xmv)'),
+                                               GLib.Bytes.new(sequence.payload_data),
+                                               False).unpack() == [(3000000000, 'foo')]
