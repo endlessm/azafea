@@ -83,6 +83,15 @@ def get_child_values(value: GLib.Variant) -> Generator[GLib.Variant, None, None]
     return (value.get_child_value(i) for i in range(value.n_children()))
 
 
+def get_variant(value: GLib.Variant) -> GLib.Variant:
+    # Some of the metric events (e.g UptimeEvent) have payload wrapped multiple times in variants,
+    # but others don't
+    while value.get_type_string() == 'v':
+        value = value.get_variant()
+
+    return value
+
+
 # See the timestamp-algorithm.rst file in this directory for details
 def get_event_datetime(request_absolute_timestamp: int, request_relative_timestamp: int,
                        event_relative_timestamp: int) -> datetime:
