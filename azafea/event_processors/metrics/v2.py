@@ -9,7 +9,10 @@
 
 import logging
 
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.session import Session as DbSession
+
+from .request import RequestBuilder
 
 
 log = logging.getLogger(__name__)
@@ -17,3 +20,24 @@ log = logging.getLogger(__name__)
 
 def process(dbsession: DbSession, record: bytes) -> None:
     log.debug('Processing metric v2 record: %s', record)
+
+    request_builder = RequestBuilder.parse_bytes(record)
+    request = request_builder.build_request()
+    dbsession.add(request)
+
+    try:
+        dbsession.commit()
+
+    except IntegrityError as e:
+        # FIXME: This is fragile, can we do better?
+        if "uq_metrics_request_v2_sha512" in str(e):
+            log.debug('Request had already been processed in the past')
+            return
+
+        # FIXME: Given how the request is built, this shouldn't ever happen; if it does though, we
+        # absolutely need an integration test
+        raise  # pragma: no cover
+
+    # TODO: Handle singular events
+    # TODO: Handle aggregate events
+    # TODO: Handle sequence events
