@@ -111,6 +111,9 @@ class Ping(Base):
     def from_serialized(cls, serialized: bytes) -> 'Ping':
         record = json.loads(serialized.decode('utf-8'))
 
+        # Older images had a bug where count=0 would not be sent
+        record.setdefault('count', 0)
+
         return cls(**record)
 
 
