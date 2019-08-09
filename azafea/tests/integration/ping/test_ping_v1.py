@@ -63,6 +63,41 @@ class TestPing(IntegrationTest):
             assert ping.count == 0
             assert ping.created_at == created_at
 
+    def test_ping_v1_missing_count(self):
+        from azafea.event_processors.ping.v1 import PingConfiguration, Ping
+
+        # Create the tables
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.ensure_tables(Ping, PingConfiguration)
+
+        # Send an event to the Redis queue
+        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        self.redis.lpush('test_ping_v1_missing_count', json.dumps({
+            'image': 'image',
+            'vendor': 'vendor',
+            'product': 'product',
+            'dualboot': True,
+            'release': 'release',
+            'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
+        }))
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            config = dbsession.query(PingConfiguration).one()
+            assert config.image == 'image'
+            assert config.vendor == 'vendor'
+            assert config.product == 'product'
+            assert config.dualboot is True
+            assert config.created_at == created_at
+
+            ping = dbsession.query(Ping).one()
+            assert ping.release == 'release'
+            assert ping.count == 0
+            assert ping.created_at == created_at
+
     def test_ping_v1_valid_country(self):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
 
