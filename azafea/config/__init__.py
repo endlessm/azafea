@@ -67,6 +67,10 @@ class Main(_Base):
     def number_of_workers_is_strictly_positive_integer(cls, value: Any) -> int:
         return is_strictly_positive_integer(value)
 
+    @validator('exit_on_empty_queues', pre=True)
+    def exit_on_empty_queues_is_boolean(cls, value: Any) -> bool:
+        return is_boolean(value)
+
 
 @dataclass(frozen=True)
 class Redis(_Base):
