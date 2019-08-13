@@ -223,6 +223,239 @@ def test_print_config_no_event_queue(capfd, make_config_file):
     assert "Did you forget to configure event queues?" in capture.err
 
 
+def test_replay_errors(capfd, monkeypatch, make_config_file):
+    class MockRedis:
+        def __init__(self):
+            self._queues = {
+                'some-queue': [],
+                'errors-some-queue': [b'event1', b'event2', b'event3'],
+            }
+
+        def llen(self, queue_name):
+            return len(self._queues[queue_name])
+
+        def lpush(self, queue_name, value):
+            self._queues[queue_name].insert(0, value)
+
+        def rpop(self, queue_name):
+            try:
+                return self._queues[queue_name].pop(-1)
+
+            except IndexError:
+                return None
+
+    redis = MockRedis()
+
+    def mock_redis(*args, **kwargs):
+        return redis
+
+    def mock_get_handler(module):
+        def process(*args, **kwargs):
+            pass
+
+        return process
+
+    config_file = make_config_file({
+        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
+    })
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'replay-errors', 'some-queue',
+    ])
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.cli, 'Redis', mock_redis)
+        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.OK
+
+    assert redis._queues == {
+        'some-queue': [b'event1', b'event2', b'event3'],
+        'errors-some-queue': [],
+    }
+
+    capture = capfd.readouterr()
+    assert 'Successfully moved failed events back to "some-queue"' in capture.out
+
+
+def test_replay_errors_invalid_config(capfd, make_config_file):
+    # Make a wrong config file
+    config_file = make_config_file({'main': {'verbose': 'blah'}})
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'replay-errors', 'some-queue',
+    ])
+
+    result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.INVALID_CONFIG
+
+    capture = capfd.readouterr()
+    assert "Invalid [main] configuration:\n* verbose: 'blah' is not a boolean" in capture.err
+
+
+def test_replay_errors_no_event_queue(capfd, make_config_file):
+    config_file = make_config_file({})
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'replay-errors', 'some-queue',
+    ])
+
+    result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.NO_EVENT_QUEUE
+
+    capture = capfd.readouterr()
+    assert 'Could not replay events from "some-queue": no event queue configured' in capture.err
+
+
+def test_replay_errors_unknown_queue(capfd, monkeypatch, make_config_file):
+    def mock_get_handler(module):
+        def process(*args, **kwargs):
+            pass
+
+        return process
+
+    config_file = make_config_file({
+        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
+    })
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'replay-errors', 'other-queue',
+    ])
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.NO_EVENT_QUEUE
+
+    capture = capfd.readouterr()
+    assert ('Could not replay events from "other-queue": '
+            'unknown event queue requested') in capture.err
+
+
+def test_replay_errors_stopped_early(capfd, monkeypatch, make_config_file):
+    class MockRedis:
+        def __init__(self):
+            self._queues = {
+                'some-queue': [],
+                'errors-some-queue': [b'event1', b'event2', b'event3'],
+            }
+
+        def llen(self, queue_name):
+            # Pretend there were 5 elements in the queue but somehow only 3 could be pulled
+            return 5
+
+        def lpush(self, queue_name, value):
+            self._queues[queue_name].insert(0, value)
+
+        def rpop(self, queue_name):
+            try:
+                return self._queues[queue_name].pop(-1)
+
+            except IndexError:
+                return None
+
+    redis = MockRedis()
+
+    def mock_redis(*args, **kwargs):
+        return redis
+
+    def mock_get_handler(module):
+        def process(*args, **kwargs):
+            pass
+
+        return process
+
+    config_file = make_config_file({
+        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
+    })
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'replay-errors', 'some-queue',
+    ])
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.cli, 'Redis', mock_redis)
+        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.OK
+
+    assert redis._queues == {
+        'some-queue': [b'event1', b'event2', b'event3'],
+        'errors-some-queue': [],
+    }
+
+    capture = capfd.readouterr()
+    assert '"some-queue" emptied faster than planned after 3 elements out of 5' in capture.err
+    assert 'Successfully moved failed events back to "some-queue"' in capture.out
+
+
+def test_replay_errors_fail_to_push(capfd, monkeypatch, make_config_file):
+    class MockRedis:
+        def __init__(self):
+            self._queues = {
+                'some-queue': [],
+                'errors-some-queue': [b'event1', b'event2', b'event3'],
+            }
+
+        def llen(self, queue_name):
+            return len(self._queues[queue_name])
+
+        def lpush(self, queue_name, value):
+            raise ValueError('Oh no!')
+
+        def rpop(self, queue_name):
+            try:
+                return self._queues[queue_name].pop(-1)
+
+            except IndexError:
+                return None
+
+    redis = MockRedis()
+
+    def mock_redis(*args, **kwargs):
+        return redis
+
+    def mock_get_handler(module):
+        def process(*args, **kwargs):
+            pass
+
+        return process
+
+    config_file = make_config_file({
+        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
+    })
+
+    args = azafea.cli.parse_args([
+        '-c', str(config_file),
+        'replay-errors', 'some-queue',
+    ])
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.cli, 'Redis', mock_redis)
+        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        result = args.subcommand(args)
+
+    assert result == azafea.cli.ExitCode.UNKNOWN_ERROR
+
+    assert redis._queues == {
+        'some-queue': [],
+        'errors-some-queue': [b'event1', b'event2'],
+    }
+
+    capture = capfd.readouterr()
+    assert 'Failed to push b\'event3\' back in "some-queue":' in capture.err
+
+
 def test_run(capfd, monkeypatch, make_config_file):
     class MockController:
         def __init__(self, config):
