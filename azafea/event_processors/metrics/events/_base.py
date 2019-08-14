@@ -19,7 +19,7 @@ from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.session import Session as DbSession
 from sqlalchemy.schema import Column, ForeignKey
-from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary
+from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary, Unicode
 
 from azafea.model import Base
 
@@ -122,10 +122,20 @@ class UnknownEvent(MetricEvent):
         return {'payload_data': payload_data}
 
 
+class InvalidEvent(UnknownEvent):
+    __abstract__ = True
+
+    error = Column(Unicode, nullable=False)
+
+
 class SingularEvent(MetricEvent):
     __abstract__ = True
 
     occured_at = Column(DateTime(timezone=True), nullable=False)
+
+
+class InvalidSingularEvent(SingularEvent, InvalidEvent):
+    __tablename__ = 'invalid_singular_event'
 
 
 class UnknownSingularEvent(SingularEvent, UnknownEvent):
@@ -163,6 +173,15 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
         # https://github.com/dropbox/sqlalchemy-stubs/issues/97
         event = UnknownSingularEvent(request=request, user_id=user_id,  # type: ignore
                                      occured_at=event_date, event_id=event_id, payload=payload)
+
+    except Exception as e:
+        log.exception('An error occured while processing the event:')
+
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        event = InvalidSingularEvent(request=request, user_id=user_id,  # type: ignore
+                                     occured_at=event_date, event_id=event_id, payload=payload,
+                                     error=str(e))
 
     dbsession.add(event)
 
