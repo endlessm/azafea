@@ -17,6 +17,7 @@ from sqlalchemy.schema import CheckConstraint, Column
 from sqlalchemy.types import BigInteger, Boolean, DateTime, Integer, Numeric, Unicode
 
 from azafea.model import Base
+from azafea.vendors import normalize_vendor
 
 
 log = logging.getLogger(__name__)
@@ -63,6 +64,8 @@ class Activation(Base):
     @classmethod
     def from_serialized(cls, serialized: bytes) -> 'Activation':
         record = json.loads(serialized.decode('utf-8'))
+
+        record['vendor'] = normalize_vendor(record.get('vendor', 'unknown'))
 
         return cls(**record)
 
