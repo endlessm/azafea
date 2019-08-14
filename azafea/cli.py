@@ -13,6 +13,7 @@ import logging
 from typing import List
 import sys
 
+from redis import Redis
 from redis.exceptions import ConnectionError as RedisConnectionError
 
 from .config import Config, InvalidConfigurationError
@@ -29,6 +30,7 @@ class ExitCode(IntEnum):
     INVALID_CONFIG = -1
     NO_EVENT_QUEUE = -2
     CONNECTION_ERROR = -3
+    UNKNOWN_ERROR = -4
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -49,6 +51,12 @@ def get_parser() -> argparse.ArgumentParser:
     print_config = subs.add_parser('print-config',
                                    help='Print the loaded configuration then exit')
     print_config.set_defaults(subcommand=do_print_config)
+
+    replay = subs.add_parser('replay-errors',
+                             help='Pull events from the error queue and send them back to the '
+                                  'incoming one')
+    replay.add_argument('queue', help='The name of the queue to replay, e.g "ping-1"')
+    replay.set_defaults(subcommand=do_replay)
 
     run = subs.add_parser('run', help='Run azafea')
     run.set_defaults(subcommand=do_run)
@@ -122,6 +130,57 @@ def do_print_config(args: argparse.Namespace) -> int:
     if not config.queues:
         log.warning('Did you forget to configure event queues?')
         return ExitCode.NO_EVENT_QUEUE
+
+    return ExitCode.OK
+
+
+def do_replay(args: argparse.Namespace) -> int:
+    try:
+        config = Config.from_file(args.config)
+
+    except InvalidConfigurationError as e:
+        print(str(e), file=sys.stderr)
+        return ExitCode.INVALID_CONFIG
+
+    setup_logging(verbose=config.main.verbose)
+    config.warn_about_default_passwords()
+
+    if not config.queues:
+        log.error(f'Could not replay events from "{args.queue}": no event queue configured')
+        return ExitCode.NO_EVENT_QUEUE
+
+    if args.queue not in config.queues:
+        log.error(f'Could not replay events from "{args.queue}": unknown event queue requested')
+        return ExitCode.NO_EVENT_QUEUE
+
+    redis = Redis(host=config.redis.host, port=config.redis.port, password=config.redis.password)
+    error_queue = f'errors-{args.queue}'
+
+    # We could try and pull them out until there aren't any left, but we'd enter a race with Azafea:
+    # if it pushes them back to the error queue faster than we pull from it, this command could
+    # continue infinitely.
+    #
+    # Checking how many errors there are when we start and pulling only that mount means we lose the
+    # new ones added while we pull, but then we can just rerun the command as needed.
+    num_errors = redis.llen(error_queue)
+
+    for i in range(num_errors):
+        failed_event = redis.rpop(error_queue)
+
+        if failed_event is None:
+            log.warning(f'"{args.queue}" emptied faster than planned after {i} elements out of '
+                        f'{num_errors}')
+            break
+
+        try:
+            redis.lpush(args.queue, failed_event)
+
+        except Exception:
+            log.exception(f'Failed to push {failed_event} back in "{args.queue}":')
+
+            return ExitCode.UNKNOWN_ERROR
+
+    log.info(f'Successfully moved failed events back to "{args.queue}"')
 
     return ExitCode.OK
 
