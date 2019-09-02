@@ -27,7 +27,7 @@ class TestPing(IntegrationTest):
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         self.redis.lpush('test_ping_v1', json.dumps({
             'image': 'image',
-            'vendor': 'vendor',
+            'vendor': 'the vendor',
             'product': 'product',
             'dualboot': True,
             'release': 'release',
@@ -42,7 +42,7 @@ class TestPing(IntegrationTest):
         with self.db as dbsession:
             config = dbsession.query(PingConfiguration).one()
             assert config.image == 'image'
-            assert config.vendor == 'vendor'
+            assert config.vendor == 'the vendor'
             assert config.product == 'product'
             assert config.dualboot is True
             assert config.created_at == created_at
@@ -64,7 +64,7 @@ class TestPing(IntegrationTest):
         for i in range(10):
             self.redis.lpush('test_ping_configuration_v1_dualboot_unicity', json.dumps({
                 'image': 'image',
-                'vendor': 'vendor',
+                'vendor': 'the vendor',
                 'product': 'product',
                 'dualboot': (True, False, None)[i % 3],
                 'release': 'release',
@@ -84,7 +84,7 @@ class TestPing(IntegrationTest):
 
             for i, config in enumerate(configs):
                 assert config.image == 'image'
-                assert config.vendor == 'vendor'
+                assert config.vendor == 'the vendor'
                 assert config.product == 'product'
                 assert config.dualboot == (True, False, None)[i % 3]
                 assert config.created_at == created_at
