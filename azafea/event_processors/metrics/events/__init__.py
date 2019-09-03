@@ -26,6 +26,18 @@ from ._base import (  # noqa: F401
 
 # -- Singular events ----------------------------------------------------------
 
+class ImageVersion(SingularEvent):
+    __tablename__ = 'image_version'
+    __event_uuid__ = '6b1c1cfc-bc36-438c-0647-dacd5878f2b3'
+    __payload_type__ = 's'
+
+    image_id = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'image_id': payload.get_string()}
+
+
 class LiveUsbBooted(SingularEvent):
     __tablename__ = 'live_usb_booted'
     __event_uuid__ = '56be0b38-e47b-4578-9599-00ff9bda54bb'
