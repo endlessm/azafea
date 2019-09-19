@@ -548,7 +548,6 @@ def test_run_redis_connection_error(capfd, monkeypatch, make_config_file):
 
     capture = capfd.readouterr()
     assert 'Could not connect to Redis:' in capture.err
-    assert 'Name or service not known' in capture.err
 
 
 def test_run_postgresql_connection_error(capfd, monkeypatch, make_config_file):
