@@ -68,6 +68,7 @@ class TestMetrics(IntegrationTest):
             assert request.received_at == received_at
 
     def test_duplicate_request(self):
+        from azafea.event_processors.metrics.events._base import UnknownSingularEvent
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
@@ -84,7 +85,14 @@ class TestMetrics(IntegrationTest):
                 2000000000,                            # request relative timestamp (2 secs)
                 int(now.timestamp() * 1000000000),     # request absolute timestamp
                 bytes.fromhex(machine_id),
-                [],                                    # singular events
+                [                                      # singular events
+                    (
+                        1000,                          # user id
+                        UUID('d3863909-8eff-43b6-9a33-ef7eda266195').bytes,
+                        3000000000,                    # event relative timestamp (3 secs)
+                        None,                          # empty payload
+                    ),
+                ],
                 [],                                    # aggregate events
                 []                                     # sequence events
             )
@@ -113,6 +121,9 @@ class TestMetrics(IntegrationTest):
             assert request.machine_id == machine_id
             assert request.sha512 == sha512(request_body).hexdigest()
             assert request.received_at == received_at
+
+            # Ensure we deduplicated the request and the events it contains
+            assert dbsession.query(UnknownSingularEvent).count() == 1
 
     def test_invalid_request(self):
         from azafea.event_processors.metrics.request import Request
