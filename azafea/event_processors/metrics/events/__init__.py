@@ -44,6 +44,24 @@ class LiveUsbBooted(SingularEvent):
     __payload_type__ = None
 
 
+class OSVersion(SingularEvent):
+    __tablename__ = 'os_version'
+    __event_uuid__ = '1fa16a31-9225-467e-8502-e31806e9b4eb'
+
+    # The 3rd field is now obsolete and ignored, so we only parse and store the first 2
+    __payload_type__ = '(sss)'
+
+    os_name = Column(Unicode, nullable=False)
+    os_version = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'os_name': payload.get_child_value(0).get_string(),
+            'os_version': payload.get_child_value(1).get_string(),
+        }
+
+
 class Uptime(SingularEvent):
     __tablename__ = 'uptime'
     __event_uuid__ = '9af2cc74-d6dd-423f-ac44-600a6eee2d96'
