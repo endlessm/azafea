@@ -88,6 +88,10 @@ class Db:
 
             return
 
+        if not self._sa_session.is_active:
+            self._sa_session.close()
+            return
+
         try:
             self._sa_session.commit()
 

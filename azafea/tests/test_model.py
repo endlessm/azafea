@@ -59,6 +59,30 @@ def test_fail_committing_db_session(monkeypatch, mock_sessionmaker):
         assert dbsession.rolled_back
 
 
+def test_exit_from_already_rolled_back_session(monkeypatch, mock_sessionmaker):
+    config = Config()
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.model, 'sessionmaker', mock_sessionmaker)
+        db = azafea.model.Db(config.postgresql.host, config.postgresql.port,
+                             config.postgresql.user, config.postgresql.password,
+                             config.postgresql.database)
+
+        with db as dbsession:
+            assert dbsession.open
+            assert not dbsession.committed
+            assert not dbsession.rolled_back
+            assert dbsession.is_active
+
+            # We tried to commit something explicitly before exiting the context manager, an error
+            # occured which rolled back the transaction; it is now inactive
+            dbsession.rollback()
+
+        assert not dbsession.open
+        assert not dbsession.committed
+        assert dbsession.rolled_back
+
+
 def test_fail_in_db_session(monkeypatch, mock_sessionmaker):
     config = Config()
 
