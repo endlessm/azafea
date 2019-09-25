@@ -63,6 +63,10 @@ class Processor(Process):
         intercept_signal(SIGINT, self._exit_cleanly)
         intercept_signal(SIGTERM, self._exit_cleanly)
 
+        import cProfile
+        cProfile.runctx('self._run()', globals(), locals(), filename='/tmp/azafea.profile')
+
+    def _run(self):
         queues = tuple(self.config.queues.keys())
         log.debug('{%s} Pulling from event queues: %s', self.name, queues)
 
