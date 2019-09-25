@@ -64,7 +64,9 @@ class Processor(Process):
         intercept_signal(SIGTERM, self._exit_cleanly)
 
         import cProfile
-        cProfile.runctx('self._run()', globals(), locals(), filename='/tmp/azafea.profile')
+        import uuid
+        suffix = uuid.uuid4()
+        cProfile.runctx('self._run()', globals(), locals(), filename=f'/tmp/azafea.profile.{suffix}')
 
     def _run(self):
         queues = tuple(self.config.queues.keys())
