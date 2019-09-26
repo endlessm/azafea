@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "6b91a1715a7e539bbe468311d65c25b0cf8c2dbd67b970653bedbca14783d824"
+            "sha256": "c9fb3e4fa5f2e11d1c59d2abcc879d99d0f3eb2aa299af6033acc9f93a03084f"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -31,6 +31,12 @@
             "index": "pypi",
             "version": "==2.8.3"
         },
+        "pycairo": {
+            "hashes": [
+                "sha256:70172e58b6bad7572a3518c26729b074acdde15e6fee6cbab6d3528ad552b786"
+            ],
+            "version": "==1.18.1"
+        },
         "pydantic": {
             "hashes": [
                 "sha256:08dd1503f0524b78d03df76daf8b66ae213b9eaa0f072ad89d05a981e7aeaad2",
@@ -42,6 +48,13 @@
             ],
             "index": "pypi",
             "version": "==0.31.1"
+        },
+        "pygobject": {
+            "hashes": [
+                "sha256:fa82746df059b9e0dcf473e0a9ff0693aa5e064f1ca1e2c46b5ac815bceda1ad"
+            ],
+            "index": "pypi",
+            "version": "==3.32.2"
         },
         "redis": {
             "hashes": [
@@ -435,12 +448,8 @@
             "version": "==1.1.3"
         },
         "sqlalchemy-stubs": {
-            "hashes": [
-                "sha256:4bb4a0377ed6c01bea2e1124d60747714d56742352bdb80e2093ca80a1bc036f",
-                "sha256:fe9df983274142f82973e4f7634a98dcbdbdde964918ad3dcf33d94398c51537"
-            ],
-            "index": "pypi",
-            "version": "==0.2"
+            "git": "https://github.com/dropbox/sqlalchemy-stubs.git",
+            "ref": "91e8ca9b369d8980459e5b673d40cae9d3d88b92"
         },
         "typed-ast": {
             "hashes": [

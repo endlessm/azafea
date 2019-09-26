@@ -11,6 +11,7 @@ PostgreSQL, where they can be queried and visualized.
 For more details on other parts of the architecture, see:
 
 * [eos-activation-server](https://github.com/endlessm/eos-activation-server/)
+* [Azafea metrics proxy](https://github.com/endlessm/azafea-metrics-proxy/)
 
 Find out more about Azafea and how to use it
 [in our documentation](docs/source/).

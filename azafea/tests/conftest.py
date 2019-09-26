@@ -33,12 +33,14 @@ class MockSqlAlchemySession:
         self.open = True
         self.committed = False
         self.rolled_back = False
+        self.is_active = True
 
     def commit(self):
         self.committed = True
 
     def rollback(self):
         self.rolled_back = True
+        self.is_active = False
 
     def close(self):
         self.open = False
