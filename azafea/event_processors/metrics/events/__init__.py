@@ -233,6 +233,30 @@ class RAMSize(SingularEvent):
         return {'total': payload.get_uint32()}
 
 
+class ShellAppAddedToDesktop(SingularEvent):
+    __tablename__ = 'shell_app_added_to_desktop'
+    __event_uuid__ = '51640a4e-79aa-47ac-b7e2-d3106a06e129'
+    __payload_type__ = 's'
+
+    app_id = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'app_id': payload.get_string()}
+
+
+class ShellAppRemovedFromDesktop(SingularEvent):
+    __tablename__ = 'shell_app_removed_from_desktop'
+    __event_uuid__ = '683b40a7-cac0-4f9a-994c-4b274693a0a0'
+    __payload_type__ = 's'
+
+    app_id = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'app_id': payload.get_string()}
+
+
 class Uptime(SingularEvent):
     __tablename__ = 'uptime'
     __event_uuid__ = '9af2cc74-d6dd-423f-ac44-600a6eee2d96'
