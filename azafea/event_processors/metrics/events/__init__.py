@@ -293,6 +293,19 @@ class Uptime(SingularEvent):
         }
 
 
+class WindowsLicenseTables(SingularEvent):
+    __tablename__ = 'windows_license_tables'
+    __event_uuid__ = 'ef74310f-7c7e-ca05-0e56-3e495973070a'
+    __payload_type__ = 'u'
+
+    # This comes in as a uint32, but PostgreSQL only has signed types so we need a BIGINT (int64)
+    tables = Column(BigInteger, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'tables': payload.get_uint32()}
+
+
 # -- Aggregate events ---------------------------------------------------------
 
 # TODO: Add aggregate event implementations here
