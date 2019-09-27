@@ -11,6 +11,7 @@ from typing import Any, Dict
 
 from gi.repository import GLib
 
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.schema import Column
 from sqlalchemy.types import BigInteger, Unicode
 
@@ -36,6 +37,28 @@ class CacheMetadataIsCorrupt(SingularEvent):
     __tablename__ = 'cache_metadata_is_corrupt'
     __event_uuid__ = 'f0e8a206-3bc2-405e-90d0-ef6fe6dd7edc'
     __payload_type__ = None
+
+
+class CPUInfo(SingularEvent):
+    __tablename__ = 'cpu_info'
+    __event_uuid__ = '4a75488a-0d9a-4c38-8556-148f500edaf0'
+    __payload_type__ = 'a(sqd)'
+
+    info = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        info = []
+
+        for i in range(payload.n_children()):
+            item = payload.get_child_value(i)
+            info.append({
+                'model': item.get_child_value(0).get_string(),
+                'cores': item.get_child_value(1).get_uint16(),
+                'max_frequency': item.get_child_value(2).get_double(),
+            })
+
+        return {'info': info}
 
 
 class ImageVersion(SingularEvent):
