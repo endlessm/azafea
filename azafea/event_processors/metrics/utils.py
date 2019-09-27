@@ -9,7 +9,7 @@
 
 from datetime import datetime, timezone
 from threading import RLock
-from typing import Generator, List
+from typing import Any, Dict, Generator, List
 
 from gi.repository import GLib
 
@@ -71,6 +71,38 @@ class cached_property:  # pragma: no cover
                         raise TypeError(msg) from None
         return val
 # End of the copy-pasted code
+
+
+_VARIANT_GETTERS = {
+    'b': 'get_boolean',
+    'd': 'get_double',
+    'i': 'get_int32',
+    'n': 'get_int16',
+    'q': 'get_uint16',
+    's': 'get_string',
+    't': 'get_uint64',
+    'u': 'get_uint32',
+    'x': 'get_int64',
+}
+
+
+# This assumes value is an `a{sv}` variant, verify before calling this
+def get_asv_dict(value: GLib.Variant) -> Dict[str, Any]:
+    result = {}
+
+    for i in range(value.n_children()):
+        item = value.get_child_value(i)
+        k = item.get_child_value(0).get_string()
+        v = get_variant(item.get_child_value(1))
+        type_string = v.get_type_string()
+
+        try:
+            result[k] = getattr(v, _VARIANT_GETTERS[type_string])()
+
+        except KeyError:
+            raise NotImplementedError(f"Can't unpack {type_string!r} variant in {value}")
+
+    return result
 
 
 # This assumes value is a `ay` variant, verify before calling this
