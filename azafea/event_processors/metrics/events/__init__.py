@@ -13,10 +13,10 @@ from gi.repository import GLib
 
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.schema import Column
-from sqlalchemy.types import BigInteger, Boolean, Integer, LargeBinary, Unicode
+from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, LargeBinary, Unicode
 
 from azafea.vendors import normalize_vendor
-from ..utils import get_bytes
+from ..utils import get_bytes, get_strings
 from ._base import (  # noqa: F401
     SequenceEvent,
     SingularEvent,
@@ -115,6 +115,70 @@ class ImageVersion(SingularEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {'image_id': payload.get_string()}
+
+
+class LaunchedEquivalentExistingFlatpak(SingularEvent):
+    __tablename__ = 'launched_equivalent_existing_flatpak'
+    __event_uuid__ = '00d7bc1e-ec93-4c53-ae78-a6b40450be4a'
+    __payload_type__ = '(sas)'
+
+    replacement_app_id = Column(Unicode, nullable=False)
+    argv = Column(ARRAY(Unicode, dimensions=1), nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'replacement_app_id': payload.get_child_value(0).get_string(),
+            'argv': get_strings(payload.get_child_value(1)),
+        }
+
+
+class LaunchedEquivalentInstallerForFlatpak(SingularEvent):
+    __tablename__ = 'launched_equivalent_installer_for_flatpak'
+    __event_uuid__ = '7de69d43-5f6b-4bef-b5f3-a21295b79185'
+    __payload_type__ = '(sas)'
+
+    replacement_app_id = Column(Unicode, nullable=False)
+    argv = Column(ARRAY(Unicode, dimensions=1), nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'replacement_app_id': payload.get_child_value(0).get_string(),
+            'argv': get_strings(payload.get_child_value(1)),
+        }
+
+
+class LaunchedExistingFlatpak(SingularEvent):
+    __tablename__ = 'launched_existing_flatpak'
+    __event_uuid__ = '192f39dd-79b3-4497-99fa-9d8aea28760c'
+    __payload_type__ = '(sas)'
+
+    replacement_app_id = Column(Unicode, nullable=False)
+    argv = Column(ARRAY(Unicode, dimensions=1), nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'replacement_app_id': payload.get_child_value(0).get_string(),
+            'argv': get_strings(payload.get_child_value(1)),
+        }
+
+
+class LaunchedInstallerForFlatpak(SingularEvent):
+    __tablename__ = 'launched_installer_for_flatpak'
+    __event_uuid__ = 'e98bf6d9-8511-44f9-a1bd-a1d0518934b9'
+    __payload_type__ = '(sas)'
+
+    replacement_app_id = Column(Unicode, nullable=False)
+    argv = Column(ARRAY(Unicode, dimensions=1), nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'replacement_app_id': payload.get_child_value(0).get_string(),
+            'argv': get_strings(payload.get_child_value(1)),
+        }
 
 
 class LiveUsbBooted(SingularEvent):
