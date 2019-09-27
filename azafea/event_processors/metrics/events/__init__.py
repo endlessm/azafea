@@ -26,6 +26,18 @@ from ._base import (  # noqa: F401
 
 # -- Singular events ----------------------------------------------------------
 
+class CacheIsCorrupt(SingularEvent):
+    __tablename__ = 'cache_is_corrupt'
+    __event_uuid__ = 'd84b9a19-9353-73eb-70bf-f91a584abcbd'
+    __payload_type__ = None
+
+
+class CacheMetadataIsCorrupt(SingularEvent):
+    __tablename__ = 'cache_metadata_is_corrupt'
+    __event_uuid__ = 'f0e8a206-3bc2-405e-90d0-ef6fe6dd7edc'
+    __payload_type__ = None
+
+
 class ImageVersion(SingularEvent):
     __tablename__ = 'image_version'
     __event_uuid__ = '6b1c1cfc-bc36-438c-0647-dacd5878f2b3'
