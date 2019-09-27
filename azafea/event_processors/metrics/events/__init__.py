@@ -221,6 +221,18 @@ class OSVersion(SingularEvent):
         }
 
 
+class RAMSize(SingularEvent):
+    __tablename__ = 'ram_size'
+    __event_uuid__ = 'aee94585-07a2-4483-a090-25abda650b12'
+    __payload_type__ = 'u'
+
+    total = Column(BigInteger, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'total': payload.get_uint32()}
+
+
 class Uptime(SingularEvent):
     __tablename__ = 'uptime'
     __event_uuid__ = '9af2cc74-d6dd-423f-ac44-600a6eee2d96'
