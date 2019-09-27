@@ -13,7 +13,7 @@ from gi.repository import GLib
 
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.schema import Column
-from sqlalchemy.types import BigInteger, Integer, LargeBinary, Unicode
+from sqlalchemy.types import BigInteger, Boolean, Integer, LargeBinary, Unicode
 
 from azafea.vendors import normalize_vendor
 from ..utils import get_bytes
@@ -255,6 +255,26 @@ class ShellAppRemovedFromDesktop(SingularEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {'app_id': payload.get_string()}
+
+
+class UpdaterBranchSelected(SingularEvent):
+    __tablename__ = 'updater_branch_selected'
+    __event_uuid__ = '99f48aac-b5a0-426d-95f4-18af7d081c4e'
+    __payload_type__ = '(sssb)'
+
+    hardware_vendor = Column(Unicode, nullable=False)
+    hardware_product = Column(Unicode, nullable=False)
+    ostree_branch = Column(Unicode, nullable=False)
+    on_hold = Column(Boolean, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'hardware_vendor': normalize_vendor(payload.get_child_value(0).get_string()),
+            'hardware_product': payload.get_child_value(1).get_string(),
+            'ostree_branch': payload.get_child_value(2).get_string(),
+            'on_hold': payload.get_child_value(3).get_boolean(),
+        }
 
 
 class Uptime(SingularEvent):
