@@ -321,6 +321,18 @@ class OSVersion(SingularEvent):
         }
 
 
+class ProgramDumpedCore(SingularEvent):
+    __tablename__ = 'program_dumped_core'
+    __event_uuid__ = 'ed57b607-4a56-47f1-b1e4-5dc3e74335ec'
+    __payload_type__ = 'a{sv}'
+
+    payload = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'payload': get_asv_dict(payload)}
+
+
 class RAMSize(SingularEvent):
     __tablename__ = 'ram_size'
     __event_uuid__ = 'aee94585-07a2-4483-a090-25abda650b12'
