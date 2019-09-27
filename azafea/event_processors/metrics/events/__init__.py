@@ -181,6 +181,20 @@ class LaunchedInstallerForFlatpak(SingularEvent):
         }
 
 
+class LinuxPackageOpened(SingularEvent):
+    __tablename__ = 'linux_package_opened'
+    __event_uuid__ = '0bba3340-52e3-41a2-854f-e6ed36621379'
+    __payload_type__ = 'as'
+
+    argv = Column(ARRAY(Unicode, dimensions=1), nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'argv': get_strings(payload),
+        }
+
+
 class LiveUsbBooted(SingularEvent):
     __tablename__ = 'live_usb_booted'
     __event_uuid__ = '56be0b38-e47b-4578-9599-00ff9bda54bb'
