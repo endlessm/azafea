@@ -13,8 +13,10 @@ from gi.repository import GLib
 
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.schema import Column
-from sqlalchemy.types import BigInteger, Unicode
+from sqlalchemy.types import BigInteger, Integer, LargeBinary, Unicode
 
+from azafea.vendors import normalize_vendor
+from ..utils import get_bytes
 from ._base import (  # noqa: F401
     SequenceEvent,
     SingularEvent,
@@ -119,6 +121,58 @@ class LiveUsbBooted(SingularEvent):
     __tablename__ = 'live_usb_booted'
     __event_uuid__ = '56be0b38-e47b-4578-9599-00ff9bda54bb'
     __payload_type__ = None
+
+
+class MonitorConnected(SingularEvent):
+    __tablename__ = 'monitor_connected'
+    __event_uuid__ = 'fa82f422-a685-46e4-91a7-7b7bfb5b289f'
+
+    # The 4th field is the serial number of the monitor, we ignore it as it could identify people
+    __payload_type__ = '(ssssiiay)'
+
+    display_name = Column(Unicode, nullable=False)
+    display_vendor = Column(Unicode, nullable=False)
+    display_product = Column(Unicode, nullable=False)
+    display_width = Column(Integer, nullable=False)
+    display_height = Column(Integer, nullable=False)
+    edid = Column(LargeBinary, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'display_name': payload.get_child_value(0).get_string(),
+            'display_vendor': normalize_vendor(payload.get_child_value(1).get_string()),
+            'display_product': payload.get_child_value(2).get_string(),
+            'display_width': payload.get_child_value(4).get_int32(),
+            'display_height': payload.get_child_value(5).get_int32(),
+            'edid': get_bytes(payload.get_child_value(6)),
+        }
+
+
+class MonitorDisconnected(SingularEvent):
+    __tablename__ = 'monitor_disconnected'
+    __event_uuid__ = '5e8c3f40-22a2-4d5d-82f3-e3bf927b5b74'
+
+    # The 4th field is the serial number of the monitor, we ignore it as it could identify people
+    __payload_type__ = '(ssssiiay)'
+
+    display_name = Column(Unicode, nullable=False)
+    display_vendor = Column(Unicode, nullable=False)
+    display_product = Column(Unicode, nullable=False)
+    display_width = Column(Integer, nullable=False)
+    display_height = Column(Integer, nullable=False)
+    edid = Column(LargeBinary, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'display_name': payload.get_child_value(0).get_string(),
+            'display_vendor': normalize_vendor(payload.get_child_value(1).get_string()),
+            'display_product': payload.get_child_value(2).get_string(),
+            'display_width': payload.get_child_value(4).get_int32(),
+            'display_height': payload.get_child_value(5).get_int32(),
+            'edid': get_bytes(payload.get_child_value(6)),
+        }
 
 
 class OSVersion(SingularEvent):
