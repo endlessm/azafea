@@ -97,6 +97,12 @@ class DiskSpaceSysroot(SingularEvent):
         }
 
 
+class DualBootBooted(SingularEvent):
+    __tablename__ = 'dual_boot_booted'
+    __event_uuid__ = '16cfc671-5525-4a99-9eb9-4f6c074803a9'
+    __payload_type__ = None
+
+
 class ImageVersion(SingularEvent):
     __tablename__ = 'image_version'
     __event_uuid__ = '6b1c1cfc-bc36-438c-0647-dacd5878f2b3'
