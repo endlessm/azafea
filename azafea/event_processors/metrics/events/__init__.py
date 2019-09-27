@@ -371,6 +371,20 @@ class Uptime(SingularEvent):
         }
 
 
+class WindowsAppOpened(SingularEvent):
+    __tablename__ = 'windows_app_opened'
+    __event_uuid__ = 'cf09194a-3090-4782-ab03-87b2f1515aed'
+    __payload_type__ = 'as'
+
+    argv = Column(ARRAY(Unicode, dimensions=1), nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'argv': get_strings(payload),
+        }
+
+
 class WindowsLicenseTables(SingularEvent):
     __tablename__ = 'windows_license_tables'
     __event_uuid__ = 'ef74310f-7c7e-ca05-0e56-3e495973070a'
