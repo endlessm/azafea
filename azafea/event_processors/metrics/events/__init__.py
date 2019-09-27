@@ -16,7 +16,7 @@ from sqlalchemy.schema import Column
 from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, LargeBinary, Unicode
 
 from azafea.vendors import normalize_vendor
-from ..utils import get_bytes, get_strings
+from ..utils import get_asv_dict, get_bytes, get_strings
 from ._base import (  # noqa: F401
     SequenceEvent,
     SingularEvent,
@@ -199,6 +199,28 @@ class LiveUsbBooted(SingularEvent):
     __tablename__ = 'live_usb_booted'
     __event_uuid__ = '56be0b38-e47b-4578-9599-00ff9bda54bb'
     __payload_type__ = None
+
+
+class MissingCodec(SingularEvent):
+    __tablename__ = 'missing_codec'
+    __event_uuid__ = '74ceec37-1f66-486e-99b0-d39b23daa113'
+    __payload_type__ = '(ssssa{sv})'
+
+    gstreamer_version = Column(Unicode, nullable=False)
+    app_name = Column(Unicode, nullable=False)
+    type = Column(Unicode, nullable=False)
+    name = Column(Unicode, nullable=False)
+    extra_info = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'gstreamer_version': payload.get_child_value(0).get_string(),
+            'app_name': payload.get_child_value(1).get_string(),
+            'type': payload.get_child_value(2).get_string(),
+            'name': payload.get_child_value(3).get_string(),
+            'extra_info': get_asv_dict(payload.get_child_value(4)),
+        }
 
 
 class MonitorConnected(SingularEvent):
