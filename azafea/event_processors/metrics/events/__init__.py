@@ -61,6 +61,42 @@ class CPUInfo(SingularEvent):
         return {'info': info}
 
 
+class DiskSpaceExtra(SingularEvent):
+    __tablename__ = 'disk_space_extra'
+    __event_uuid__ = 'da505554-4248-4a38-bb32-84ab58e45a6d'
+    __payload_type__ = '(uuu)'
+
+    total = Column(BigInteger, nullable=False)
+    used = Column(BigInteger, nullable=False)
+    free = Column(BigInteger, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'total': payload.get_child_value(0).get_uint32(),
+            'used': payload.get_child_value(1).get_uint32(),
+            'free': payload.get_child_value(2).get_uint32(),
+        }
+
+
+class DiskSpaceSysroot(SingularEvent):
+    __tablename__ = 'disk_space_sysroot'
+    __event_uuid__ = '5f58024f-3b99-47d3-a17f-1ec876acd97e'
+    __payload_type__ = '(uuu)'
+
+    total = Column(BigInteger, nullable=False)
+    used = Column(BigInteger, nullable=False)
+    free = Column(BigInteger, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'total': payload.get_child_value(0).get_uint32(),
+            'used': payload.get_child_value(1).get_uint32(),
+            'free': payload.get_child_value(2).get_uint32(),
+        }
+
+
 class ImageVersion(SingularEvent):
     __tablename__ = 'image_version'
     __event_uuid__ = '6b1c1cfc-bc36-438c-0647-dacd5878f2b3'
