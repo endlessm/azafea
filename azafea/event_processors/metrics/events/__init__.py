@@ -182,14 +182,14 @@ class OSVersion(SingularEvent):
     # The 3rd field is now obsolete and ignored, so we only parse and store the first 2
     __payload_type__ = '(sss)'
 
-    os_name = Column(Unicode, nullable=False)
-    os_version = Column(Unicode, nullable=False)
+    name = Column(Unicode, nullable=False)
+    version = Column(Unicode, nullable=False)
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
-            'os_name': payload.get_child_value(0).get_string(),
-            'os_version': payload.get_child_value(1).get_string(),
+            'name': payload.get_child_value(0).get_string(),
+            'version': payload.get_child_value(1).get_string(),
         }
 
 
