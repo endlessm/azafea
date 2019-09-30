@@ -11,8 +11,7 @@ from datetime import datetime, timezone
 import json
 
 from azafea import cli
-
-from .. import IntegrationTest
+from azafea.tests.integration import IntegrationTest
 
 
 class TestActivation(IntegrationTest):
