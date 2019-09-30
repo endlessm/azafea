@@ -171,7 +171,9 @@ class TestMetrics(IntegrationTest):
             ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop, ShellAppRemovedFromDesktop,
             UpdaterBranchSelected, Uptime, WindowsAppOpened, WindowsLicenseTables,
         )
-        from azafea.event_processors.metrics.events._base import UnknownSingularEvent
+        from azafea.event_processors.metrics.events._base import (
+            InvalidSingularEvent, UnknownSingularEvent,
+        )
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
@@ -609,6 +611,7 @@ class TestMetrics(IntegrationTest):
             assert windows_tables.occured_at == now - timedelta(seconds=2) + timedelta(seconds=27)
             assert windows_tables.tables == 0
 
+            assert dbsession.query(InvalidSingularEvent).count() == 0
             assert dbsession.query(UnknownSingularEvent).count() == 0
 
     def test_no_payload_singular_event_with_payload(self, capfd):
