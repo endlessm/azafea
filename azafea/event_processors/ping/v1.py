@@ -94,7 +94,7 @@ class Ping(Base):
             return None
 
         if len(country) != 3:
-            raise ValueError('country is too short')
+            raise ValueError(f'country has wrong length: {country}')
 
         return country
 
