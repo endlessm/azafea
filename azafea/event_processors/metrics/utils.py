@@ -9,7 +9,7 @@
 
 from datetime import datetime, timezone
 from threading import RLock
-from typing import Generator
+from typing import Any, Dict, Generator, List
 
 from gi.repository import GLib
 
@@ -73,6 +73,38 @@ class cached_property:  # pragma: no cover
 # End of the copy-pasted code
 
 
+_VARIANT_GETTERS = {
+    'b': 'get_boolean',
+    'd': 'get_double',
+    'i': 'get_int32',
+    'n': 'get_int16',
+    'q': 'get_uint16',
+    's': 'get_string',
+    't': 'get_uint64',
+    'u': 'get_uint32',
+    'x': 'get_int64',
+}
+
+
+# This assumes value is an `a{sv}` variant, verify before calling this
+def get_asv_dict(value: GLib.Variant) -> Dict[str, Any]:
+    result = {}
+
+    for i in range(value.n_children()):
+        item = value.get_child_value(i)
+        k = item.get_child_value(0).get_string()
+        v = get_variant(item.get_child_value(1))
+        type_string = v.get_type_string()
+
+        try:
+            result[k] = getattr(v, _VARIANT_GETTERS[type_string])()
+
+        except KeyError:
+            raise NotImplementedError(f"Can't unpack {type_string!r} variant in {value}")
+
+    return result
+
+
 # This assumes value is a `ay` variant, verify before calling this
 def get_bytes(value: GLib.Variant) -> bytes:
     return bytes(v.get_byte() for v in get_child_values(value))
@@ -81,6 +113,11 @@ def get_bytes(value: GLib.Variant) -> bytes:
 # This assumes value is an array/tuple variant, verify before calling this
 def get_child_values(value: GLib.Variant) -> Generator[GLib.Variant, None, None]:
     return (value.get_child_value(i) for i in range(value.n_children()))
+
+
+# This assumes value is an `as` variant, verify before calling this
+def get_strings(value: GLib.Variant) -> List[str]:
+    return [v.get_string() for v in get_child_values(value)]
 
 
 def get_variant(value: GLib.Variant) -> GLib.Variant:
