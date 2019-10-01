@@ -57,7 +57,7 @@ class RequestBuilder:
                                               False)
 
         if not variant.is_normal_form():
-            raise ValueError('Metric request is not in the expected format:'
+            raise ValueError('Metric request is not in the expected format: '
                              f'{cls.__format_string__}')
 
         return cls(request_body, variant, received_at)

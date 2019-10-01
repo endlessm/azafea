@@ -24,7 +24,7 @@ def pytest_collection_modifyitems(items):
         if markers:
             continue
 
-        if item.nodeid.startswith('azafea/tests/integration/'):
+        if '/tests/integration/' in item.nodeid:
             item.add_marker(pytest.mark.integration)
 
 

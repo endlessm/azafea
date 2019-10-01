@@ -1,4 +1,4 @@
-from typing import Optional, Text
+from typing import Any, Optional, Text
 
 
 class Bytes:
@@ -11,6 +11,8 @@ class Bytes:
 class Variant:
     @classmethod
     def new_from_bytes(cls, type: VariantType, bytes: Bytes, trusted: bool) -> Variant: ...
+
+    def __new__(cls, format_string: str, value: Any) -> 'Variant': ...
 
     def get_boolean(self) -> bool: ...
     def get_byte(self) -> int: ...

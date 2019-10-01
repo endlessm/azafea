@@ -14,8 +14,7 @@ from uuid import UUID
 from gi.repository import GLib
 
 from azafea import cli
-
-from .. import IntegrationTest
+from azafea.tests.integration import IntegrationTest
 
 
 class TestMetrics(IntegrationTest):
