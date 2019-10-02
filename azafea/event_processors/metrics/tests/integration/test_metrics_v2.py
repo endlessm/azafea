@@ -845,8 +845,8 @@ class TestMetrics(IntegrationTest):
 
         capture = capfd.readouterr()
         assert 'An error occured while processing the event:' in capture.err
-        assert ('ValueError: Metric event 9af2cc74-d6dd-423f-ac44-600a6eee2d96 needs a (xx) '
-                "payload, but got 'Up!' (s)") in capture.err
+        assert ('Metric event 9af2cc74-d6dd-423f-ac44-600a6eee2d96 needs a (xx) payload, '
+                "but got 'Up!' (s)") in capture.err
 
     def test_unknown_aggregate_events(self):
         from azafea.event_processors.metrics.events._base import UnknownAggregateEvent
@@ -1205,8 +1205,8 @@ class TestMetrics(IntegrationTest):
 
         capture = capfd.readouterr()
         assert 'An error occured while processing the sequence:' in capture.err
-        assert ('ValueError: Metric event b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0 needs a s '
-                "payload, but got uint32 42 (u)") in capture.err
+        assert ('Metric event b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0 needs a s payload, '
+                "but got uint32 42 (u)") in capture.err
 
     def test_ignored_events(self):
         from azafea.event_processors.metrics.events._base import (

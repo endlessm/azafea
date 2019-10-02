@@ -54,6 +54,14 @@ IGNORED_EVENTS: Set[str] = {
 }
 
 
+class EmptyPayloadError(Exception):
+    pass
+
+
+class WrongPayloadError(Exception):
+    pass
+
+
 class MetricMeta(DeclarativeMeta):
     def __new__(mcl: Type[type], name: str, bases: Tuple[type, ...], attrs: Dict[str, Any],
                 **kwargs: Any) -> Type['MetricEvent']:
@@ -113,15 +121,16 @@ class MetricEvent(Base, metaclass=MetricMeta):
             return {}
 
         if payload is None:
-            raise ValueError(f'Metric event {self.__event_uuid__} needs a {self.__payload_type__} '
-                             'payload, but got none')
+            raise EmptyPayloadError(f'Metric event {self.__event_uuid__} needs a '
+                                    f'{self.__payload_type__} payload, but got none')
 
         payload = get_variant(payload)
         payload_type = payload.get_type_string()
 
         if payload_type != self.__payload_type__:
-            raise ValueError(f'Metric event {self.__event_uuid__} needs a {self.__payload_type__} '
-                             f'payload, but got {payload} ({payload_type})')
+            raise WrongPayloadError(f'Metric event {self.__event_uuid__} needs a '
+                                    f'{self.__payload_type__} payload, but got '
+                                    f'{payload} ({payload_type})')
 
         return self._get_fields_from_payload(payload)
 
