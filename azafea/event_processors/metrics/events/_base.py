@@ -34,6 +34,12 @@ AGGREGATE_EVENT_MODELS: Dict[str, Type['AggregateEvent']] = {}
 SEQUENCE_EVENT_MODELS: Dict[str, Type['SequenceEvent']] = {}
 
 IGNORED_EVENTS: Set[str] = {
+    '005096c4-9444-48c6-844b-6cb693c15235',
+    '566adb36-7701-4067-a971-a398312c2874',
+    '91de63ea-c7b7-412c-93f3-6f3d9b2f864c',
+    'ab839fd2-a927-456c-8c18-f1136722666b',
+    'ae391c82-1937-4ae5-8539-8d1aceed037d',
+    'ce179909-dacb-4b7e-83a5-690480bf21eb',
 }
 
 

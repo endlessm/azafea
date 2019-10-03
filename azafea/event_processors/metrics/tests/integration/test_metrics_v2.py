@@ -1207,3 +1207,77 @@ class TestMetrics(IntegrationTest):
         assert 'An error occured while processing the sequence:' in capture.err
         assert ('ValueError: Metric event b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0 needs a s '
                 "payload, but got uint32 42 (u)") in capture.err
+
+    def test_ignored_events(self):
+        from azafea.event_processors.metrics.events._base import (
+            UnknownSequence, UnknownSingularEvent,
+        )
+        from azafea.event_processors.metrics.request import Request
+
+        # Create the table
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.ensure_tables(Request)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        user_id = 2000
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                         # network send number
+                2000000000,                                # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),         # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                          # singular events
+                    (
+                        user_id,
+                        UUID('566adb36-7701-4067-a971-a398312c2874').bytes,
+                        1000000000,                    # event relative timestamp (1 sec)
+                        None,                          # empty payload
+                    ),
+                ],
+                [                                          # aggregate events
+                ],
+                [                                          # sequence events
+                    (
+                        user_id,
+                        UUID('ab839fd2-a927-456c-8c18-f1136722666b').bytes,
+                        [                                  # events in the sequence
+                            (
+                                3000000000,                # event relative timestamp (3 secs)
+                                GLib.Variant('u', 42),
+                            ),
+                            (
+                                120000000000,              # event relative timestamp (2 mins)
+                                None,
+                            ),
+                        ]
+                    ),
+                ]
+            )
+        )
+
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_ignored_events', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).one()
+            assert request.send_number == 0
+            assert request.machine_id == machine_id
+
+            assert dbsession.query(UnknownSingularEvent).count() == 0
+            assert dbsession.query(UnknownSequence).count() == 0
