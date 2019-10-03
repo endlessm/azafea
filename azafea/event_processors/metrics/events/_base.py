@@ -52,6 +52,8 @@ IGNORED_EVENTS: Set[str] = {
     'ce179909-dacb-4b7e-83a5-690480bf21eb',
     'e6541049-9462-4db5-96df-1977f3051578',
 }
+IGNORED_EMPTY_PAYLOAD_ERRORS: Set[str] = {
+}
 
 
 class EmptyPayloadError(Exception):
@@ -228,18 +230,25 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
                                     event_relative_timestamp)
 
     try:
-        event_model = SINGULAR_EVENT_MODELS[event_id]
+        try:
+            event_model = SINGULAR_EVENT_MODELS[event_id]
 
-        # Mypy complains here, even though this should be fine:
-        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        event = event_model(request=request, user_id=user_id, occured_at=event_date,  # type: ignore
-                            payload=payload)
+            # Mypy complains here, even though this should be fine:
+            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+            event = event_model(request=request, user_id=user_id,  # type: ignore
+                                occured_at=event_date, payload=payload)
 
-    except KeyError:
-        # Mypy complains here, even though this should be fine:
-        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        event = UnknownSingularEvent(request=request, user_id=user_id,  # type: ignore
-                                     occured_at=event_date, event_id=event_id, payload=payload)
+        except KeyError:
+            # Mypy complains here, even though this should be fine:
+            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+            event = UnknownSingularEvent(request=request, user_id=user_id,  # type: ignore
+                                         occured_at=event_date, event_id=event_id, payload=payload)
+
+        except EmptyPayloadError:
+            if event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
+                return None
+
+            raise
 
     except Exception as e:
         log.exception('An error occured while processing the event:')
