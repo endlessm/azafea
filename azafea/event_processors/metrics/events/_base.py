@@ -8,7 +8,7 @@
 
 
 import logging
-from typing import Any, Dict, Optional, Tuple, Type, Union, cast
+from typing import Any, Dict, Optional, Set, Tuple, Type, Union, cast
 from uuid import UUID
 
 from gi.repository import GLib
@@ -32,6 +32,9 @@ log = logging.getLogger(__name__)
 SINGULAR_EVENT_MODELS: Dict[str, Type['SingularEvent']] = {}
 AGGREGATE_EVENT_MODELS: Dict[str, Type['AggregateEvent']] = {}
 SEQUENCE_EVENT_MODELS: Dict[str, Type['SequenceEvent']] = {}
+
+IGNORED_EVENTS: Set[str] = {
+}
 
 
 class MetricMeta(DeclarativeMeta):
@@ -185,9 +188,13 @@ class UnknownSequence(UnknownEvent):
 
 
 def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession: DbSession
-                       ) -> SingularEvent:
-    user_id = event_variant.get_child_value(0).get_uint32()
+                       ) -> Optional[SingularEvent]:
     event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(1))))
+
+    if event_id in IGNORED_EVENTS:
+        return None
+
+    user_id = event_variant.get_child_value(0).get_uint32()
     event_relative_timestamp = event_variant.get_child_value(2).get_int64()
     payload = event_variant.get_child_value(3)
 
@@ -223,9 +230,13 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
 
 
 def new_aggregate_event(request: Request, event_variant: GLib.Variant, dbsession: DbSession
-                        ) -> AggregateEvent:
-    user_id = event_variant.get_child_value(0).get_uint32()
+                        ) -> Optional[AggregateEvent]:
     event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(1))))
+
+    if event_id in IGNORED_EVENTS:
+        return None
+
+    user_id = event_variant.get_child_value(0).get_uint32()
     count = event_variant.get_child_value(2).get_int64()
     event_relative_timestamp = event_variant.get_child_value(3).get_int64()
     payload = event_variant.get_child_value(4)
@@ -263,9 +274,13 @@ def new_aggregate_event(request: Request, event_variant: GLib.Variant, dbsession
 
 
 def new_sequence_event(request: Request, sequence_variant: GLib.Variant, dbsession: DbSession
-                       ) -> Union[SequenceEvent, InvalidSequence, UnknownSequence]:
-    user_id = sequence_variant.get_child_value(0).get_uint32()
+                       ) -> Optional[Union[SequenceEvent, InvalidSequence, UnknownSequence]]:
     event_id = str(UUID(bytes=get_bytes(sequence_variant.get_child_value(1))))
+
+    if event_id in IGNORED_EVENTS:
+        return None
+
+    user_id = sequence_variant.get_child_value(0).get_uint32()
     events = sequence_variant.get_child_value(2)
     num_events = events.n_children()
 

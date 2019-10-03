@@ -41,12 +41,18 @@ def process(dbsession: DbSession, record: bytes) -> None:
 
     for event_variant in request_builder.singulars:
         singular_event = new_singular_event(request, event_variant, dbsession)
-        log.debug('Inserting singular metric:\n%s', singular_event)
+
+        if singular_event is not None:
+            log.debug('Inserting singular metric:\n%s', singular_event)
 
     for event_variant in request_builder.aggregates:
         aggregate_event = new_aggregate_event(request, event_variant, dbsession)
-        log.debug('Inserting aggregate metric:\n%s', aggregate_event)
+
+        if aggregate_event is not None:
+            log.debug('Inserting aggregate metric:\n%s', aggregate_event)
 
     for event_variant in request_builder.sequences:
         sequence_event = new_sequence_event(request, event_variant, dbsession)
-        log.debug('Inserting sequence event:\n%s', sequence_event)
+
+        if sequence_event is not None:
+            log.debug('Inserting sequence event:\n%s', sequence_event)
