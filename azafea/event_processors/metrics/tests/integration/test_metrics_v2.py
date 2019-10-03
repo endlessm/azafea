@@ -767,7 +767,7 @@ class TestMetrics(IntegrationTest):
         now = datetime.now(tz=timezone.utc)
         machine_id = 'ffffffffffffffffffffffffffffffff'
         user_id = 2000
-        event_id = UUID('9af2cc74-d6dd-423f-ac44-600a6eee2d96')
+        event_id = UUID('aee94585-07a2-4483-a090-25abda650b12')
         request = GLib.Variant(
             '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
             (
@@ -828,7 +828,7 @@ class TestMetrics(IntegrationTest):
             assert event.event_id == event_id
             assert event.payload_data == b''
             assert event.error == (
-                'Metric event 9af2cc74-d6dd-423f-ac44-600a6eee2d96 needs a (xx) payload, '
+                'Metric event aee94585-07a2-4483-a090-25abda650b12 needs a u payload, '
                 'but got none')
 
             event = events[1]
@@ -840,12 +840,14 @@ class TestMetrics(IntegrationTest):
                                                GLib.Bytes.new(event.payload_data),
                                                False).unpack() == 'Up!'
             assert event.error == (
-                'Metric event 9af2cc74-d6dd-423f-ac44-600a6eee2d96 needs a (xx) payload, '
+                'Metric event aee94585-07a2-4483-a090-25abda650b12 needs a u payload, '
                 "but got 'Up!' (s)")
 
         capture = capfd.readouterr()
         assert 'An error occured while processing the event:' in capture.err
-        assert ('Metric event 9af2cc74-d6dd-423f-ac44-600a6eee2d96 needs a (xx) payload, '
+        assert ('Metric event aee94585-07a2-4483-a090-25abda650b12 needs a u payload, '
+                'but got none') in capture.err
+        assert ('Metric event aee94585-07a2-4483-a090-25abda650b12 needs a u payload, '
                 "but got 'Up!' (s)") in capture.err
 
     def test_unknown_aggregate_events(self):
@@ -1280,3 +1282,60 @@ class TestMetrics(IntegrationTest):
 
             assert dbsession.query(UnknownSingularEvent).count() == 0
             assert dbsession.query(UnknownSequence).count() == 0
+
+    def test_ignored_empty_payload_errors(self):
+        from azafea.event_processors.metrics.events import Uptime
+        from azafea.event_processors.metrics.events._base import InvalidSingularEvent
+        from azafea.event_processors.metrics.request import Request
+
+        # Create the table
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.ensure_tables(Request)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        user_id = 2000
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                         # network send number
+                2000000000,                                # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),         # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                          # singular events
+                    (
+                        user_id,
+                        UUID('9af2cc74-d6dd-423f-ac44-600a6eee2d96').bytes,
+                        1000000000,                    # event relative timestamp (1 sec)
+                        None,                          # empty payload
+                    ),
+                ],
+                [],                                        # aggregate events
+                []                                         # sequence events
+            )
+        )
+
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_ignored_empty_payload_errors', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).one()
+            assert request.send_number == 0
+            assert request.machine_id == machine_id
+
+            assert dbsession.query(InvalidSingularEvent).count() == 0
+            assert dbsession.query(Uptime).count() == 0

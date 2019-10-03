@@ -53,6 +53,7 @@ IGNORED_EVENTS: Set[str] = {
     'e6541049-9462-4db5-96df-1977f3051578',
 }
 IGNORED_EMPTY_PAYLOAD_ERRORS: Set[str] = {
+    '9af2cc74-d6dd-423f-ac44-600a6eee2d96',
 }
 
 
