@@ -292,7 +292,7 @@ class TestMetrics(IntegrationTest):
                         UUID('fa82f422-a685-46e4-91a7-7b7bfb5b289f').bytes,
                         15000000000,                   # event relative timestamp (15 secs)
                         GLib.Variant('(ssssiiay)', (
-                            'Samsung Electric Company 22"',
+                            'Samsung Electric Company 22',
                             'Samsung Electronics Co.,Ltd',
                             'S22E450',
                             'serial number ignored',
@@ -306,7 +306,7 @@ class TestMetrics(IntegrationTest):
                         UUID('5e8c3f40-22a2-4d5d-82f3-e3bf927b5b74').bytes,
                         14000000000,                   # event relative timestamp (14 secs)
                         GLib.Variant('(ssssiiay)', (
-                            'Samsung Electric Company 22"',
+                            'Samsung Electric Company 22',
                             'Samsung Electronics Co.,Ltd',
                             'S22E450',
                             'serial number ignored',
@@ -382,7 +382,7 @@ class TestMetrics(IntegrationTest):
                         user_id,
                         UUID('cf09194a-3090-4782-ab03-87b2f1515aed').bytes,
                         26000000000,                   # event relative timestamp (26 secs)
-                        GLib.Variant('as', ('photoshop.exe', ))
+                        GLib.Variant('as', ['photoshop.exe'])
                     ),
                     (
                         user_id,
@@ -520,7 +520,7 @@ class TestMetrics(IntegrationTest):
             assert monitor.request_id == request.id
             assert monitor.user_id == user_id
             assert monitor.occured_at == now - timedelta(seconds=2) + timedelta(seconds=15)
-            assert monitor.display_name == 'Samsung Electric Company 22"'
+            assert monitor.display_name == 'Samsung Electric Company 22'
             assert monitor.display_vendor == 'Samsung'
             assert monitor.display_product == 'S22E450'
             assert monitor.display_width == 500
@@ -531,7 +531,7 @@ class TestMetrics(IntegrationTest):
             assert monitor.request_id == request.id
             assert monitor.user_id == user_id
             assert monitor.occured_at == now - timedelta(seconds=2) + timedelta(seconds=14)
-            assert monitor.display_name == 'Samsung Electric Company 22"'
+            assert monitor.display_name == 'Samsung Electric Company 22'
             assert monitor.display_vendor == 'Samsung'
             assert monitor.display_product == 'S22E450'
             assert monitor.display_width == 500
@@ -1237,8 +1237,7 @@ class TestMetrics(IntegrationTest):
                         None,                          # empty payload
                     ),
                 ],
-                [                                          # aggregate events
-                ],
+                [],                                        # aggregate events
                 [                                          # sequence events
                     (
                         user_id,
