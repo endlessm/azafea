@@ -8,7 +8,7 @@
 
 
 import logging
-from typing import Any, Dict, Optional, Tuple, Type, Union, cast
+from typing import Any, Dict, Optional, Set, Tuple, Type, Union, cast
 from uuid import UUID
 
 from gi.repository import GLib
@@ -32,6 +32,37 @@ log = logging.getLogger(__name__)
 SINGULAR_EVENT_MODELS: Dict[str, Type['SingularEvent']] = {}
 AGGREGATE_EVENT_MODELS: Dict[str, Type['AggregateEvent']] = {}
 SEQUENCE_EVENT_MODELS: Dict[str, Type['SequenceEvent']] = {}
+
+IGNORED_EVENTS: Set[str] = {
+    '005096c4-9444-48c6-844b-6cb693c15235',
+    '337fa66d-5163-46ae-ab20-dc605b5d7307',
+    '3a4eff55-5d01-48c8-a827-fca5732fd767',
+    '566adb36-7701-4067-a971-a398312c2874',
+    '6dad6c44-f52f-4bca-8b4c-dc203f175b97',
+    '7be59566-2b23-408a-acf6-91490fc1df1c',
+    '8f70276e-3f78-45b2-99f8-94db231d42dd',
+    '91de63ea-c7b7-412c-93f3-6f3d9b2f864c',
+    '9c33a734-7ed8-4348-9e39-3c27f4dc2e62',
+    '9f06d0f7-677e-43ca-b732-ccbb40847a31',
+    'ab839fd2-a927-456c-8c18-f1136722666b',
+    'ae391c82-1937-4ae5-8539-8d1aceed037d',
+    'af3e89b2-8293-4703-809c-8e0231c128cb',
+    'bef3d12c-df9b-43cd-a67c-31abc5361f03',
+    'c02a5764-7f81-48c7-aea4-1413fd4e829c',
+    'ce179909-dacb-4b7e-83a5-690480bf21eb',
+    'e6541049-9462-4db5-96df-1977f3051578',
+}
+IGNORED_EMPTY_PAYLOAD_ERRORS: Set[str] = {
+    '9af2cc74-d6dd-423f-ac44-600a6eee2d96',
+}
+
+
+class EmptyPayloadError(Exception):
+    pass
+
+
+class WrongPayloadError(Exception):
+    pass
 
 
 class MetricMeta(DeclarativeMeta):
@@ -93,15 +124,16 @@ class MetricEvent(Base, metaclass=MetricMeta):
             return {}
 
         if payload is None:
-            raise ValueError(f'Metric event {self.__event_uuid__} needs a {self.__payload_type__} '
-                             'payload, but got none')
+            raise EmptyPayloadError(f'Metric event {self.__event_uuid__} needs a '
+                                    f'{self.__payload_type__} payload, but got none')
 
         payload = get_variant(payload)
         payload_type = payload.get_type_string()
 
         if payload_type != self.__payload_type__:
-            raise ValueError(f'Metric event {self.__event_uuid__} needs a {self.__payload_type__} '
-                             f'payload, but got {payload} ({payload_type})')
+            raise WrongPayloadError(f'Metric event {self.__event_uuid__} needs a '
+                                    f'{self.__payload_type__} payload, but got '
+                                    f'{payload} ({payload_type})')
 
         return self._get_fields_from_payload(payload)
 
@@ -185,9 +217,13 @@ class UnknownSequence(UnknownEvent):
 
 
 def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession: DbSession
-                       ) -> SingularEvent:
-    user_id = event_variant.get_child_value(0).get_uint32()
+                       ) -> Optional[SingularEvent]:
     event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(1))))
+
+    if event_id in IGNORED_EVENTS:
+        return None
+
+    user_id = event_variant.get_child_value(0).get_uint32()
     event_relative_timestamp = event_variant.get_child_value(2).get_int64()
     payload = event_variant.get_child_value(3)
 
@@ -195,18 +231,25 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
                                     event_relative_timestamp)
 
     try:
-        event_model = SINGULAR_EVENT_MODELS[event_id]
+        try:
+            event_model = SINGULAR_EVENT_MODELS[event_id]
 
-        # Mypy complains here, even though this should be fine:
-        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        event = event_model(request=request, user_id=user_id, occured_at=event_date,  # type: ignore
-                            payload=payload)
+            # Mypy complains here, even though this should be fine:
+            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+            event = event_model(request=request, user_id=user_id,  # type: ignore
+                                occured_at=event_date, payload=payload)
 
-    except KeyError:
-        # Mypy complains here, even though this should be fine:
-        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        event = UnknownSingularEvent(request=request, user_id=user_id,  # type: ignore
-                                     occured_at=event_date, event_id=event_id, payload=payload)
+        except KeyError:
+            # Mypy complains here, even though this should be fine:
+            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+            event = UnknownSingularEvent(request=request, user_id=user_id,  # type: ignore
+                                         occured_at=event_date, event_id=event_id, payload=payload)
+
+        except EmptyPayloadError:
+            if event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
+                return None
+
+            raise
 
     except Exception as e:
         log.exception('An error occured while processing the event:')
@@ -223,9 +266,13 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
 
 
 def new_aggregate_event(request: Request, event_variant: GLib.Variant, dbsession: DbSession
-                        ) -> AggregateEvent:
-    user_id = event_variant.get_child_value(0).get_uint32()
+                        ) -> Optional[AggregateEvent]:
     event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(1))))
+
+    if event_id in IGNORED_EVENTS:
+        return None
+
+    user_id = event_variant.get_child_value(0).get_uint32()
     count = event_variant.get_child_value(2).get_int64()
     event_relative_timestamp = event_variant.get_child_value(3).get_int64()
     payload = event_variant.get_child_value(4)
@@ -263,9 +310,13 @@ def new_aggregate_event(request: Request, event_variant: GLib.Variant, dbsession
 
 
 def new_sequence_event(request: Request, sequence_variant: GLib.Variant, dbsession: DbSession
-                       ) -> Union[SequenceEvent, InvalidSequence, UnknownSequence]:
-    user_id = sequence_variant.get_child_value(0).get_uint32()
+                       ) -> Optional[Union[SequenceEvent, InvalidSequence, UnknownSequence]]:
     event_id = str(UUID(bytes=get_bytes(sequence_variant.get_child_value(1))))
+
+    if event_id in IGNORED_EVENTS:
+        return None
+
+    user_id = sequence_variant.get_child_value(0).get_uint32()
     events = sequence_variant.get_child_value(2)
     num_events = events.n_children()
 

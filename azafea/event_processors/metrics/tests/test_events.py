@@ -103,7 +103,7 @@ def test_new_event_no_payload_but_payload_given(capfd):
 
 
 def test_new_event_no_payload_given():
-    from azafea.event_processors.metrics.events._base import SingularEvent
+    from azafea.event_processors.metrics.events._base import EmptyPayloadError, SingularEvent
 
     class TestEventNoPayloadGiven(SingularEvent):
         __tablename__ = 'test_singular_no_payload_given'
@@ -112,7 +112,7 @@ def test_new_event_no_payload_given():
 
     payload = GLib.Variant('mv', None)
 
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(EmptyPayloadError) as excinfo:
         TestEventNoPayloadGiven(payload=payload)
 
     assert (f'Metric event 00000000-0000-0000-0000-000000000000 needs a i payload, '
@@ -120,7 +120,7 @@ def test_new_event_no_payload_given():
 
 
 def test_new_event_wrong_payload_given():
-    from azafea.event_processors.metrics.events._base import SingularEvent
+    from azafea.event_processors.metrics.events._base import SingularEvent, WrongPayloadError
 
     class TestEventWrongPayloadGiven(SingularEvent):
         __tablename__ = 'test_singular_wrong_payload_given'
@@ -129,7 +129,7 @@ def test_new_event_wrong_payload_given():
 
     payload = GLib.Variant('mv', GLib.Variant('s', 'foo'))
 
-    with pytest.raises(ValueError) as excinfo:
+    with pytest.raises(WrongPayloadError) as excinfo:
         TestEventWrongPayloadGiven(payload=payload)
 
     assert (f'Metric event 00000000-0000-0000-0000-000000000000 needs a i payload, '
