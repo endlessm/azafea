@@ -167,7 +167,7 @@ class TestMetrics(IntegrationTest):
             DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, ImageVersion,
             LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
-            Location, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
+            Location, LocationLabel, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
             NetworkStatusChanged, OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
             ShellAppRemovedFromDesktop, UpdaterBranchSelected, Uptime, WindowsAppOpened,
             WindowsLicenseTables,
@@ -323,6 +323,13 @@ class TestMetrics(IntegrationTest):
                         UUID('abe7af92-6704-4d34-93cf-8f1b46eb09b8').bytes,
                         33000000000,                   # event relative timestamp (33 secs)
                         GLib.Variant('(ddbdd)', (1.0, 2.1, True, 3.2, 4.3))
+                    ),
+                    (
+                        user_id,
+                        UUID('eb0302d8-62e7-274b-365f-cd4e59103983').bytes,
+                        35000000000,                   # event relative timestamp (35 secs)
+                        GLib.Variant('a{ss}',
+                                     {'city': 'City', 'state': 'State', 'facility': 'Facility'})
                     ),
                     (
                         user_id,
@@ -613,6 +620,12 @@ class TestMetrics(IntegrationTest):
             assert location.longitude == 6.5
             assert location.altitude is None
             assert location.accuracy == 8.7
+
+            location = dbsession.query(LocationLabel).one()
+            assert location.request_id == request.id
+            assert location.user_id == user_id
+            assert location.occured_at == now - timedelta(seconds=2) + timedelta(seconds=35)
+            assert location.info == {'facility': 'Facility', 'city': 'City', 'state': 'State'}
 
             codec = dbsession.query(MissingCodec).one()
             assert codec.request_id == request.id

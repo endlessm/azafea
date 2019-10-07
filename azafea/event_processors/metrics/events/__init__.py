@@ -283,6 +283,18 @@ class Location(SingularEvent):
         }
 
 
+class LocationLabel(SingularEvent):
+    __tablename__ = 'location_event'
+    __event_uuid__ = 'eb0302d8-62e7-274b-365f-cd4e59103983'
+    __payload_type__ = 'a{ss}'
+
+    info = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'info': get_asv_dict(payload)}
+
+
 class MissingCodec(SingularEvent):
     __tablename__ = 'missing_codec'
     __event_uuid__ = '74ceec37-1f66-486e-99b0-d39b23daa113'
