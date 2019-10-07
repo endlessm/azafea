@@ -75,6 +75,42 @@ class CPUInfo(SingularEvent):
         return {'info': info}
 
 
+class DiscoveryFeedClicked(SingularEvent):
+    __tablename__ = 'discovery_feed_clicked'
+    __event_uuid__ = 'f2f31a64-2193-42b5-ae39-ca0b4d1f0691'
+    __payload_type__ = 'a{ss}'
+
+    info = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'info': get_asv_dict(payload)}
+
+
+class DiscoveryFeedClosed(SingularEvent):
+    __tablename__ = 'discovery_feed_closed'
+    __event_uuid__ = 'e7932cbd-7c20-49eb-94e9-4bf075e0c0c0'
+    __payload_type__ = 'a{ss}'
+
+    info = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'info': get_asv_dict(payload)}
+
+
+class DiscoveryFeedOpened(SingularEvent):
+    __tablename__ = 'discovery_feed_opened'
+    __event_uuid__ = 'd54cbd8c-c977-4dac-ae72-535ad5633877'
+    __payload_type__ = 'a{ss}'
+
+    info = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'info': get_asv_dict(payload)}
+
+
 class DiskSpaceExtra(SingularEvent):
     __tablename__ = 'disk_space_extra'
     __event_uuid__ = 'da505554-4248-4a38-bb32-84ab58e45a6d'

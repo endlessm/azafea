@@ -163,13 +163,13 @@ class TestMetrics(IntegrationTest):
     def test_singular_events(self):
         from azafea.event_processors.metrics.events import (
             CacheIsCorrupt, CacheMetadataIsCorrupt, ControlCenterPanelOpened, CPUInfo,
-            DiskSpaceExtra, DiskSpaceSysroot, DualBootBooted, ImageVersion,
-            LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
-            LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
-            MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId, NetworkStatusChanged,
-            OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
-            ShellAppRemovedFromDesktop, UpdaterBranchSelected, Uptime, WindowsAppOpened,
-            WindowsLicenseTables,
+            DiscoveryFeedClicked, DiscoveryFeedClosed, DiscoveryFeedOpened, DiskSpaceExtra,
+            DiskSpaceSysroot, DualBootBooted, ImageVersion, LaunchedEquivalentExistingFlatpak,
+            LaunchedEquivalentInstallerForFlatpak, LaunchedExistingFlatpak,
+            LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted, MissingCodec,
+            MonitorConnected, MonitorDisconnected, NetworkId, NetworkStatusChanged, OSVersion,
+            ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop, ShellAppRemovedFromDesktop,
+            UpdaterBranchSelected, Uptime, WindowsAppOpened, WindowsLicenseTables,
         )
         from azafea.event_processors.metrics.events._base import (
             InvalidSingularEvent, UnknownSingularEvent,
@@ -217,6 +217,33 @@ class TestMetrics(IntegrationTest):
                         GLib.Variant('a(sqd)', [
                             ('Intel(R) Core(TM) i7-5600U CPU @ 2.60GHz', 4, 2600.0),
                         ])
+                    ),
+                    (
+                        user_id,
+                        UUID('f2f31a64-2193-42b5-ae39-ca0b4d1f0691').bytes,
+                        29000000000,                   # event relative timestamp (29 secs)
+                        GLib.Variant('a{ss}', {
+                            'app_id': 'org.gnome.Totem',
+                            'content_type': 'knowledge_video',
+                        })
+                    ),
+                    (
+                        user_id,
+                        UUID('e7932cbd-7c20-49eb-94e9-4bf075e0c0c0').bytes,
+                        30000000000,                   # event relative timestamp (30 secs)
+                        GLib.Variant('a{ss}', {
+                            'closed_by': 'buttonclose',
+                            'time_open': '123',
+                        })
+                    ),
+                    (
+                        user_id,
+                        UUID('d54cbd8c-c977-4dac-ae72-535ad5633877').bytes,
+                        31000000000,                   # event relative timestamp (31 secs)
+                        GLib.Variant('a{ss}', {
+                            'opened_by': 'shell_button',
+                            'language': 'fr_FR.UTF-8',
+                        })
                     ),
                     (
                         user_id,
@@ -448,6 +475,33 @@ class TestMetrics(IntegrationTest):
                 'cores': 4,
                 'max_frequency': 2600.0,
             }]
+
+            feed = dbsession.query(DiscoveryFeedClicked).one()
+            assert feed.request_id == request.id
+            assert feed.user_id == user_id
+            assert feed.occured_at == now - timedelta(seconds=2) + timedelta(seconds=29)
+            assert feed.info == {
+                'app_id': 'org.gnome.Totem',
+                'content_type': 'knowledge_video',
+            }
+
+            feed = dbsession.query(DiscoveryFeedClosed).one()
+            assert feed.request_id == request.id
+            assert feed.user_id == user_id
+            assert feed.occured_at == now - timedelta(seconds=2) + timedelta(seconds=30)
+            assert feed.info == {
+                'closed_by': 'buttonclose',
+                'time_open': '123',
+            }
+
+            feed = dbsession.query(DiscoveryFeedOpened).one()
+            assert feed.request_id == request.id
+            assert feed.user_id == user_id
+            assert feed.occured_at == now - timedelta(seconds=2) + timedelta(seconds=31)
+            assert feed.info == {
+                'opened_by': 'shell_button',
+                'language': 'fr_FR.UTF-8',
+            }
 
             extra_space = dbsession.query(DiskSpaceExtra).one()
             assert extra_space.request_id == request.id
