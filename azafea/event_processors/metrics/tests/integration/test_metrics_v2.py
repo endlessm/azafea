@@ -164,12 +164,13 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.events import (
             CacheIsCorrupt, CacheMetadataIsCorrupt, ControlCenterPanelOpened, CPUInfo,
             DiscoveryFeedClicked, DiscoveryFeedClosed, DiscoveryFeedOpened, DiskSpaceExtra,
-            DiskSpaceSysroot, DualBootBooted, ImageVersion, LaunchedEquivalentExistingFlatpak,
-            LaunchedEquivalentInstallerForFlatpak, LaunchedExistingFlatpak,
-            LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted, MissingCodec,
-            MonitorConnected, MonitorDisconnected, NetworkId, NetworkStatusChanged, OSVersion,
-            ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop, ShellAppRemovedFromDesktop,
-            UpdaterBranchSelected, Uptime, WindowsAppOpened, WindowsLicenseTables,
+            DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, ImageVersion,
+            LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
+            LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
+            MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId, NetworkStatusChanged,
+            OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
+            ShellAppRemovedFromDesktop, UpdaterBranchSelected, Uptime, WindowsAppOpened,
+            WindowsLicenseTables,
         )
         from azafea.event_processors.metrics.events._base import (
             InvalidSingularEvent, UnknownSingularEvent,
@@ -262,6 +263,12 @@ class TestMetrics(IntegrationTest):
                         UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
                         8000000000,                    # event relative timestamp (8 secs)
                         None,                          # empty payload
+                    ),
+                    (
+                        user_id,
+                        UUID('2b5c044d-d819-4e2c-a3a6-c485c1ac371e').bytes,
+                        32000000000,                   # event relative timestamp (32 secs)
+                        GLib.Variant('s', 'org.gnome.Calendar')
                     ),
                     (
                         user_id,
@@ -523,6 +530,12 @@ class TestMetrics(IntegrationTest):
             assert dual_boot.request_id == request.id
             assert dual_boot.user_id == user_id
             assert dual_boot.occured_at == now - timedelta(seconds=2) + timedelta(seconds=8)
+
+            unmaximized = dbsession.query(EndlessApplicationUnmaximized).one()
+            assert unmaximized.request_id == request.id
+            assert unmaximized.user_id == user_id
+            assert unmaximized.occured_at == now - timedelta(seconds=2) + timedelta(seconds=32)
+            assert unmaximized.app_id == 'org.gnome.Calendar'
 
             image = dbsession.query(ImageVersion).one()
             assert image.request_id == request.id

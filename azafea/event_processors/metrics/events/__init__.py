@@ -153,6 +153,18 @@ class DualBootBooted(SingularEvent):
     __payload_type__ = None
 
 
+class EndlessApplicationUnmaximized(SingularEvent):
+    __tablename__ = 'endless_application_unmaximized'
+    __event_uuid__ = '2b5c044d-d819-4e2c-a3a6-c485c1ac371e'
+    __payload_type__ = 's'
+
+    app_id = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'app_id': payload.get_string()}
+
+
 class ImageVersion(SingularEvent):
     __tablename__ = 'image_version'
     __event_uuid__ = '6b1c1cfc-bc36-438c-0647-dacd5878f2b3'
