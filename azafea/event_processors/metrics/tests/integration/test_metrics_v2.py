@@ -162,13 +162,14 @@ class TestMetrics(IntegrationTest):
 
     def test_singular_events(self):
         from azafea.event_processors.metrics.events import (
-            CacheIsCorrupt, CacheMetadataIsCorrupt, CPUInfo, DiskSpaceExtra, DiskSpaceSysroot,
-            DualBootBooted, ImageVersion, LaunchedEquivalentExistingFlatpak,
-            LaunchedEquivalentInstallerForFlatpak, LaunchedExistingFlatpak,
-            LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted, MissingCodec,
-            MonitorConnected, MonitorDisconnected, NetworkId, NetworkStatusChanged, OSVersion,
-            ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop, ShellAppRemovedFromDesktop,
-            UpdaterBranchSelected, Uptime, WindowsAppOpened, WindowsLicenseTables,
+            CacheIsCorrupt, CacheMetadataIsCorrupt, ControlCenterPanelOpened, CPUInfo,
+            DiskSpaceExtra, DiskSpaceSysroot, DualBootBooted, ImageVersion,
+            LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
+            LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
+            MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId, NetworkStatusChanged,
+            OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
+            ShellAppRemovedFromDesktop, UpdaterBranchSelected, Uptime, WindowsAppOpened,
+            WindowsLicenseTables,
         )
         from azafea.event_processors.metrics.events._base import (
             InvalidSingularEvent, UnknownSingularEvent,
@@ -202,6 +203,12 @@ class TestMetrics(IntegrationTest):
                         UUID('f0e8a206-3bc2-405e-90d0-ef6fe6dd7edc').bytes,
                         2000000000,                    # event relative timestamp (2 secs)
                         None,                          # empty payload
+                    ),
+                    (
+                        user_id,
+                        UUID('3c5d59d2-6c3f-474b-95f4-ac6fcc192655').bytes,
+                        28000000000,                   # event relative timestamp (28 secs)
+                        GLib.Variant('s', 'privacy')
                     ),
                     (
                         user_id,
@@ -425,6 +432,12 @@ class TestMetrics(IntegrationTest):
             assert corrupted_meta.request_id == request.id
             assert corrupted_meta.user_id == user_id
             assert corrupted_meta.occured_at == now - timedelta(seconds=2) + timedelta(seconds=2)
+
+            panel = dbsession.query(ControlCenterPanelOpened).one()
+            assert panel.request_id == request.id
+            assert panel.user_id == user_id
+            assert panel.occured_at == now - timedelta(seconds=2) + timedelta(seconds=28)
+            assert panel.name == 'privacy'
 
             cpu_info = dbsession.query(CPUInfo).one()
             assert cpu_info.request_id == request.id

@@ -41,6 +41,18 @@ class CacheMetadataIsCorrupt(SingularEvent):
     __payload_type__ = None
 
 
+class ControlCenterPanelOpened(SingularEvent):
+    __tablename__ = 'control_center_panel_opened'
+    __event_uuid__ = '3c5d59d2-6c3f-474b-95f4-ac6fcc192655'
+    __payload_type__ = 's'
+
+    name = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'name': payload.get_string()}
+
+
 class CPUInfo(SingularEvent):
     __tablename__ = 'cpu_info'
     __event_uuid__ = '4a75488a-0d9a-4c38-8556-148f500edaf0'
