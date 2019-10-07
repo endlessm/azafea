@@ -11,7 +11,7 @@ from typing import Any, Dict
 
 from gi.repository import GLib
 
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB
 from sqlalchemy.schema import Column
 from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, LargeBinary, Unicode
 
@@ -259,6 +259,28 @@ class LiveUsbBooted(SingularEvent):
     __tablename__ = 'live_usb_booted'
     __event_uuid__ = '56be0b38-e47b-4578-9599-00ff9bda54bb'
     __payload_type__ = None
+
+
+class Location(SingularEvent):
+    __tablename__ = 'location'
+    __event_uuid__ = 'abe7af92-6704-4d34-93cf-8f1b46eb09b8'
+    __payload_type__ = '(ddbdd)'
+
+    latitude = Column(DOUBLE_PRECISION, nullable=False)
+    longitude = Column(DOUBLE_PRECISION, nullable=False)
+    altitude = Column(DOUBLE_PRECISION)  # This is optional
+    accuracy = Column(DOUBLE_PRECISION, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        has_altitude = payload.get_child_value(2).get_boolean()
+
+        return {
+            'latitude': payload.get_child_value(0).get_double(),
+            'longitude': payload.get_child_value(1).get_double(),
+            'altitude': payload.get_child_value(3).get_double() if has_altitude else None,
+            'accuracy': payload.get_child_value(4).get_double(),
+        }
 
 
 class MissingCodec(SingularEvent):

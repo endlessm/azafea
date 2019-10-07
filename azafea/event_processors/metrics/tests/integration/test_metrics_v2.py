@@ -167,8 +167,8 @@ class TestMetrics(IntegrationTest):
             DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, ImageVersion,
             LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
-            MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId, NetworkStatusChanged,
-            OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
+            Location, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
+            NetworkStatusChanged, OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
             ShellAppRemovedFromDesktop, UpdaterBranchSelected, Uptime, WindowsAppOpened,
             WindowsLicenseTables,
         )
@@ -311,6 +311,18 @@ class TestMetrics(IntegrationTest):
                         UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
                         3000000000,                    # event relative timestamp (3 secs)
                         None,                          # empty payload
+                    ),
+                    (
+                        user_id,
+                        UUID('abe7af92-6704-4d34-93cf-8f1b46eb09b8').bytes,
+                        34000000000,                   # event relative timestamp (34 secs)
+                        GLib.Variant('(ddbdd)', (5.4, 6.5, False, 7.6, 8.7))
+                    ),
+                    (
+                        user_id,
+                        UUID('abe7af92-6704-4d34-93cf-8f1b46eb09b8').bytes,
+                        33000000000,                   # event relative timestamp (33 secs)
+                        GLib.Variant('(ddbdd)', (1.0, 2.1, True, 3.2, 4.3))
                     ),
                     (
                         user_id,
@@ -581,6 +593,26 @@ class TestMetrics(IntegrationTest):
             assert live_boot.request_id == request.id
             assert live_boot.user_id == user_id
             assert live_boot.occured_at == now - timedelta(seconds=2) + timedelta(seconds=3)
+
+            locations = dbsession.query(Location).order_by(Location.altitude).all()
+
+            location = locations[0]
+            assert location.request_id == request.id
+            assert location.user_id == user_id
+            assert location.occured_at == now - timedelta(seconds=2) + timedelta(seconds=33)
+            assert location.latitude == 1.0
+            assert location.longitude == 2.1
+            assert location.altitude == 3.2
+            assert location.accuracy == 4.3
+
+            location = locations[1]
+            assert location.request_id == request.id
+            assert location.user_id == user_id
+            assert location.occured_at == now - timedelta(seconds=2) + timedelta(seconds=34)
+            assert location.latitude == 5.4
+            assert location.longitude == 6.5
+            assert location.altitude is None
+            assert location.accuracy == 8.7
 
             codec = dbsession.query(MissingCodec).one()
             assert codec.request_id == request.id
