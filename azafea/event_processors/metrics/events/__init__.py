@@ -543,3 +543,15 @@ class ShellAppIsOpen(SequenceEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {'app_id': payload.get_string()}
+
+
+class UserIsLoggedIn(SequenceEvent):
+    __tablename__ = 'user_id_logged_in'
+    __event_uuid__ = 'add052be-7b2a-4959-81a5-a7f45062ee98'
+    __payload_type__ = 'u'
+
+    logged_in_user_id = Column(BigInteger, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'logged_in_user_id': payload.get_uint32()}

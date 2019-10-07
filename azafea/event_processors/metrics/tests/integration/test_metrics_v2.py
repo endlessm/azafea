@@ -1061,7 +1061,7 @@ class TestMetrics(IntegrationTest):
                                                False).unpack() == (1, 2)
 
     def test_sequence_events(self):
-        from azafea.event_processors.metrics.events import ShellAppIsOpen
+        from azafea.event_processors.metrics.events import ShellAppIsOpen, UserIsLoggedIn
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
@@ -1072,7 +1072,6 @@ class TestMetrics(IntegrationTest):
         now = datetime.now(tz=timezone.utc)
         machine_id = 'ffffffffffffffffffffffffffffffff'
         user_id = 2000
-        event_id = UUID('b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0')
         request = GLib.Variant(
             '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
             (
@@ -1085,7 +1084,7 @@ class TestMetrics(IntegrationTest):
                 [                                   # sequence events
                     (
                         user_id,
-                        event_id.bytes,
+                        UUID('b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0').bytes,
                         [                           # events in the sequence
                             (
                                 3000000000,         # event relative timestamp (3 secs)
@@ -1100,7 +1099,7 @@ class TestMetrics(IntegrationTest):
                     ),
                     (
                         user_id,
-                        event_id.bytes,
+                        UUID('b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0').bytes,
                         [                           # events in the sequence
                             (
                                 4000000000,         # event relative timestamp (4 secs)
@@ -1110,6 +1109,20 @@ class TestMetrics(IntegrationTest):
                             (
                                 3600000000000,      # event relative timestamp (1 hour)
                                 None,               # no payload on stop event
+                            ),
+                        ]
+                    ),
+                    (
+                        0,
+                        UUID('add052be-7b2a-4959-81a5-a7f45062ee98').bytes,
+                        [
+                            (
+                                2000000000,         # event relative timestamp (5 secs)
+                                GLib.Variant('u', user_id),
+                            ),
+                            (
+                                3610000000000,      # event relative timestamp (1 hour 10 secs)
+                                None,
                             ),
                         ]
                     ),
@@ -1155,6 +1168,14 @@ class TestMetrics(IntegrationTest):
             assert fractal.started_at == now - timedelta(seconds=2) + timedelta(seconds=4)
             assert fractal.stopped_at == now - timedelta(seconds=2) + timedelta(hours=1)
             assert fractal.app_id == 'org.gnome.Fractal'
+
+            logged_in = dbsession.query(UserIsLoggedIn).one()
+            assert logged_in.request_id == request.id
+            assert logged_in.user_id == 0
+            assert logged_in.started_at == now - timedelta(seconds=2) + timedelta(seconds=2)
+            assert logged_in.stopped_at == now - timedelta(seconds=2) + timedelta(hours=1,
+                                                                                  seconds=10)
+            assert logged_in.logged_in_user_id == user_id
 
     def test_unknown_sequence(self):
         from azafea.event_processors.metrics.events._base import UnknownSequence
