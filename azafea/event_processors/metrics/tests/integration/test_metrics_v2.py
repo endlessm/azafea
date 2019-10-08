@@ -162,13 +162,15 @@ class TestMetrics(IntegrationTest):
 
     def test_singular_events(self):
         from azafea.event_processors.metrics.events import (
-            CacheIsCorrupt, CacheMetadataIsCorrupt, CPUInfo, DiskSpaceExtra, DiskSpaceSysroot,
-            DualBootBooted, ImageVersion, LaunchedEquivalentExistingFlatpak,
-            LaunchedEquivalentInstallerForFlatpak, LaunchedExistingFlatpak,
-            LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted, MissingCodec,
-            MonitorConnected, MonitorDisconnected, NetworkId, NetworkStatusChanged, OSVersion,
-            ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop, ShellAppRemovedFromDesktop,
-            UpdaterBranchSelected, Uptime, WindowsAppOpened, WindowsLicenseTables,
+            CacheIsCorrupt, CacheMetadataIsCorrupt, ControlCenterPanelOpened, CPUInfo,
+            DiscoveryFeedClicked, DiscoveryFeedClosed, DiscoveryFeedOpened, DiskSpaceExtra,
+            DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, ImageVersion,
+            LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
+            LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
+            Location, LocationLabel, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
+            NetworkStatusChanged, OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
+            ShellAppRemovedFromDesktop, UpdaterBranchSelected, Uptime, WindowsAppOpened,
+            WindowsLicenseTables,
         )
         from azafea.event_processors.metrics.events._base import (
             InvalidSingularEvent, UnknownSingularEvent,
@@ -205,11 +207,44 @@ class TestMetrics(IntegrationTest):
                     ),
                     (
                         user_id,
+                        UUID('3c5d59d2-6c3f-474b-95f4-ac6fcc192655').bytes,
+                        28000000000,                   # event relative timestamp (28 secs)
+                        GLib.Variant('s', 'privacy')
+                    ),
+                    (
+                        user_id,
                         UUID('4a75488a-0d9a-4c38-8556-148f500edaf0').bytes,
                         5000000000,                    # event relative timestamp (5 secs)
                         GLib.Variant('a(sqd)', [
                             ('Intel(R) Core(TM) i7-5600U CPU @ 2.60GHz', 4, 2600.0),
                         ])
+                    ),
+                    (
+                        user_id,
+                        UUID('f2f31a64-2193-42b5-ae39-ca0b4d1f0691').bytes,
+                        29000000000,                   # event relative timestamp (29 secs)
+                        GLib.Variant('a{ss}', {
+                            'app_id': 'org.gnome.Totem',
+                            'content_type': 'knowledge_video',
+                        })
+                    ),
+                    (
+                        user_id,
+                        UUID('e7932cbd-7c20-49eb-94e9-4bf075e0c0c0').bytes,
+                        30000000000,                   # event relative timestamp (30 secs)
+                        GLib.Variant('a{ss}', {
+                            'closed_by': 'buttonclose',
+                            'time_open': '123',
+                        })
+                    ),
+                    (
+                        user_id,
+                        UUID('d54cbd8c-c977-4dac-ae72-535ad5633877').bytes,
+                        31000000000,                   # event relative timestamp (31 secs)
+                        GLib.Variant('a{ss}', {
+                            'opened_by': 'shell_button',
+                            'language': 'fr_FR.UTF-8',
+                        })
                     ),
                     (
                         user_id,
@@ -228,6 +263,12 @@ class TestMetrics(IntegrationTest):
                         UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
                         8000000000,                    # event relative timestamp (8 secs)
                         None,                          # empty payload
+                    ),
+                    (
+                        user_id,
+                        UUID('2b5c044d-d819-4e2c-a3a6-c485c1ac371e').bytes,
+                        32000000000,                   # event relative timestamp (32 secs)
+                        GLib.Variant('s', 'org.gnome.Calendar')
                     ),
                     (
                         user_id,
@@ -270,6 +311,25 @@ class TestMetrics(IntegrationTest):
                         UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
                         3000000000,                    # event relative timestamp (3 secs)
                         None,                          # empty payload
+                    ),
+                    (
+                        user_id,
+                        UUID('abe7af92-6704-4d34-93cf-8f1b46eb09b8').bytes,
+                        34000000000,                   # event relative timestamp (34 secs)
+                        GLib.Variant('(ddbdd)', (5.4, 6.5, False, 7.6, 8.7))
+                    ),
+                    (
+                        user_id,
+                        UUID('abe7af92-6704-4d34-93cf-8f1b46eb09b8').bytes,
+                        33000000000,                   # event relative timestamp (33 secs)
+                        GLib.Variant('(ddbdd)', (1.0, 2.1, True, 3.2, 4.3))
+                    ),
+                    (
+                        user_id,
+                        UUID('eb0302d8-62e7-274b-365f-cd4e59103983').bytes,
+                        35000000000,                   # event relative timestamp (35 secs)
+                        GLib.Variant('a{ss}',
+                                     {'city': 'City', 'state': 'State', 'facility': 'Facility'})
                     ),
                     (
                         user_id,
@@ -426,6 +486,12 @@ class TestMetrics(IntegrationTest):
             assert corrupted_meta.user_id == user_id
             assert corrupted_meta.occured_at == now - timedelta(seconds=2) + timedelta(seconds=2)
 
+            panel = dbsession.query(ControlCenterPanelOpened).one()
+            assert panel.request_id == request.id
+            assert panel.user_id == user_id
+            assert panel.occured_at == now - timedelta(seconds=2) + timedelta(seconds=28)
+            assert panel.name == 'privacy'
+
             cpu_info = dbsession.query(CPUInfo).one()
             assert cpu_info.request_id == request.id
             assert cpu_info.user_id == user_id
@@ -435,6 +501,33 @@ class TestMetrics(IntegrationTest):
                 'cores': 4,
                 'max_frequency': 2600.0,
             }]
+
+            feed = dbsession.query(DiscoveryFeedClicked).one()
+            assert feed.request_id == request.id
+            assert feed.user_id == user_id
+            assert feed.occured_at == now - timedelta(seconds=2) + timedelta(seconds=29)
+            assert feed.info == {
+                'app_id': 'org.gnome.Totem',
+                'content_type': 'knowledge_video',
+            }
+
+            feed = dbsession.query(DiscoveryFeedClosed).one()
+            assert feed.request_id == request.id
+            assert feed.user_id == user_id
+            assert feed.occured_at == now - timedelta(seconds=2) + timedelta(seconds=30)
+            assert feed.info == {
+                'closed_by': 'buttonclose',
+                'time_open': '123',
+            }
+
+            feed = dbsession.query(DiscoveryFeedOpened).one()
+            assert feed.request_id == request.id
+            assert feed.user_id == user_id
+            assert feed.occured_at == now - timedelta(seconds=2) + timedelta(seconds=31)
+            assert feed.info == {
+                'opened_by': 'shell_button',
+                'language': 'fr_FR.UTF-8',
+            }
 
             extra_space = dbsession.query(DiskSpaceExtra).one()
             assert extra_space.request_id == request.id
@@ -456,6 +549,12 @@ class TestMetrics(IntegrationTest):
             assert dual_boot.request_id == request.id
             assert dual_boot.user_id == user_id
             assert dual_boot.occured_at == now - timedelta(seconds=2) + timedelta(seconds=8)
+
+            unmaximized = dbsession.query(EndlessApplicationUnmaximized).one()
+            assert unmaximized.request_id == request.id
+            assert unmaximized.user_id == user_id
+            assert unmaximized.occured_at == now - timedelta(seconds=2) + timedelta(seconds=32)
+            assert unmaximized.app_id == 'org.gnome.Calendar'
 
             image = dbsession.query(ImageVersion).one()
             assert image.request_id == request.id
@@ -501,6 +600,32 @@ class TestMetrics(IntegrationTest):
             assert live_boot.request_id == request.id
             assert live_boot.user_id == user_id
             assert live_boot.occured_at == now - timedelta(seconds=2) + timedelta(seconds=3)
+
+            locations = dbsession.query(Location).order_by(Location.altitude).all()
+
+            location = locations[0]
+            assert location.request_id == request.id
+            assert location.user_id == user_id
+            assert location.occured_at == now - timedelta(seconds=2) + timedelta(seconds=33)
+            assert location.latitude == 1.0
+            assert location.longitude == 2.1
+            assert location.altitude == 3.2
+            assert location.accuracy == 4.3
+
+            location = locations[1]
+            assert location.request_id == request.id
+            assert location.user_id == user_id
+            assert location.occured_at == now - timedelta(seconds=2) + timedelta(seconds=34)
+            assert location.latitude == 5.4
+            assert location.longitude == 6.5
+            assert location.altitude is None
+            assert location.accuracy == 8.7
+
+            location = dbsession.query(LocationLabel).one()
+            assert location.request_id == request.id
+            assert location.user_id == user_id
+            assert location.occured_at == now - timedelta(seconds=2) + timedelta(seconds=35)
+            assert location.info == {'facility': 'Facility', 'city': 'City', 'state': 'State'}
 
             codec = dbsession.query(MissingCodec).one()
             assert codec.request_id == request.id
@@ -562,7 +687,7 @@ class TestMetrics(IntegrationTest):
             assert crash.request_id == request.id
             assert crash.user_id == user_id
             assert crash.occured_at == now - timedelta(seconds=2) + timedelta(seconds=21)
-            assert crash.payload == {'binary': '/app/bin/evolution', 'signal': 11}
+            assert crash.info == {'binary': '/app/bin/evolution', 'signal': 11}
 
             ram = dbsession.query(RAMSize).one()
             assert ram.request_id == request.id
@@ -936,7 +1061,7 @@ class TestMetrics(IntegrationTest):
                                                False).unpack() == (1, 2)
 
     def test_sequence_events(self):
-        from azafea.event_processors.metrics.events import ShellAppIsOpen
+        from azafea.event_processors.metrics.events import ShellAppIsOpen, UserIsLoggedIn
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
@@ -947,7 +1072,6 @@ class TestMetrics(IntegrationTest):
         now = datetime.now(tz=timezone.utc)
         machine_id = 'ffffffffffffffffffffffffffffffff'
         user_id = 2000
-        event_id = UUID('b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0')
         request = GLib.Variant(
             '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
             (
@@ -960,7 +1084,7 @@ class TestMetrics(IntegrationTest):
                 [                                   # sequence events
                     (
                         user_id,
-                        event_id.bytes,
+                        UUID('b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0').bytes,
                         [                           # events in the sequence
                             (
                                 3000000000,         # event relative timestamp (3 secs)
@@ -975,7 +1099,7 @@ class TestMetrics(IntegrationTest):
                     ),
                     (
                         user_id,
-                        event_id.bytes,
+                        UUID('b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0').bytes,
                         [                           # events in the sequence
                             (
                                 4000000000,         # event relative timestamp (4 secs)
@@ -985,6 +1109,20 @@ class TestMetrics(IntegrationTest):
                             (
                                 3600000000000,      # event relative timestamp (1 hour)
                                 None,               # no payload on stop event
+                            ),
+                        ]
+                    ),
+                    (
+                        0,
+                        UUID('add052be-7b2a-4959-81a5-a7f45062ee98').bytes,
+                        [
+                            (
+                                2000000000,         # event relative timestamp (5 secs)
+                                GLib.Variant('u', user_id),
+                            ),
+                            (
+                                3610000000000,      # event relative timestamp (1 hour 10 secs)
+                                None,
                             ),
                         ]
                     ),
@@ -1030,6 +1168,14 @@ class TestMetrics(IntegrationTest):
             assert fractal.started_at == now - timedelta(seconds=2) + timedelta(seconds=4)
             assert fractal.stopped_at == now - timedelta(seconds=2) + timedelta(hours=1)
             assert fractal.app_id == 'org.gnome.Fractal'
+
+            logged_in = dbsession.query(UserIsLoggedIn).one()
+            assert logged_in.request_id == request.id
+            assert logged_in.user_id == 0
+            assert logged_in.started_at == now - timedelta(seconds=2) + timedelta(seconds=2)
+            assert logged_in.stopped_at == now - timedelta(seconds=2) + timedelta(hours=1,
+                                                                                  seconds=10)
+            assert logged_in.logged_in_user_id == user_id
 
     def test_unknown_sequence(self):
         from azafea.event_processors.metrics.events._base import UnknownSequence

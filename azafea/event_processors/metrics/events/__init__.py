@@ -11,7 +11,7 @@ from typing import Any, Dict
 
 from gi.repository import GLib
 
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB
 from sqlalchemy.schema import Column
 from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, LargeBinary, Unicode
 
@@ -41,6 +41,18 @@ class CacheMetadataIsCorrupt(SingularEvent):
     __payload_type__ = None
 
 
+class ControlCenterPanelOpened(SingularEvent):
+    __tablename__ = 'control_center_panel_opened'
+    __event_uuid__ = '3c5d59d2-6c3f-474b-95f4-ac6fcc192655'
+    __payload_type__ = 's'
+
+    name = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'name': payload.get_string()}
+
+
 class CPUInfo(SingularEvent):
     __tablename__ = 'cpu_info'
     __event_uuid__ = '4a75488a-0d9a-4c38-8556-148f500edaf0'
@@ -61,6 +73,42 @@ class CPUInfo(SingularEvent):
             })
 
         return {'info': info}
+
+
+class DiscoveryFeedClicked(SingularEvent):
+    __tablename__ = 'discovery_feed_clicked'
+    __event_uuid__ = 'f2f31a64-2193-42b5-ae39-ca0b4d1f0691'
+    __payload_type__ = 'a{ss}'
+
+    info = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'info': get_asv_dict(payload)}
+
+
+class DiscoveryFeedClosed(SingularEvent):
+    __tablename__ = 'discovery_feed_closed'
+    __event_uuid__ = 'e7932cbd-7c20-49eb-94e9-4bf075e0c0c0'
+    __payload_type__ = 'a{ss}'
+
+    info = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'info': get_asv_dict(payload)}
+
+
+class DiscoveryFeedOpened(SingularEvent):
+    __tablename__ = 'discovery_feed_opened'
+    __event_uuid__ = 'd54cbd8c-c977-4dac-ae72-535ad5633877'
+    __payload_type__ = 'a{ss}'
+
+    info = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'info': get_asv_dict(payload)}
 
 
 class DiskSpaceExtra(SingularEvent):
@@ -103,6 +151,18 @@ class DualBootBooted(SingularEvent):
     __tablename__ = 'dual_boot_booted'
     __event_uuid__ = '16cfc671-5525-4a99-9eb9-4f6c074803a9'
     __payload_type__ = None
+
+
+class EndlessApplicationUnmaximized(SingularEvent):
+    __tablename__ = 'endless_application_unmaximized'
+    __event_uuid__ = '2b5c044d-d819-4e2c-a3a6-c485c1ac371e'
+    __payload_type__ = 's'
+
+    app_id = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'app_id': payload.get_string()}
 
 
 class ImageVersion(SingularEvent):
@@ -199,6 +259,40 @@ class LiveUsbBooted(SingularEvent):
     __tablename__ = 'live_usb_booted'
     __event_uuid__ = '56be0b38-e47b-4578-9599-00ff9bda54bb'
     __payload_type__ = None
+
+
+class Location(SingularEvent):
+    __tablename__ = 'location'
+    __event_uuid__ = 'abe7af92-6704-4d34-93cf-8f1b46eb09b8'
+    __payload_type__ = '(ddbdd)'
+
+    latitude = Column(DOUBLE_PRECISION, nullable=False)
+    longitude = Column(DOUBLE_PRECISION, nullable=False)
+    altitude = Column(DOUBLE_PRECISION)  # This is optional
+    accuracy = Column(DOUBLE_PRECISION, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        has_altitude = payload.get_child_value(2).get_boolean()
+
+        return {
+            'latitude': payload.get_child_value(0).get_double(),
+            'longitude': payload.get_child_value(1).get_double(),
+            'altitude': payload.get_child_value(3).get_double() if has_altitude else None,
+            'accuracy': payload.get_child_value(4).get_double(),
+        }
+
+
+class LocationLabel(SingularEvent):
+    __tablename__ = 'location_event'
+    __event_uuid__ = 'eb0302d8-62e7-274b-365f-cd4e59103983'
+    __payload_type__ = 'a{ss}'
+
+    info = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'info': get_asv_dict(payload)}
 
 
 class MissingCodec(SingularEvent):
@@ -326,11 +420,11 @@ class ProgramDumpedCore(SingularEvent):
     __event_uuid__ = 'ed57b607-4a56-47f1-b1e4-5dc3e74335ec'
     __payload_type__ = 'a{sv}'
 
-    payload = Column(JSONB, nullable=False)
+    info = Column(JSONB, nullable=False)
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {'payload': get_asv_dict(payload)}
+        return {'info': get_asv_dict(payload)}
 
 
 class RAMSize(SingularEvent):
@@ -449,3 +543,15 @@ class ShellAppIsOpen(SequenceEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {'app_id': payload.get_string()}
+
+
+class UserIsLoggedIn(SequenceEvent):
+    __tablename__ = 'user_id_logged_in'
+    __event_uuid__ = 'add052be-7b2a-4959-81a5-a7f45062ee98'
+    __payload_type__ = 'u'
+
+    logged_in_user_id = Column(BigInteger, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'logged_in_user_id': payload.get_uint32()}
