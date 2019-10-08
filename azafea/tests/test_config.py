@@ -63,11 +63,11 @@ def test_override(monkeypatch, make_config):
     def process(*args, **kwargs):
         pass
 
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         return process
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
         config = make_config({
             'main': {'number_of_workers': 1},
             'redis': {'port': 42},

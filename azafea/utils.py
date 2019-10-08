@@ -25,10 +25,10 @@ def get_fqdn(f: Callable) -> str:
     return f'{f.__module__}.{f.__name__}'
 
 
-def get_handler(module: str) -> Callable:
-    handler_module = import_module(module)
+def get_callable(module_name: str, callable_name: str) -> Callable:
+    module = import_module(module_name)
 
-    return handler_module.process  # type: ignore
+    return getattr(module, callable_name)
 
 
 def wrap_with_repr(f: Callable, repr_: str) -> Callable:

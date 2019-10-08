@@ -41,20 +41,20 @@ def test_get_fqdn(module, name, expected):
     assert azafea.utils.get_fqdn(f) == expected
 
 
-def test_get_handler():
-    handler = azafea.utils.get_handler('azafea.tests.test_utils')
+def test_get_callable():
+    handler = azafea.utils.get_callable('azafea.tests.test_utils', 'process')
 
     assert handler == process
 
 
-def test_get_nonexistent_handler_module():
+def test_get_nonexistent_callable_module():
     with pytest.raises(ImportError):
-        azafea.utils.get_handler('no.such.module')
+        azafea.utils.get_callable('no.such.module', 'process')
 
 
-def test_get_invalid_handler_module():
+def test_get_invalid_callable_module():
     with pytest.raises(AttributeError):
-        azafea.utils.get_handler('azafea')
+        azafea.utils.get_callable('azafea.tests.test_utils', 'no_such_method')
 
 
 def test_wrap_with_repr(capfd):

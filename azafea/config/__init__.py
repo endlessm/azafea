@@ -21,7 +21,7 @@ from sqlalchemy.orm.session import Session as DbSession
 import toml
 
 from ._validators import is_boolean, is_non_empty_string, is_strictly_positive_integer
-from ..utils import get_cpu_count, get_handler, wrap_with_repr
+from ..utils import get_callable, get_cpu_count, wrap_with_repr
 
 
 log = logging.getLogger(__name__)
@@ -135,7 +135,7 @@ class Queue(_Base):
     @validator('handler', pre=True)
     def get_handler(cls, value: str) -> Callable[[DbSession, bytes], None]:
         try:
-            handler = get_handler(value)
+            handler = get_callable(value, 'process')
 
         except ImportError:
             raise ValueError(f'Could not import handler module {value!r}')
