@@ -420,11 +420,11 @@ class ProgramDumpedCore(SingularEvent):
     __event_uuid__ = 'ed57b607-4a56-47f1-b1e4-5dc3e74335ec'
     __payload_type__ = 'a{sv}'
 
-    payload = Column(JSONB, nullable=False)
+    info = Column(JSONB, nullable=False)
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {'payload': get_asv_dict(payload)}
+        return {'info': get_asv_dict(payload)}
 
 
 class RAMSize(SingularEvent):

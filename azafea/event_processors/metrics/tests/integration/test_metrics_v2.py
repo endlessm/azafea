@@ -687,7 +687,7 @@ class TestMetrics(IntegrationTest):
             assert crash.request_id == request.id
             assert crash.user_id == user_id
             assert crash.occured_at == now - timedelta(seconds=2) + timedelta(seconds=21)
-            assert crash.payload == {'binary': '/app/bin/evolution', 'signal': 11}
+            assert crash.info == {'binary': '/app/bin/evolution', 'signal': 11}
 
             ram = dbsession.query(RAMSize).one()
             assert ram.request_id == request.id
