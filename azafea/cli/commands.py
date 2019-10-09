@@ -15,7 +15,6 @@ from redis.exceptions import ConnectionError as RedisConnectionError
 
 from ..config import Config
 from ..controller import Controller
-from ..logging import setup_logging
 from ..model import Db, PostgresqlConnectionError
 from .errors import ConnectionErrorExit, NoEventQueueExit, UnknownErrorExit
 
@@ -55,8 +54,6 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def do_dropdb(config: Config, args: argparse.Namespace) -> None:
-    setup_logging(verbose=config.main.verbose)
-
     if not config.queues:
         log.error('Could not clear the database: no event queue configured')
         raise NoEventQueueExit()
@@ -67,8 +64,6 @@ def do_dropdb(config: Config, args: argparse.Namespace) -> None:
 
 
 def do_initdb(config: Config, args: argparse.Namespace) -> None:
-    setup_logging(verbose=config.main.verbose)
-
     if not config.queues:
         log.error('Could not initialize the database: no event queue configured')
         raise NoEventQueueExit()
@@ -79,8 +74,6 @@ def do_initdb(config: Config, args: argparse.Namespace) -> None:
 
 
 def do_print_config(config: Config, args: argparse.Namespace) -> None:
-    setup_logging(verbose=config.main.verbose)
-
     print('----- BEGIN -----')
     print(config)
     print('------ END ------')
@@ -91,8 +84,6 @@ def do_print_config(config: Config, args: argparse.Namespace) -> None:
 
 
 def do_replay(config: Config, args: argparse.Namespace) -> None:
-    setup_logging(verbose=config.main.verbose)
-
     if not config.queues:
         log.error(f'Could not replay events from "{args.queue}": no event queue configured')
         raise NoEventQueueExit()
@@ -131,8 +122,6 @@ def do_replay(config: Config, args: argparse.Namespace) -> None:
 
 
 def do_run(config: Config, args: argparse.Namespace) -> None:
-    setup_logging(verbose=config.main.verbose)
-
     if not config.queues:
         log.error('Could not start: no event queue configured')
         raise NoEventQueueExit()

@@ -32,4 +32,6 @@ def run_command(*argv: str) -> None:
 
         raise InvalidConfigExit()
 
+    setup_logging(verbose=config.main.verbose)
+
     args.subcommand(config, args)
