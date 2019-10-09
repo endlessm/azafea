@@ -7,8 +7,15 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+import logging
+
 from . import commands
+from .errors import InvalidConfigExit
+from ..config import Config, InvalidConfigurationError
 from ..logging import setup_logging
+
+
+log = logging.getLogger(__name__)
 
 
 def run_command(*argv: str) -> None:
@@ -16,4 +23,13 @@ def run_command(*argv: str) -> None:
 
     parser = commands.get_parser()
     args = parser.parse_args(argv)
-    args.subcommand(args)
+
+    try:
+        config = Config.from_file(args.config)
+
+    except InvalidConfigurationError as e:
+        log.error(e)
+
+        raise InvalidConfigExit()
+
+    args.subcommand(config, args)

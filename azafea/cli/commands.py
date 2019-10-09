@@ -9,16 +9,15 @@
 
 import argparse
 import logging
-import sys
 
 from redis import Redis
 from redis.exceptions import ConnectionError as RedisConnectionError
 
-from ..config import Config, InvalidConfigurationError
+from ..config import Config
 from ..controller import Controller
 from ..logging import setup_logging
 from ..model import Db, PostgresqlConnectionError
-from .errors import ConnectionErrorExit, InvalidConfigExit, NoEventQueueExit, UnknownErrorExit
+from .errors import ConnectionErrorExit, NoEventQueueExit, UnknownErrorExit
 
 
 log = logging.getLogger(__name__)
@@ -55,14 +54,7 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def do_dropdb(args: argparse.Namespace) -> None:
-    try:
-        config = Config.from_file(args.config)
-
-    except InvalidConfigurationError as e:
-        print(str(e), file=sys.stderr)
-        raise InvalidConfigExit()
-
+def do_dropdb(config: Config, args: argparse.Namespace) -> None:
     setup_logging(verbose=config.main.verbose)
 
     if not config.queues:
@@ -74,14 +66,7 @@ def do_dropdb(args: argparse.Namespace) -> None:
     db.drop_all()
 
 
-def do_initdb(args: argparse.Namespace) -> None:
-    try:
-        config = Config.from_file(args.config)
-
-    except InvalidConfigurationError as e:
-        print(str(e), file=sys.stderr)
-        raise InvalidConfigExit()
-
+def do_initdb(config: Config, args: argparse.Namespace) -> None:
     setup_logging(verbose=config.main.verbose)
 
     if not config.queues:
@@ -93,14 +78,7 @@ def do_initdb(args: argparse.Namespace) -> None:
     db.create_all()
 
 
-def do_print_config(args: argparse.Namespace) -> None:
-    try:
-        config = Config.from_file(args.config)
-
-    except InvalidConfigurationError as e:
-        print(str(e), file=sys.stderr)
-        raise InvalidConfigExit()
-
+def do_print_config(config: Config, args: argparse.Namespace) -> None:
     setup_logging(verbose=config.main.verbose)
 
     print('----- BEGIN -----')
@@ -112,14 +90,7 @@ def do_print_config(args: argparse.Namespace) -> None:
         raise NoEventQueueExit()
 
 
-def do_replay(args: argparse.Namespace) -> None:
-    try:
-        config = Config.from_file(args.config)
-
-    except InvalidConfigurationError as e:
-        print(str(e), file=sys.stderr)
-        raise InvalidConfigExit()
-
+def do_replay(config: Config, args: argparse.Namespace) -> None:
     setup_logging(verbose=config.main.verbose)
 
     if not config.queues:
@@ -159,14 +130,7 @@ def do_replay(args: argparse.Namespace) -> None:
     log.info(f'Successfully moved failed events back to "{args.queue}"')
 
 
-def do_run(args: argparse.Namespace) -> None:
-    try:
-        config = Config.from_file(args.config)
-
-    except InvalidConfigurationError as e:
-        print(str(e), file=sys.stderr)
-        raise InvalidConfigExit()
-
+def do_run(config: Config, args: argparse.Namespace) -> None:
     setup_logging(verbose=config.main.verbose)
 
     if not config.queues:
