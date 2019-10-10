@@ -66,7 +66,7 @@ class IntegrationTest:
             *cmd,
         ])
 
-        return args.subcommand(args)
+        args.subcommand(args)
 
     def setup_method(self, method):
         # Create a config file for the test, with a common base and some per-test options

@@ -10,7 +10,6 @@
 from datetime import datetime, timezone
 import json
 
-from azafea import cli
 from azafea.tests.integration import IntegrationTest
 
 
@@ -21,7 +20,7 @@ class TestPing(IntegrationTest):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
 
         # Create the tables
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Ping, PingConfiguration)
 
         # Send an event to the Redis queue
@@ -57,7 +56,7 @@ class TestPing(IntegrationTest):
         from azafea.event_processors.ping.v1 import PingConfiguration, Ping
 
         # Create the tables
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Ping, PingConfiguration)
 
         # Send events to the Redis queue
