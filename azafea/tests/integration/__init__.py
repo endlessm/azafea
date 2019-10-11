@@ -61,12 +61,7 @@ class IntegrationTest:
         proc.join()
 
     def run_subcommand(self, *cmd):
-        args = cli.parse_args([
-            '-c', self.config_file,
-            *cmd,
-        ])
-
-        args.subcommand(args)
+        cli.run_command('-c', self.config_file, *cmd)
 
     def setup_method(self, method):
         # Create a config file for the test, with a common base and some per-test options

@@ -7,13 +7,13 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-import argparse
-from typing import List
-
-from .commands import get_parser
+from . import commands
+from ..logging import setup_logging
 
 
-def parse_args(args: List[str]) -> argparse.Namespace:
-    parser = get_parser()
+def run_command(*argv: str) -> None:
+    setup_logging(verbose=False)
 
-    return parser.parse_args(args)
+    parser = commands.get_parser()
+    args = parser.parse_args(argv)
+    args.subcommand(args)

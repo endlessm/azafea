@@ -9,16 +9,11 @@
 
 import sys
 
-from .cli import parse_args
-from .cli.errors import BaseExit
-from .logging import setup_logging
+from . import cli
 
-
-setup_logging(verbose=False)
-args = parse_args(sys.argv[1:])
 
 try:
-    args.subcommand(args)
+    cli.run_command(*sys.argv[1:])
 
-except BaseExit as e:
+except cli.errors.BaseExit as e:
     sys.exit(e.status_code)
