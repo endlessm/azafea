@@ -36,7 +36,7 @@ def test_dropdb(capfd, monkeypatch, make_config_file):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.config, 'get_handler', mock_get_handler)
-        m.setattr(azafea.cli, 'Db', MockDb)
+        m.setattr(azafea.cli.commands, 'Db', MockDb)
         args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -52,7 +52,7 @@ def test_dropdb_invalid_config(capfd, make_config_file):
         'dropdb',
     ])
 
-    with pytest.raises(azafea.cli.InvalidConfigExit):
+    with pytest.raises(azafea.cli.errors.InvalidConfigExit):
         args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -67,7 +67,7 @@ def test_dropdb_no_event_queue(capfd, make_config_file):
         'dropdb',
     ])
 
-    with pytest.raises(azafea.cli.NoEventQueueExit):
+    with pytest.raises(azafea.cli.errors.NoEventQueueExit):
         args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -97,7 +97,7 @@ def test_initdb(capfd, monkeypatch, make_config_file):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.config, 'get_handler', mock_get_handler)
-        m.setattr(azafea.cli, 'Db', MockDb)
+        m.setattr(azafea.cli.commands, 'Db', MockDb)
         args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -113,7 +113,7 @@ def test_initdb_invalid_config(capfd, make_config_file):
         'initdb',
     ])
 
-    with pytest.raises(azafea.cli.InvalidConfigExit):
+    with pytest.raises(azafea.cli.errors.InvalidConfigExit):
         args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -128,7 +128,7 @@ def test_initdb_no_event_queue(capfd, make_config_file):
         'initdb',
     ])
 
-    with pytest.raises(azafea.cli.NoEventQueueExit):
+    with pytest.raises(azafea.cli.errors.NoEventQueueExit):
         args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -193,7 +193,7 @@ def test_print_invalid_config(capfd, make_config_file):
         'print-config',
     ])
 
-    with pytest.raises(azafea.cli.InvalidConfigExit):
+    with pytest.raises(azafea.cli.errors.InvalidConfigExit):
         args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -208,7 +208,7 @@ def test_print_config_no_event_queue(capfd, make_config_file):
         'print-config',
     ])
 
-    with pytest.raises(azafea.cli.NoEventQueueExit):
+    with pytest.raises(azafea.cli.errors.NoEventQueueExit):
         args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -257,7 +257,7 @@ def test_replay_errors(capfd, monkeypatch, make_config_file):
     ])
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.cli, 'Redis', mock_redis)
+        m.setattr(azafea.cli.commands, 'Redis', mock_redis)
         m.setattr(azafea.config, 'get_handler', mock_get_handler)
         args.subcommand(args)
 
@@ -279,7 +279,7 @@ def test_replay_errors_invalid_config(capfd, make_config_file):
         'replay-errors', 'some-queue',
     ])
 
-    with pytest.raises(azafea.cli.InvalidConfigExit):
+    with pytest.raises(azafea.cli.errors.InvalidConfigExit):
         args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -294,7 +294,7 @@ def test_replay_errors_no_event_queue(capfd, make_config_file):
         'replay-errors', 'some-queue',
     ])
 
-    with pytest.raises(azafea.cli.NoEventQueueExit):
+    with pytest.raises(azafea.cli.errors.NoEventQueueExit):
         args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -320,7 +320,7 @@ def test_replay_errors_unknown_queue(capfd, monkeypatch, make_config_file):
     with monkeypatch.context() as m:
         m.setattr(azafea.config, 'get_handler', mock_get_handler)
 
-        with pytest.raises(azafea.cli.NoEventQueueExit):
+        with pytest.raises(azafea.cli.errors.NoEventQueueExit):
             args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -371,7 +371,7 @@ def test_replay_errors_stopped_early(capfd, monkeypatch, make_config_file):
     ])
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.cli, 'Redis', mock_redis)
+        m.setattr(azafea.cli.commands, 'Redis', mock_redis)
         m.setattr(azafea.config, 'get_handler', mock_get_handler)
         args.subcommand(args)
 
@@ -427,10 +427,10 @@ def test_replay_errors_fail_to_push(capfd, monkeypatch, make_config_file):
     ])
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.cli, 'Redis', mock_redis)
+        m.setattr(azafea.cli.commands, 'Redis', mock_redis)
         m.setattr(azafea.config, 'get_handler', mock_get_handler)
 
-        with pytest.raises(azafea.cli.UnknownErrorExit):
+        with pytest.raises(azafea.cli.errors.UnknownErrorExit):
             args.subcommand(args)
 
     assert redis._queues == {
@@ -465,7 +465,7 @@ def test_run(capfd, monkeypatch, make_config_file):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.config, 'get_handler', mock_get_handler)
-        m.setattr(azafea.cli, 'Controller', MockController)
+        m.setattr(azafea.cli.commands, 'Controller', MockController)
         args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -481,7 +481,7 @@ def test_run_invalid_config(capfd, make_config_file):
         'run',
     ])
 
-    with pytest.raises(azafea.cli.InvalidConfigExit):
+    with pytest.raises(azafea.cli.errors.InvalidConfigExit):
         args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -497,7 +497,7 @@ def test_run_no_event_queue(capfd, make_config_file):
         'run',
     ])
 
-    with pytest.raises(azafea.cli.NoEventQueueExit):
+    with pytest.raises(azafea.cli.errors.NoEventQueueExit):
         args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -525,7 +525,7 @@ def test_run_redis_connection_error(capfd, monkeypatch, make_config_file):
     with monkeypatch.context() as m:
         m.setattr(azafea.config, 'get_handler', mock_get_handler)
 
-        with pytest.raises(azafea.cli.ConnectionErrorExit):
+        with pytest.raises(azafea.cli.errors.ConnectionErrorExit):
             args.subcommand(args)
 
     capture = capfd.readouterr()
@@ -566,7 +566,7 @@ def test_run_postgresql_connection_error(capfd, monkeypatch, make_config_file):
         m.setattr(azafea.config, 'get_handler', mock_get_handler)
         m.setattr(azafea.processor, 'Redis', MockRedis)
 
-        with pytest.raises(azafea.cli.ConnectionErrorExit):
+        with pytest.raises(azafea.cli.errors.ConnectionErrorExit):
             args.subcommand(args)
 
     capture = capfd.readouterr()

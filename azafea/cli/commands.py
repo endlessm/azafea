@@ -9,39 +9,19 @@
 
 import argparse
 import logging
-from typing import List
 import sys
 
 from redis import Redis
 from redis.exceptions import ConnectionError as RedisConnectionError
 
-from .config import Config, InvalidConfigurationError
-from .controller import Controller
-from .logging import setup_logging
-from .model import Db, PostgresqlConnectionError
+from ..config import Config, InvalidConfigurationError
+from ..controller import Controller
+from ..logging import setup_logging
+from ..model import Db, PostgresqlConnectionError
+from .errors import ConnectionErrorExit, InvalidConfigExit, NoEventQueueExit, UnknownErrorExit
 
 
 log = logging.getLogger(__name__)
-
-
-class BaseExit(Exception):
-    status_code: int
-
-
-class InvalidConfigExit(BaseExit):
-    status_code: int = -1
-
-
-class NoEventQueueExit(BaseExit):
-    status_code: int = -2
-
-
-class ConnectionErrorExit(BaseExit):
-    status_code: int = -3
-
-
-class UnknownErrorExit(BaseExit):
-    status_code: int = -4
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -73,12 +53,6 @@ def get_parser() -> argparse.ArgumentParser:
     run.set_defaults(subcommand=do_run)
 
     return parser
-
-
-def parse_args(args: List[str]) -> argparse.Namespace:
-    parser = get_parser()
-
-    return parser.parse_args(args)
 
 
 def do_dropdb(args: argparse.Namespace) -> None:

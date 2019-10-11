@@ -7,18 +7,13 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-import sys
+import argparse
+from typing import List
 
-from .cli import parse_args
-from .cli.errors import BaseExit
-from .logging import setup_logging
+from .commands import get_parser
 
 
-setup_logging(verbose=False)
-args = parse_args(sys.argv[1:])
+def parse_args(args: List[str]) -> argparse.Namespace:
+    parser = get_parser()
 
-try:
-    args.subcommand(args)
-
-except BaseExit as e:
-    sys.exit(e.status_code)
+    return parser.parse_args(args)
