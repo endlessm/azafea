@@ -53,6 +53,19 @@ class _Base:
         raise NoSuchConfigurationError(f'No such configuration option: {name!r}')
 
 
+class _Dictifier(dict):
+    def __init__(self, items: List = None) -> None:
+        super().__init__()
+
+        if items is not None:
+            for k, v in items:
+                if k == 'password':
+                    # Don't print passwords
+                    v = '** hidden **'
+
+                self[k] = v
+
+
 @dataclass(frozen=True)
 class Main(_Base):
     verbose: bool = False
@@ -180,9 +193,4 @@ class Config(_Base):
             log.warning('Did you forget to change the Redis password?')
 
     def __str__(self) -> str:
-        pg_no_password = dataclasses.replace(self.postgresql, password='** hidden **')
-        redis_no_password = dataclasses.replace(self.redis, password='** hidden **')
-        self_no_passwords = dataclasses.replace(self, postgresql=pg_no_password,
-                                                redis=redis_no_password)
-
-        return toml.dumps(dataclasses.asdict(self_no_passwords)).strip()
+        return toml.dumps(dataclasses.asdict(self, dict_factory=_Dictifier)).strip()
