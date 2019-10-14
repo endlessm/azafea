@@ -145,9 +145,12 @@ Each queue is its own table with its own options:
   The dotted-path of the Python module responsible to process the events pulled
   from this queue. Azafea will try importing that module.
 
-  Make sure you read :doc:`how to write event handler modules <event-handlers>`
+  Make sure you read :doc:`how to write event handler modules <queue-plugins>`
   for all the details on what Azafea expects from them.
 
 So in the above example, Azafea will pull events from 2 Redis queues, one named
 ``"be"`` and one named ``"te"``, and will pass them to the ``a.python.module``
 handler for the former and to the ``another.python.module`` for the latter.
+
+Azafea will also provide the subcommands registered by both queues in their
+respective module.

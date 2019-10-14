@@ -11,7 +11,7 @@ import copy
 import dataclasses
 import logging
 import os
-from typing import Any, Callable, Dict, List, Mapping, MutableMapping
+from typing import Any, Callable, Dict, List, Mapping, MutableMapping, Optional
 
 from pydantic.class_validators import root_validator, validator
 from pydantic.dataclasses import dataclass
@@ -152,6 +152,7 @@ class PostgreSQL(_Base):
 class Queue(_Base):
     handler: str
     processor: Callable = dataclasses.field(init=False)
+    cli: Optional[Callable] = dataclasses.field(default=None, init=False)
 
     @staticmethod
     def _validate_callable(module_name: str, callable_name: str) -> Callable:
@@ -169,6 +170,13 @@ class Queue(_Base):
     def get_computed_fields(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         handler = values['handler']
         values['processor'] = cls._validate_callable(handler, 'process')
+
+        try:
+            values['cli'] = cls._validate_callable(handler, 'register_commands')
+
+        except ValueError:
+            # No CLI then
+            pass
 
         return values
 

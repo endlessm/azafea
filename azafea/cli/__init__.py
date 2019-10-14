@@ -50,5 +50,14 @@ def run_command(*argv: str) -> None:
     # Core commands
     commands.register_commands(subs)
 
+    # Per-queue plugin commands
+    for queue_name, queue_config in config.queues.items():
+        if queue_config.cli is not None:
+            queue_parser = subs.add_parser(
+                queue_name, help=f'Commands related to the {queue_name} queue processor')
+            queue_subs = queue_parser.add_subparsers(title='subcommands', dest='subcommand',
+                                                     required=True)
+            queue_config.cli(queue_subs)
+
     args = parser.parse_args(argv)
     args.subcommand(config, args)

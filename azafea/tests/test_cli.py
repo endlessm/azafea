@@ -472,3 +472,71 @@ def test_run_postgresql_connection_error(capfd, monkeypatch, make_config_file):
     capture = capfd.readouterr()
     assert ('Could not connect to PostgreSQL: '
             'connection refused on postgresql://azafea@no-such-host:1/azafea') in capture.err
+
+
+def test_per_queue_command(capfd, monkeypatch, make_config_file):
+    def mock_get_callable(module_name, callable_name):
+        def process(*args, **kwargs):
+            pass
+
+        def register_commands(subs) -> None:
+            do_something = subs.add_parser('do-something')
+            do_something.set_defaults(subcommand=lambda *_: print('Doing something!'))
+
+        assert callable_name in ('register_commands', 'process')
+
+        if callable_name == 'register_commands':
+            return register_commands
+
+        if callable_name == 'process':
+            return process
+
+    config_file = make_config_file({
+        'queues': {
+            'some-queue': {
+                'handler': 'azafea.tests.test_cli',
+            },
+        }
+    })
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
+        azafea.cli.run_command('-c', str(config_file), 'some-queue', 'do-something')
+
+    capture = capfd.readouterr()
+    assert 'Doing something!' in capture.out
+
+
+def test_per_queue_invalid_command(capfd, monkeypatch, make_config_file):
+    def mock_get_callable(module_name, callable_name):
+        def process(*args, **kwargs):
+            pass
+
+        def register_commands(subs) -> None:
+            do_something = subs.add_parser('do-something')
+            do_something.set_defaults(subcommand=lambda *_: print('Doing something!'))
+
+        assert callable_name in ('register_commands', 'process')
+
+        if callable_name == 'register_commands':
+            return register_commands
+
+        if callable_name == 'process':
+            return process
+
+    config_file = make_config_file({
+        'queues': {
+            'some-queue': {
+                'handler': 'azafea.tests.test_cli',
+            },
+        }
+    })
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
+
+        with pytest.raises(SystemExit):
+            azafea.cli.run_command('-c', str(config_file), 'some-queue', 'initdb')
+
+    capture = capfd.readouterr()
+    assert "invalid choice: 'initdb' (choose from 'do-something')" in capture.err

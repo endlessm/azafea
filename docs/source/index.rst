@@ -18,5 +18,5 @@ PostgreSQL, where they can be queried and visualized.
    design
    install
    configuration
-   event-handlers
+   queue-plugins
    contribute
