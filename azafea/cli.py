@@ -79,7 +79,6 @@ def do_dropdb(args: argparse.Namespace) -> int:
         return ExitCode.INVALID_CONFIG
 
     setup_logging(verbose=config.main.verbose)
-    config.warn_about_default_passwords()
 
     if not config.queues:
         log.error('Could not clear the database: no event queue configured')
@@ -101,7 +100,6 @@ def do_initdb(args: argparse.Namespace) -> int:
         return ExitCode.INVALID_CONFIG
 
     setup_logging(verbose=config.main.verbose)
-    config.warn_about_default_passwords()
 
     if not config.queues:
         log.error('Could not initialize the database: no event queue configured')
@@ -123,7 +121,6 @@ def do_print_config(args: argparse.Namespace) -> int:
         return ExitCode.INVALID_CONFIG
 
     setup_logging(verbose=config.main.verbose)
-    config.warn_about_default_passwords()
 
     print('----- BEGIN -----')
     print(config)
@@ -145,7 +142,6 @@ def do_replay(args: argparse.Namespace) -> int:
         return ExitCode.INVALID_CONFIG
 
     setup_logging(verbose=config.main.verbose)
-    config.warn_about_default_passwords()
 
     if not config.queues:
         log.error(f'Could not replay events from "{args.queue}": no event queue configured')
@@ -196,7 +192,6 @@ def do_run(args: argparse.Namespace) -> int:
         return ExitCode.INVALID_CONFIG
 
     setup_logging(verbose=config.main.verbose)
-    config.warn_about_default_passwords()
 
     if not config.queues:
         log.error('Could not start: no event queue configured')
