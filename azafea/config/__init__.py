@@ -132,18 +132,22 @@ class PostgreSQL(_Base):
 class Queue(_Base):
     handler: Callable
 
-    @validator('handler', pre=True)
-    def get_handler(cls, value: str) -> Callable[[DbSession, bytes], None]:
+    @staticmethod
+    def _validate_callable(module_name: str, callable_name: str) -> Callable:
         try:
-            handler = get_callable(value, 'process')
+            result = get_callable(module_name, callable_name)
 
         except ImportError:
-            raise ValueError(f'Could not import handler module {value!r}')
+            raise ValueError(f'Could not import module {module_name!r}')
 
         except AttributeError:
-            raise ValueError(f'Handler {value!r} is missing a "process" function')
+            raise ValueError(f'Module {module_name!r} is missing a {callable_name!r} function')
 
-        return wrap_with_repr(handler, value)
+        return wrap_with_repr(result, module_name)
+
+    @validator('handler', pre=True)
+    def get_handler(cls, value: str) -> Callable[[DbSession, bytes], None]:
+        return cls._validate_callable(value, 'process')
 
 
 @dataclass(frozen=True)
