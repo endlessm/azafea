@@ -168,6 +168,7 @@ def test_print_config(capfd, monkeypatch, make_config_file):
 
     capture = capfd.readouterr()
     assert capture.out.strip() == '\n'.join([
+        '----- BEGIN -----',
         '[main]',
         'verbose = false',
         'number_of_workers = 1',
@@ -187,6 +188,7 @@ def test_print_config(capfd, monkeypatch, make_config_file):
         '',
         '[queues.some-queue]',
         'handler = "azafea.tests.test_cli"',
+        '------ END ------',
     ])
 
 
