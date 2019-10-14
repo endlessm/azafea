@@ -10,8 +10,10 @@
 import sys
 
 from .cli import parse_args
+from .logging import setup_logging
 
 
+setup_logging(verbose=False)
 args = parse_args(sys.argv[1:])
 
 sys.exit(args.subcommand(args))
