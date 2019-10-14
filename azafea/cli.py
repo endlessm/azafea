@@ -125,7 +125,9 @@ def do_print_config(args: argparse.Namespace) -> int:
     setup_logging(verbose=config.main.verbose)
     config.warn_about_default_passwords()
 
+    print('----- BEGIN -----')
     print(config)
+    print('------ END ------')
 
     if not config.queues:
         log.warning('Did you forget to configure event queues?')
