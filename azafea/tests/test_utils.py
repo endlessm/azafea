@@ -55,3 +55,26 @@ def test_get_nonexistent_callable_module():
 def test_get_invalid_callable_module():
     with pytest.raises(AttributeError):
         azafea.utils.get_callable('azafea.tests.test_utils', 'no_such_method')
+
+
+def test_progress(capfd):
+    azafea.utils.progress(0, 6)
+
+    capture = capfd.readouterr()
+    assert capture.out == '\r|                                                            |  0 / 6'
+
+    azafea.utils.progress(2, 6)
+
+    capture = capfd.readouterr()
+    assert capture.out == '\r|####################                                        |  2 / 6'
+
+    azafea.utils.progress(4, 6)
+
+    capture = capfd.readouterr()
+    assert capture.out == '\r|########################################                    |  4 / 6'
+
+    azafea.utils.progress(6, 6, end='\n')
+
+    capture = capfd.readouterr()
+    assert capture.out == (
+        '\r|############################################################|  6 / 6\n')
