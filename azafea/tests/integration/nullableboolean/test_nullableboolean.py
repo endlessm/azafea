@@ -47,3 +47,19 @@ class TestNullableBoolean(IntegrationTest):
             result = dbsession.execute(text('SELECT value FROM nullableboolean_event'))
             assert result.rowcount == 1
             assert result.fetchone()[0] == name
+
+    def test_query_filtered_on_none(self):
+        from .handler_module import Event
+
+        # Create the table
+        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.ensure_tables(Event)
+
+        # Insert a value
+        with self.db as dbsession:
+            dbsession.add(Event(name='hello', value=None))
+
+        # Try filtering on the None value
+        with self.db as dbsession:
+            event = dbsession.query(Event).filter_by(value=None).one()
+            assert event.name == 'hello'
