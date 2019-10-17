@@ -42,6 +42,8 @@ MAPPING = {
     "casper bilgisayar sistemleri.a.s": "Casper",
     "casper bilgisayar sistemleri.a.s.": "Casper",
 
+    "centrium": "Centrium",
+
     "clevo": "CLEVO",
     "clevo co.": "CLEVO",
 
@@ -106,9 +108,11 @@ MAPPING = {
     "corporativo lanix, s.a. de c.v": "Lanix",
     "corporativo lanix, s.a. de c.v.": "Lanix",
     "lanis": "Lanix",
+    "lanix": "Lanix",
     "lanix todos los derechos reservados": "Lanix",
 
     "lenovo": "Lenovo",
+    "lenovo product": "Lenovo",
 
     "lg electronics": "LG",
     "lg electronics inc.": "LG",
@@ -126,6 +130,8 @@ MAPPING = {
     "micro-star international co., ltd.": "MSI",
     "micro-star international co.,ltd": "MSI",
 
+    "packard bell bv": "Packard Bell",
+
     "pegatron": "PEGATRON",
     "pegatron computer inc.": "PEGATRON",
     "pegatron corporation": "PEGATRON",
@@ -136,6 +142,9 @@ MAPPING = {
     "positivo informatica ltda": "POSITIVO",
     "positivo informatica s/a": "POSITIVO",
     "positivo informatica sa": "POSITIVO",
+    "positivo tecnologia sa": "POSITIVO",
+
+    "qbex electronics corp.": "QBEX",
 
     "samsung": "Samsung",
     "samsung electronics co.,ltd": "Samsung",
@@ -207,6 +216,7 @@ MAPPING = {
     "default string": "unknown",
     "empty": "unknown",
     "invalid": "unknown",
+    "n/a": "unknown",
     "none": "unknown",
     "o.e.m": "unknown",
     "odm": "unknown",
