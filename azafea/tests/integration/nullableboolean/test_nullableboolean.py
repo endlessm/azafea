@@ -11,8 +11,6 @@ import pytest
 
 from sqlalchemy.sql import text
 
-from azafea import cli
-
 from .. import IntegrationTest
 
 
@@ -28,7 +26,7 @@ class TestNullableBoolean(IntegrationTest):
         from .handler_module import Event
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Event)
 
         # Insert a value
@@ -52,7 +50,7 @@ class TestNullableBoolean(IntegrationTest):
         from .handler_module import Event
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Event)
 
         # Insert a value

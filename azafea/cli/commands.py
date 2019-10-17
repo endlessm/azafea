@@ -8,29 +8,18 @@
 
 
 import argparse
-from enum import IntEnum
 import logging
-from typing import List
-import sys
 
 from redis import Redis
 from redis.exceptions import ConnectionError as RedisConnectionError
 
-from .config import Config, InvalidConfigurationError
-from .controller import Controller
-from .logging import setup_logging
-from .model import Db, PostgresqlConnectionError
+from ..config import Config
+from ..controller import Controller
+from ..model import Db, PostgresqlConnectionError
+from .errors import ConnectionErrorExit, NoEventQueueExit, UnknownErrorExit
 
 
 log = logging.getLogger(__name__)
-
-
-class ExitCode(IntEnum):
-    OK = 0
-    INVALID_CONFIG = -1
-    NO_EVENT_QUEUE = -2
-    CONNECTION_ERROR = -3
-    UNKNOWN_ERROR = -4
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -64,96 +53,44 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def parse_args(args: List[str]) -> argparse.Namespace:
-    parser = get_parser()
-
-    return parser.parse_args(args)
-
-
-def do_dropdb(args: argparse.Namespace) -> int:
-    try:
-        config = Config.from_file(args.config)
-
-    except InvalidConfigurationError as e:
-        print(str(e), file=sys.stderr)
-        return ExitCode.INVALID_CONFIG
-
-    setup_logging(verbose=config.main.verbose)
-    config.warn_about_default_passwords()
-
+def do_dropdb(config: Config, args: argparse.Namespace) -> None:
     if not config.queues:
         log.error('Could not clear the database: no event queue configured')
-        return ExitCode.NO_EVENT_QUEUE
+        raise NoEventQueueExit()
 
     db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
             config.postgresql.password, config.postgresql.database)
     db.drop_all()
 
-    return ExitCode.OK
 
-
-def do_initdb(args: argparse.Namespace) -> int:
-    try:
-        config = Config.from_file(args.config)
-
-    except InvalidConfigurationError as e:
-        print(str(e), file=sys.stderr)
-        return ExitCode.INVALID_CONFIG
-
-    setup_logging(verbose=config.main.verbose)
-    config.warn_about_default_passwords()
-
+def do_initdb(config: Config, args: argparse.Namespace) -> None:
     if not config.queues:
         log.error('Could not initialize the database: no event queue configured')
-        return ExitCode.NO_EVENT_QUEUE
+        raise NoEventQueueExit()
 
     db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
             config.postgresql.password, config.postgresql.database)
     db.create_all()
 
-    return ExitCode.OK
 
-
-def do_print_config(args: argparse.Namespace) -> int:
-    try:
-        config = Config.from_file(args.config)
-
-    except InvalidConfigurationError as e:
-        print(str(e), file=sys.stderr)
-        return ExitCode.INVALID_CONFIG
-
-    setup_logging(verbose=config.main.verbose)
-    config.warn_about_default_passwords()
-
+def do_print_config(config: Config, args: argparse.Namespace) -> None:
     print('----- BEGIN -----')
     print(config)
     print('------ END ------')
 
     if not config.queues:
         log.warning('Did you forget to configure event queues?')
-        return ExitCode.NO_EVENT_QUEUE
-
-    return ExitCode.OK
+        raise NoEventQueueExit()
 
 
-def do_replay(args: argparse.Namespace) -> int:
-    try:
-        config = Config.from_file(args.config)
-
-    except InvalidConfigurationError as e:
-        print(str(e), file=sys.stderr)
-        return ExitCode.INVALID_CONFIG
-
-    setup_logging(verbose=config.main.verbose)
-    config.warn_about_default_passwords()
-
+def do_replay(config: Config, args: argparse.Namespace) -> None:
     if not config.queues:
         log.error(f'Could not replay events from "{args.queue}": no event queue configured')
-        return ExitCode.NO_EVENT_QUEUE
+        raise NoEventQueueExit()
 
     if args.queue not in config.queues:
         log.error(f'Could not replay events from "{args.queue}": unknown event queue requested')
-        return ExitCode.NO_EVENT_QUEUE
+        raise NoEventQueueExit()
 
     redis = Redis(host=config.redis.host, port=config.redis.port, password=config.redis.password)
     error_queue = f'errors-{args.queue}'
@@ -179,28 +116,15 @@ def do_replay(args: argparse.Namespace) -> int:
 
         except Exception:
             log.exception(f'Failed to push {failed_event} back in "{args.queue}":')
-
-            return ExitCode.UNKNOWN_ERROR
+            raise UnknownErrorExit()
 
     log.info(f'Successfully moved failed events back to "{args.queue}"')
 
-    return ExitCode.OK
 
-
-def do_run(args: argparse.Namespace) -> int:
-    try:
-        config = Config.from_file(args.config)
-
-    except InvalidConfigurationError as e:
-        print(str(e), file=sys.stderr)
-        return ExitCode.INVALID_CONFIG
-
-    setup_logging(verbose=config.main.verbose)
-    config.warn_about_default_passwords()
-
+def do_run(config: Config, args: argparse.Namespace) -> None:
     if not config.queues:
         log.error('Could not start: no event queue configured')
-        return ExitCode.NO_EVENT_QUEUE
+        raise NoEventQueueExit()
 
     controller = Controller(config)
 
@@ -209,10 +133,8 @@ def do_run(args: argparse.Namespace) -> int:
 
     except PostgresqlConnectionError as e:
         log.error('Could not connect to PostgreSQL: %s', e)
-        return ExitCode.CONNECTION_ERROR
+        raise ConnectionErrorExit()
 
     except RedisConnectionError as e:
         log.error('Could not connect to Redis: %s', e)
-        return ExitCode.CONNECTION_ERROR
-
-    return ExitCode.OK
+        raise ConnectionErrorExit()

@@ -7,8 +7,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-from azafea import cli
-
 from .. import IntegrationTest
 
 
@@ -19,14 +17,14 @@ class TestManageDb(IntegrationTest):
         from .handler_module import Event
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Event)
 
     def test_reinitdb(self):
         from .handler_module import Event
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Event)
 
         # Add an event
@@ -39,11 +37,11 @@ class TestManageDb(IntegrationTest):
             assert event.name == 'hi!'
 
         # Drop the table
-        assert self.run_subcommand('dropdb') == cli.ExitCode.OK
+        self.run_subcommand('dropdb')
         self.ensure_no_tables()
 
         # Recreate the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Event)
 
         # Ensure the old events were cleared by the drop

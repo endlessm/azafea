@@ -13,7 +13,6 @@ from uuid import UUID
 
 from gi.repository import GLib
 
-from azafea import cli
 from azafea.tests.integration import IntegrationTest
 
 
@@ -24,7 +23,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Request)
 
         # Build a request as it would have been sent to us
@@ -71,7 +70,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Request)
 
         # Build a request as it would have been sent to us
@@ -128,7 +127,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Request)
 
         # Build an invalid request (GVariant not in its normal form)
@@ -178,7 +177,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Request, LiveUsbBooted, Uptime, UnknownSingularEvent)
 
         # Build a request as it would have been sent to us
@@ -743,7 +742,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Request, LiveUsbBooted)
 
         # Build a request as it would have been sent to us
@@ -804,7 +803,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Request, UnknownSingularEvent)
 
         # Build a request as it would have been sent to us
@@ -885,7 +884,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Request, Uptime, InvalidSingularEvent)
 
         # Build a request as it would have been sent to us
@@ -980,7 +979,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Request, UnknownAggregateEvent)
 
         # Build a request as it would have been sent to us
@@ -1065,7 +1064,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Request, ShellAppIsOpen)
 
         # Build a request as it would have been sent to us
@@ -1182,7 +1181,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Request, UnknownSequence)
 
         # Build a request as it would have been sent to us
@@ -1261,7 +1260,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Request, InvalidSequence)
 
         # Build a request as it would have been sent to us
@@ -1363,7 +1362,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Request)
 
         # Build a request as it would have been sent to us
@@ -1435,7 +1434,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Request)
 
         # Build a request as it would have been sent to us

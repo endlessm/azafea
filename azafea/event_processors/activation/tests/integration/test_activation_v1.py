@@ -10,7 +10,6 @@
 from datetime import datetime, timezone
 import json
 
-from azafea import cli
 from azafea.tests.integration import IntegrationTest
 
 
@@ -21,7 +20,7 @@ class TestActivation(IntegrationTest):
         from azafea.event_processors.activation.v1 import Activation
 
         # Create the table
-        assert self.run_subcommand('initdb') == cli.ExitCode.OK
+        self.run_subcommand('initdb')
         self.ensure_tables(Activation)
 
         # Send an event to the Redis queue

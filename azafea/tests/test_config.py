@@ -328,8 +328,7 @@ def test_add_queue_with_invalid_handler_module(make_config):
 
 def test_default_passwords(capfd):
     setup_logging(verbose=False)
-    config = azafea.config.Config()
-    config.warn_about_default_passwords()
+    azafea.config.Config()
 
     capture = capfd.readouterr()
     assert 'Did you forget to change the PostgreSQL password?' in capture.err
@@ -338,11 +337,10 @@ def test_default_passwords(capfd):
 
 def test_non_default_passwords(capfd, make_config):
     setup_logging(verbose=False)
-    config = make_config({
+    make_config({
         'postgresql': {'password': 'not default'},
         'redis': {'password': 'not default'},
     })
-    config.warn_about_default_passwords()
 
     capture = capfd.readouterr()
     assert 'Did you forget to change the PostgreSQL password?' not in capture.err
