@@ -156,6 +156,8 @@ class NullableBoolean(TypeDecorator):
 
         super().__init__('true', 'false', 'unknown', **kwargs)
 
+    coerce_to_is_types = ()
+
     def process_bind_param(self, value: Optional[bool], dialect: Any) -> str:
         """Convert the Python values into the SQL ones"""
         return {
