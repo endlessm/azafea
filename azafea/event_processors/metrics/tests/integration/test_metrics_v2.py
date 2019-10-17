@@ -352,7 +352,7 @@ class TestMetrics(IntegrationTest):
                         15000000000,                   # event relative timestamp (15 secs)
                         GLib.Variant('(ssssiiay)', (
                             'Samsung Electric Company 22',
-                            'Samsung Electronics Co.,Ltd',
+                            'SAM',
                             'S22E450',
                             'serial number ignored',
                             500,
@@ -366,7 +366,7 @@ class TestMetrics(IntegrationTest):
                         14000000000,                   # event relative timestamp (14 secs)
                         GLib.Variant('(ssssiiay)', (
                             'Samsung Electric Company 22',
-                            'Samsung Electronics Co.,Ltd',
+                            'SAM',
                             'S22E450',
                             'serial number ignored',
                             500,
@@ -645,7 +645,7 @@ class TestMetrics(IntegrationTest):
             assert monitor.user_id == user_id
             assert monitor.occured_at == now - timedelta(seconds=2) + timedelta(seconds=15)
             assert monitor.display_name == 'Samsung Electric Company 22'
-            assert monitor.display_vendor == 'Samsung'
+            assert monitor.display_vendor == 'SAM'
             assert monitor.display_product == 'S22E450'
             assert monitor.display_width == 500
             assert monitor.display_height == 350
@@ -656,7 +656,7 @@ class TestMetrics(IntegrationTest):
             assert monitor.user_id == user_id
             assert monitor.occured_at == now - timedelta(seconds=2) + timedelta(seconds=14)
             assert monitor.display_name == 'Samsung Electric Company 22'
-            assert monitor.display_vendor == 'Samsung'
+            assert monitor.display_vendor == 'SAM'
             assert monitor.display_product == 'S22E450'
             assert monitor.display_width == 500
             assert monitor.display_height == 350

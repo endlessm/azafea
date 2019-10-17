@@ -335,7 +335,7 @@ class MonitorConnected(SingularEvent):
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
             'display_name': payload.get_child_value(0).get_string(),
-            'display_vendor': normalize_vendor(payload.get_child_value(1).get_string()),
+            'display_vendor': payload.get_child_value(1).get_string(),
             'display_product': payload.get_child_value(2).get_string(),
             'display_width': payload.get_child_value(4).get_int32(),
             'display_height': payload.get_child_value(5).get_int32(),
@@ -361,7 +361,7 @@ class MonitorDisconnected(SingularEvent):
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
             'display_name': payload.get_child_value(0).get_string(),
-            'display_vendor': normalize_vendor(payload.get_child_value(1).get_string()),
+            'display_vendor': payload.get_child_value(1).get_string(),
             'display_product': payload.get_child_value(2).get_string(),
             'display_width': payload.get_child_value(4).get_int32(),
             'display_height': payload.get_child_value(5).get_int32(),
