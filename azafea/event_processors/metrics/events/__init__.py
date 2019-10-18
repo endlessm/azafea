@@ -13,7 +13,7 @@ from gi.repository import GLib
 
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB
 from sqlalchemy.schema import Column
-from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, LargeBinary, Unicode
+from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, LargeBinary, Numeric, Unicode
 
 from azafea.vendors import normalize_vendor
 from ..utils import get_asv_dict, get_bytes, get_strings
@@ -163,6 +163,79 @@ class EndlessApplicationUnmaximized(SingularEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {'app_id': payload.get_string()}
+
+
+class HackClubhouseAchievement(SingularEvent):
+    __tablename__ = 'hack_clubhouse_achievement'
+    __event_uuid__ = '62ce2e93-bfdc-4cae-af4c-54068abfaf02'
+    __payload_type__ = '(ss)'
+
+    achievement_id = Column(Unicode, nullable=False)
+    achievement_name = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'achievement_id': payload.get_child_value(0).get_string(),
+            'achievement_name': payload.get_child_value(1).get_string(),
+        }
+
+
+class HackClubhouseAchievementPoints(SingularEvent):
+    __tablename__ = 'hack_clubhouse_achievement_points'
+    __event_uuid__ = '86521913-bfa3-4d13-b511-a03d4e339d2f'
+    __payload_type__ = '(sii)'
+
+    skillset = Column(Unicode, nullable=False)
+    points = Column(Integer, nullable=False)
+    new_points = Column(Integer, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'skillset': payload.get_child_value(0).get_string(),
+            'points': payload.get_child_value(1).get_int32(),
+            'new_points': payload.get_child_value(2).get_int32(),
+        }
+
+
+class HackClubhouseChangePage(SingularEvent):
+    __tablename__ = 'hack_clubhouse_change_page'
+    __event_uuid__ = '2c765b36-a4c9-40ee-b313-dc73c4fa1f0d'
+    __payload_type__ = 's'
+
+    page = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'page': payload.get_string()}
+
+
+class HackClubhouseEnterPathway(SingularEvent):
+    __tablename__ = 'hack_clubhouse_enter_pathway'
+    __event_uuid__ = '600c1cae-b391-4cb4-9930-ea284792fdfb'
+    __payload_type__ = 's'
+
+    pathway = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'pathway': payload.get_string()}
+
+
+class HackClubhouseProgress(SingularEvent):
+    __tablename__ = 'hack_clubhouse_progress'
+    __event_uuid__ = '3a037364-9164-4b42-8c07-73bcc00902de'
+    __payload_type__ = 'a{sv}'
+
+    complete = Column(Boolean, nullable=False)
+    quest = Column(Unicode, nullable=False)
+    pathways = Column(ARRAY(Unicode, dimensions=1), nullable=False)
+    progress = Column(Numeric, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return get_asv_dict(payload)
 
 
 class ImageVersion(SingularEvent):
