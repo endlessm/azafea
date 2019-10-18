@@ -66,8 +66,8 @@ class WrongPayloadError(Exception):
 
 
 class MetricMeta(DeclarativeMeta):
-    def __new__(mcl: Type[type], name: str, bases: Tuple[type, ...], attrs: Dict[str, Any],
-                **kwargs: Any) -> Type['MetricEvent']:
+    def __new__(mcl, name: str, bases: Tuple[type, ...], attrs: Dict[str, Any], **kwargs: Any
+                ) -> 'MetricMeta':
         cls = super().__new__(mcl, name, bases, attrs)
         event_uuid = attrs.get('__event_uuid__')
 
@@ -85,7 +85,8 @@ class MetricMeta(DeclarativeMeta):
             else:  # pragma: no cover
                 raise NotImplementedError(f"Can't handle class {name} with bases {bases}")
 
-        return cls
+        # FIXME: Do we have to cast? https://github.com/python/typeshed/issues/3386
+        return cast(MetricMeta, cls)
 
 
 class MetricEvent(Base, metaclass=MetricMeta):
