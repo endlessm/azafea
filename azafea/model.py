@@ -170,11 +170,11 @@ class NullableBoolean(TypeDecorator):
         """Convert the SQL values into the Python ones"""
         # The function signature says value is an Optional[Any], but in our case it can never be
         # None, as long as the model declares this column as nullable=False.
-        return {  # type: ignore
+        return {
             'true': True,
             'false': False,
             'unknown': None,
-        }[value]
+        }[value]  # type: ignore
 
 
 class PostgresqlConnectionError(Exception):
