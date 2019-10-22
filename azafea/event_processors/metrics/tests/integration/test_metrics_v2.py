@@ -167,7 +167,7 @@ class TestMetrics(IntegrationTest):
             LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
             Location, LocationLabel, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
-            NetworkStatusChanged, OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
+            OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
             ShellAppRemovedFromDesktop, UpdaterBranchSelected, Uptime, WindowsAppOpened,
             WindowsLicenseTables,
         )
@@ -379,12 +379,6 @@ class TestMetrics(IntegrationTest):
                         UUID('38eb48f8-e131-9b57-77c6-35e0590c82fd').bytes,
                         19000000000,                   # event relative timestamp (19 secs)
                         GLib.Variant('u', 123456)
-                    ),
-                    (
-                        user_id,
-                        UUID('5fae6179-e108-4962-83be-c909259c0584').bytes,
-                        20000000000,                   # event relative timestamp (20 secs)
-                        GLib.Variant('(uu)', (1, 0))
                     ),
                     (
                         user_id,
@@ -667,13 +661,6 @@ class TestMetrics(IntegrationTest):
             assert network.user_id == user_id
             assert network.occured_at == now - timedelta(seconds=2) + timedelta(seconds=19)
             assert network.network_id == 123456
-
-            network = dbsession.query(NetworkStatusChanged).one()
-            assert network.request_id == request.id
-            assert network.user_id == user_id
-            assert network.occured_at == now - timedelta(seconds=2) + timedelta(seconds=20)
-            assert network.previous_state == 1
-            assert network.new_state == 0
 
             os = dbsession.query(OSVersion).one()
             assert os.request_id == request.id
