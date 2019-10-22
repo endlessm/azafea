@@ -454,22 +454,6 @@ class NetworkId(SingularEvent):
         return {'network_id': payload.get_uint32()}
 
 
-class NetworkStatusChanged(SingularEvent):
-    __tablename__ = 'network_status_changed'
-    __event_uuid__ = '5fae6179-e108-4962-83be-c909259c0584'
-    __payload_type__ = '(uu)'
-
-    previous_state = Column(BigInteger, nullable=False)
-    new_state = Column(BigInteger, nullable=False)
-
-    @staticmethod
-    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {
-            'previous_state': payload.get_child_value(0).get_uint32(),
-            'new_state': payload.get_child_value(1).get_uint32(),
-        }
-
-
 class OSVersion(SingularEvent):
     __tablename__ = 'os_version'
     __event_uuid__ = '1fa16a31-9225-467e-8502-e31806e9b4eb'
