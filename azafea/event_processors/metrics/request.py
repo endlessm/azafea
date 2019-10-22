@@ -25,7 +25,7 @@ class Request(Base):
     __tablename__ = 'metrics_request_v2'
 
     id = Column(Integer, primary_key=True)
-    serialized = Column(LargeBinary, nullable=False)
+    serialized = Column(LargeBinary)
     sha512 = Column(Unicode, nullable=False, unique=True)
     received_at = Column(DateTime(timezone=True), nullable=False)
     absolute_timestamp = Column(BigInteger, nullable=False)
