@@ -233,27 +233,26 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
                                     event_relative_timestamp)
 
     try:
-        try:
-            event_model = SINGULAR_EVENT_MODELS[event_id]
+        event_model = SINGULAR_EVENT_MODELS[event_id]
 
-            # Mypy complains here, even though this should be fine:
-            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            event = event_model(request=request, user_id=user_id,  # type: ignore
-                                occured_at=event_date, payload=payload)
+    except KeyError:
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        event = UnknownSingularEvent(request=request, user_id=user_id,  # type: ignore
+                                     occured_at=event_date, event_id=event_id, payload=payload)
+        dbsession.add(event)
+        return event
 
-        except KeyError:
-            # Mypy complains here, even though this should be fine:
-            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            event = UnknownSingularEvent(request=request, user_id=user_id,  # type: ignore
-                                         occured_at=event_date, event_id=event_id, payload=payload)
-
-        except EmptyPayloadError:
-            if event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
-                return None
-
-            raise
+    try:
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        event = event_model(request=request, user_id=user_id,  # type: ignore
+                            occured_at=event_date, payload=payload)
 
     except Exception as e:
+        if isinstance(e, EmptyPayloadError) and event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
+            return None
+
         log.exception('An error occured while processing the event:')
 
         # Mypy complains here, even though this should be fine:
@@ -285,17 +284,20 @@ def new_aggregate_event(request: Request, event_variant: GLib.Variant, dbsession
     try:
         event_model = AGGREGATE_EVENT_MODELS[event_id]
 
-        # Mypy complains here, even though this should be fine:
-        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        event = event_model(request=request, user_id=user_id, occured_at=event_date,  # type: ignore
-                            count=count, payload=payload)
-
     except KeyError:
         # Mypy complains here, even though this should be fine:
         # https://github.com/dropbox/sqlalchemy-stubs/issues/97
         event = UnknownAggregateEvent(request=request, user_id=user_id,  # type: ignore
                                       occured_at=event_date, count=count, event_id=event_id,
                                       payload=payload)
+        dbsession.add(event)
+        return event
+
+    try:
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        event = event_model(request=request, user_id=user_id, occured_at=event_date,  # type: ignore
+                            count=count, payload=payload)
 
     except Exception as e:
         log.exception('An error occured while processing the aggregate:')
@@ -351,16 +353,19 @@ def new_sequence_event(request: Request, sequence_variant: GLib.Variant, dbsessi
     try:
         event_model = SEQUENCE_EVENT_MODELS[event_id]
 
-        # Mypy complains here, even though this should be fine:
-        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        sequence = event_model(request=request, user_id=user_id,  # type: ignore
-                               started_at=started_at, stopped_at=stopped_at, payload=payload)
-
     except KeyError:
         # Mypy complains here, even though this should be fine:
         # https://github.com/dropbox/sqlalchemy-stubs/issues/97
         sequence = UnknownSequence(request=request, user_id=user_id,  # type: ignore
                                    event_id=event_id, payload=events)
+        dbsession.add(sequence)
+        return sequence
+
+    try:
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        sequence = event_model(request=request, user_id=user_id,  # type: ignore
+                               started_at=started_at, stopped_at=stopped_at, payload=payload)
 
     except Exception as e:
         log.exception('An error occured while processing the sequence:')
