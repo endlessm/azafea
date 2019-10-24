@@ -107,6 +107,7 @@ _VARIANT_GETTERS = {
     't': lambda v: v.get_uint64(),
     'u': lambda v: v.get_uint32(),
     'x': lambda v: v.get_int64(),
+    'as': get_strings,
 }
 
 
