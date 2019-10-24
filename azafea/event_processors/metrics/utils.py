@@ -73,6 +73,30 @@ class cached_property:  # pragma: no cover
 # End of the copy-pasted code
 
 
+# This assumes value is a `ay` variant, verify before calling this
+def get_bytes(value: GLib.Variant) -> bytes:
+    return bytes(v.get_byte() for v in get_child_values(value))
+
+
+# This assumes value is an array/tuple variant, verify before calling this
+def get_child_values(value: GLib.Variant) -> Generator[GLib.Variant, None, None]:
+    return (value.get_child_value(i) for i in range(value.n_children()))
+
+
+# This assumes value is an `as` variant, verify before calling this
+def get_strings(value: GLib.Variant) -> List[str]:
+    return [v.get_string() for v in get_child_values(value)]
+
+
+def get_variant(value: GLib.Variant) -> GLib.Variant:
+    # Some of the metric events (e.g UptimeEvent) have payload wrapped multiple times in variants,
+    # but others don't
+    while value.get_type_string() == 'v':
+        value = value.get_variant()
+
+    return value
+
+
 _VARIANT_GETTERS = {
     'b': 'get_boolean',
     'd': 'get_double',
@@ -103,30 +127,6 @@ def get_asv_dict(value: GLib.Variant) -> Dict[str, Any]:
             raise NotImplementedError(f"Can't unpack {type_string!r} variant in {value}")
 
     return result
-
-
-# This assumes value is a `ay` variant, verify before calling this
-def get_bytes(value: GLib.Variant) -> bytes:
-    return bytes(v.get_byte() for v in get_child_values(value))
-
-
-# This assumes value is an array/tuple variant, verify before calling this
-def get_child_values(value: GLib.Variant) -> Generator[GLib.Variant, None, None]:
-    return (value.get_child_value(i) for i in range(value.n_children()))
-
-
-# This assumes value is an `as` variant, verify before calling this
-def get_strings(value: GLib.Variant) -> List[str]:
-    return [v.get_string() for v in get_child_values(value)]
-
-
-def get_variant(value: GLib.Variant) -> GLib.Variant:
-    # Some of the metric events (e.g UptimeEvent) have payload wrapped multiple times in variants,
-    # but others don't
-    while value.get_type_string() == 'v':
-        value = value.get_variant()
-
-    return value
 
 
 # See the timestamp-algorithm.rst file in this directory for details
