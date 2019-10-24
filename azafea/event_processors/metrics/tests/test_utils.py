@@ -26,6 +26,7 @@ def test_get_asv_dict():
         'q': GLib.Variant('q', 1),
         't': GLib.Variant('t', 1985),
         's': GLib.Variant('s', '🎂️'),
+        'as': GLib.Variant('as', ['🌬️', '🎂️']),
     })
     assert get_asv_dict(variant) == {
         'b': True,
@@ -37,6 +38,7 @@ def test_get_asv_dict():
         'q': 1,
         't': 1985,
         's': '🎂️',
+        'as': ['🌬️', '🎂️'],
     }
 
 
@@ -45,7 +47,6 @@ def test_get_asv_dict():
     ('h', 512),
     ('o', '/path/to/nope'),
     ('g', 'no'),
-    ('as', ['nope']),
     ('mi', None),
     ('mv', GLib.Variant('i', 10)),
     ('(ii)', (10, 1)),
