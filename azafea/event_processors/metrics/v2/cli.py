@@ -16,7 +16,15 @@ from azafea.model import Db
 from azafea.utils import progress
 from azafea.vendors import normalize_vendor
 
-from ..events import UpdaterBranchSelected
+from ..events import (
+    UnknownAggregateEvent,
+    UnknownSequence,
+    UnknownSingularEvent,
+    UpdaterBranchSelected,
+    replay_unknown_aggregate_events,
+    replay_unknown_sequences,
+    replay_unknown_singular_events,
+)
 
 
 log = logging.getLogger(__name__)
@@ -28,6 +36,11 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     normalize_vendors.add_argument('--chunk-size', type=int, default=5000,
                                    help='The size of the chunks to operate on')
     normalize_vendors.set_defaults(subcommand=do_normalize_vendors)
+
+    replay_unknown = subs.add_parser('replay-unknown', help='Replay unknown events')
+    replay_unknown.add_argument('--chunk-size', type=int, default=5000,
+                                help='The size of the chunks to operate on')
+    replay_unknown.set_defaults(subcommand=do_replay_unknown)
 
 
 def _normalize_chunk(chunk: Query) -> None:
@@ -64,3 +77,48 @@ def do_normalize_vendors(config: Config, args: argparse.Namespace) -> None:
     progress(num_records, num_records, end='\n')
 
     log.info('All done!')
+
+
+def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
+    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
+            config.postgresql.password, config.postgresql.database)
+
+    log.info('Replaying the unknown singular events…')
+
+    with db as dbsession:
+        query = dbsession.chunked_query(UnknownSingularEvent, chunk_size=args.chunk_size)
+        total = query.count()
+
+        for chunk_number, chunk in enumerate(query, start=1):
+            replay_unknown_singular_events(chunk)
+            dbsession.commit()
+            progress(chunk_number * args.chunk_size, total)
+
+    progress(total, total, end='\n')
+
+    log.info('Replaying the unknown aggregate events…')
+
+    with db as dbsession:
+        query = dbsession.chunked_query(UnknownAggregateEvent, chunk_size=args.chunk_size)
+        total = query.count()
+
+        # FIXME: Stop ignoring from coverage report once we actually have aggregate events
+        for chunk_number, chunk in enumerate(query, start=1):  # pragma: no cover
+            replay_unknown_aggregate_events(chunk)
+            dbsession.commit()
+            progress(chunk_number * args.chunk_size, total)
+
+    progress(total, total, end='\n')
+
+    log.info('Replaying the unknown sequences…')
+
+    with db as dbsession:
+        query = dbsession.chunked_query(UnknownSequence, chunk_size=args.chunk_size)
+        total = query.count()
+
+        for chunk_number, chunk in enumerate(query, start=1):
+            replay_unknown_sequences(chunk)
+            dbsession.commit()
+            progress(chunk_number * args.chunk_size, total)
+
+    progress(total, total, end='\n')
