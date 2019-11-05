@@ -223,6 +223,18 @@ class HackClubhouseEnterPathway(SingularEvent):
         return {'pathway': payload.get_string()}
 
 
+class HackClubhouseMode(SingularEvent):
+    __tablename__ = 'hack_clubhouse_mode'
+    __event_uuid__ = '7587784b-c3ed-4d74-b0fa-1023033698c0'
+    __payload_type__ = 'b'
+
+    active = Column(Boolean, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'active': payload.get_boolean()}
+
+
 class HackClubhouseProgress(SingularEvent):
     __tablename__ = 'hack_clubhouse_progress'
     __event_uuid__ = '3a037364-9164-4b42-8c07-73bcc00902de'
