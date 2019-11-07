@@ -197,6 +197,7 @@ def test_new_unknown_event():
     ),
     ('HackClubhouseChangePage', GLib.Variant('s', 'page'), {'page': 'page'}),
     ('HackClubhouseEnterPathway', GLib.Variant('s', 'pathway'), {'pathway': 'pathway'}),
+    ('HackClubhouseMode', GLib.Variant('b', True), {'active': True}),
     (
         'HackClubhouseProgress',
         GLib.Variant('a{sv}', {
