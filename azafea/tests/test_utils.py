@@ -55,22 +55,3 @@ def test_get_nonexistent_callable_module():
 def test_get_invalid_callable_module():
     with pytest.raises(AttributeError):
         azafea.utils.get_callable('azafea.tests.test_utils', 'no_such_method')
-
-
-def test_wrap_with_repr(capfd):
-    def some_function(some, arguments):
-        """An excellent doc string"""
-        print(f'Calling some_function({some!r}, {arguments!r})')
-
-    assert repr(some_function) != 'Some super repr'
-
-    wrapped = azafea.utils.wrap_with_repr(some_function, 'Some super repr')
-    assert repr(wrapped) == 'Some super repr'
-    assert wrapped.__doc__ == 'An excellent doc string'
-    assert wrapped.__module__ == 'azafea.tests.test_utils'
-    assert wrapped.__name__ == 'some_function'
-
-    wrapped('foo', 42)
-
-    capture = capfd.readouterr()
-    assert "Calling some_function('foo', 42)" in capture.out

@@ -13,16 +13,14 @@ import logging
 import os
 from typing import Any, Callable, Dict, List, Mapping, MutableMapping
 
-from pydantic.class_validators import validator
+from pydantic.class_validators import root_validator, validator
 from pydantic.dataclasses import dataclass
 from pydantic.error_wrappers import ValidationError
-
-from sqlalchemy.orm.session import Session as DbSession
 
 import toml
 
 from ._validators import is_boolean, is_non_empty_string, is_strictly_positive_integer
-from ..utils import get_callable, get_cpu_count, wrap_with_repr
+from ..utils import get_callable, get_cpu_count
 
 
 log = logging.getLogger(__name__)
@@ -39,6 +37,12 @@ class InvalidConfigurationError(Exception):
 
         for e in self.errors:
             loc = e['loc']
+
+            # Make the output prettier
+            # FIXME: Do that better: https://github.com/samuelcolvin/pydantic/issues/982
+            if loc[0] == 'queues' and loc[-1] == '__root__':
+                loc = (*loc[0:-1], 'handler')
+
             msg.append(f"* {'.'.join(loc)}: {e['msg']}")
 
         return '\n'.join(msg)
@@ -59,6 +63,10 @@ def asdict(obj):  # type: ignore
         result = {}
 
         for f in dataclasses.fields(obj):
+            if not f.init:
+                # Ignore computed fields
+                continue
+
             k = f.name
             if k == 'password':
                 result[k] = '** hidden **'
@@ -142,12 +150,13 @@ class PostgreSQL(_Base):
 
 @dataclass(frozen=True)
 class Queue(_Base):
-    handler: Callable
+    handler: str
+    processor: Callable = dataclasses.field(init=False)
 
     @staticmethod
     def _validate_callable(module_name: str, callable_name: str) -> Callable:
         try:
-            result = get_callable(module_name, callable_name)
+            return get_callable(module_name, callable_name)
 
         except ImportError:
             raise ValueError(f'Could not import module {module_name!r}')
@@ -155,11 +164,13 @@ class Queue(_Base):
         except AttributeError:
             raise ValueError(f'Module {module_name!r} is missing a {callable_name!r} function')
 
-        return wrap_with_repr(result, module_name)
+    # Ignore the mypy issue: https://github.com/samuelcolvin/pydantic/issues/984
+    @root_validator(pre=True)  # type: ignore
+    def get_computed_fields(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        handler = values['handler']
+        values['processor'] = cls._validate_callable(handler, 'process')
 
-    @validator('handler', pre=True)
-    def get_handler(cls, value: str) -> Callable[[DbSession, bytes], None]:
-        return cls._validate_callable(value, 'process')
+        return values
 
 
 @dataclass(frozen=True)
