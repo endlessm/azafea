@@ -154,7 +154,7 @@ class Config(_Base):
     postgresql: PostgreSQL = dataclasses.field(default_factory=PostgreSQL)
     queues: Mapping[str, Queue] = dataclasses.field(default_factory=dict)
 
-    def __post_init__(self) -> None:
+    def __post_init_post_parse__(self) -> None:
         self.warn_about_default_passwords()
 
     @classmethod
