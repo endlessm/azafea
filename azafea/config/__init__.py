@@ -7,6 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+import copy
 import dataclasses
 import logging
 import os
@@ -52,17 +53,28 @@ class _Base:
         raise NoSuchConfigurationError(f'No such configuration option: {name!r}')
 
 
-class _Dictifier(dict):
-    def __init__(self, items: List = None) -> None:
-        super().__init__()
+def asdict(obj):  # type: ignore
+    # We don't use dataclasses.asdict because we want to hide some fields
+    if isinstance(obj, _Base):
+        result = {}
 
-        if items is not None:
-            for k, v in items:
-                if k == 'password':
-                    # Don't print passwords
-                    v = '** hidden **'
+        for f in dataclasses.fields(obj):
+            k = f.name
+            if k == 'password':
+                result[k] = '** hidden **'
+            else:
+                result[k] = asdict(getattr(obj, k))
 
-                self[k] = v
+        return result
+
+    elif isinstance(obj, dict):
+        return {
+            k: asdict(v)
+            for k, v in obj.items()
+        }
+
+    else:
+        return copy.deepcopy(obj)
 
 
 @dataclass(frozen=True)
@@ -181,4 +193,4 @@ class Config(_Base):
             log.warning('Did you forget to change the Redis password?')
 
     def __str__(self) -> str:
-        return toml.dumps(dataclasses.asdict(self, dict_factory=_Dictifier)).strip()
+        return toml.dumps(asdict(self)).strip()
