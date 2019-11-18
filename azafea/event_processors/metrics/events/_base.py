@@ -55,6 +55,7 @@ IGNORED_EVENTS: Set[str] = {
 }
 IGNORED_EMPTY_PAYLOAD_ERRORS: Set[str] = {
     '9af2cc74-d6dd-423f-ac44-600a6eee2d96',
+    'add052be-7b2a-4959-81a5-a7f45062ee98',
 }
 
 
@@ -368,6 +369,9 @@ def new_sequence_event(request: Request, sequence_variant: GLib.Variant, dbsessi
                                started_at=started_at, stopped_at=stopped_at, payload=payload)
 
     except Exception as e:
+        if isinstance(e, EmptyPayloadError) and event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
+            return None
+
         log.exception('An error occured while processing the sequence:')
 
         # Mypy complains here, even though this should be fine:
