@@ -1440,8 +1440,8 @@ class TestMetrics(IntegrationTest):
                     (
                         user_id,
                         UUID('9af2cc74-d6dd-423f-ac44-600a6eee2d96').bytes,
-                        1000000000,                    # event relative timestamp (1 sec)
-                        None,                          # empty payload
+                        1000000000,                        # event relative timestamp (1 sec)
+                        None,                              # empty payload
                     ),
                 ],
                 [],                                        # aggregate events
