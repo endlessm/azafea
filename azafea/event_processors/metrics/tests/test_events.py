@@ -203,7 +203,10 @@ def test_new_unknown_event():
         GLib.Variant('a{sv}', {
             'complete': GLib.Variant('b', True),
             'quest': GLib.Variant('s', 'quest'),
-            'pathways': GLib.Variant('as', ['pathway1', 'pathway2']),
+            'pathways': GLib.Variant('av', [
+                GLib.Variant('s', 'pathway1'),
+                GLib.Variant('s', 'pathway2'),
+            ]),
             'progress': GLib.Variant('d', 100.0),
         }),
         {
@@ -401,7 +404,10 @@ def test_hack_clubhouse_progress_event_with_unknown_key():
         'progress': GLib.Variant('d', 95.3),
         'complete': GLib.Variant('b', False),
         'quest': GLib.Variant('s', 'quest'),
-        'pathways': GLib.Variant('as', ['pathway2', 'pathway1']),
+        'pathways': GLib.Variant('av', [
+            GLib.Variant('s', 'pathway2'),
+            GLib.Variant('s', 'pathway1'),
+        ]),
         'unknown': GLib.Variant('s', 'ignored'),
     }))
 
