@@ -16,7 +16,7 @@ from sqlalchemy.schema import Column
 from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, LargeBinary, Numeric, Unicode
 
 from azafea.vendors import normalize_vendor
-from ..utils import get_asv_dict, get_bytes, get_strings
+from ..utils import get_asv_dict, get_bytes, get_child_values, get_strings
 from ._base import (  # noqa: F401
     SequenceEvent,
     SingularEvent,
@@ -247,7 +247,32 @@ class HackClubhouseProgress(SingularEvent):
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return get_asv_dict(payload)
+        result: Dict[str, Any] = {}
+
+        for item in get_child_values(payload):
+            name = item.get_child_value(0).get_string()
+            value = item.get_child_value(1).get_variant()
+
+            if name == 'complete':
+                result['complete'] = value.get_boolean()
+
+            elif name == 'quest':
+                result['quest'] = value.get_string()
+
+            elif name == 'pathways':
+                result['pathways'] = get_strings(value)
+
+            elif name == 'progress':
+                result['progress'] = value.get_double()
+
+        keys = sorted(result.keys())
+
+        if keys != ['complete', 'pathways', 'progress', 'quest']:
+            raise ValueError(f'Metric event 3a037364-9164-4b42-8c07-73bcc00902de needs an '
+                             '"a{sv}" payload with certain keys, but some were missing: got '
+                             f'{keys}')
+
+        return result
 
 
 class ImageVersion(SingularEvent):
