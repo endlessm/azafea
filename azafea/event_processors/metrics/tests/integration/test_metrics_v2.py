@@ -1416,8 +1416,9 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(UnknownSequence).count() == 0
 
     def test_ignored_empty_payload_errors(self):
-        from azafea.event_processors.metrics.events import Uptime
-        from azafea.event_processors.metrics.events._base import InvalidSingularEvent
+        from azafea.event_processors.metrics.events import Uptime, UserIsLoggedIn
+        from azafea.event_processors.metrics.events._base import (
+            InvalidSequence, InvalidSingularEvent)
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
@@ -1439,12 +1440,27 @@ class TestMetrics(IntegrationTest):
                     (
                         user_id,
                         UUID('9af2cc74-d6dd-423f-ac44-600a6eee2d96').bytes,
-                        1000000000,                    # event relative timestamp (1 sec)
-                        None,                          # empty payload
+                        1000000000,                        # event relative timestamp (1 sec)
+                        None,                              # empty payload
                     ),
                 ],
                 [],                                        # aggregate events
-                []                                         # sequence events
+                [                                          # sequence events
+                    (
+                        user_id,
+                        UUID('add052be-7b2a-4959-81a5-a7f45062ee98').bytes,
+                        [                                  # events in the sequence
+                            (
+                                3000000000,                # event relative timestamp (3 secs)
+                                None,                      # INVALID: the payload should be a 'u'
+                            ),
+                            (
+                                120000000000,              # event relative timestamp (2 mins)
+                                None,
+                            ),
+                        ]
+                    ),
+                ]
             )
         )
 
@@ -1471,3 +1487,6 @@ class TestMetrics(IntegrationTest):
 
             assert dbsession.query(InvalidSingularEvent).count() == 0
             assert dbsession.query(Uptime).count() == 0
+
+            assert dbsession.query(InvalidSequence).count() == 0
+            assert dbsession.query(UserIsLoggedIn).count() == 0
