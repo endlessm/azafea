@@ -83,9 +83,9 @@ def get_child_values(value: GLib.Variant) -> Generator[GLib.Variant, None, None]
     return (value.get_child_value(i) for i in range(value.n_children()))
 
 
-# This assumes value is an `as` variant, verify before calling this
+# This assumes value is an `as` or `av<s>` variant, verify before calling this
 def get_strings(value: GLib.Variant) -> List[str]:
-    return [v.get_string() for v in get_child_values(value)]
+    return [get_variant(v).get_string() for v in get_child_values(value)]
 
 
 def get_variant(value: GLib.Variant) -> GLib.Variant:

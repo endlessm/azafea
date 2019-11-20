@@ -203,7 +203,10 @@ def test_new_unknown_event():
         GLib.Variant('a{sv}', {
             'complete': GLib.Variant('b', True),
             'quest': GLib.Variant('s', 'quest'),
-            'pathways': GLib.Variant('as', ['pathway1', 'pathway2']),
+            'pathways': GLib.Variant('av', [
+                GLib.Variant('s', 'pathway1'),
+                GLib.Variant('s', 'pathway2'),
+            ]),
             'progress': GLib.Variant('d', 100.0),
         }),
         {
@@ -374,6 +377,47 @@ def test_singular_event(event_model_name, payload, expected_attrs):
 
     for attr_name, attr_value in expected_attrs.items():
         assert getattr(event, attr_name) == attr_value
+
+
+def test_invalid_hack_clubhouse_progress_event():
+    from azafea.event_processors.metrics.events import HackClubhouseProgress
+
+    # Make an invalid payload with missing keys
+    payload = GLib.Variant('mv', GLib.Variant('a{sv}', {'complete': GLib.Variant('b', True)}))
+
+    with pytest.raises(ValueError) as excinfo:
+        HackClubhouseProgress(payload)
+
+    assert str(excinfo.value) == ('Metric event 3a037364-9164-4b42-8c07-73bcc00902de needs an '
+                                  '"a{sv}" payload with certain keys, but some were missing: got '
+                                  "['complete']")
+
+
+def test_hack_clubhouse_progress_event_with_unknown_key():
+    # Additional event attributes passed to the constructor are ignored by our base model, but for
+    # this specific event the code parsing the payload does its own ignoring as well, so let's test
+    # it to be sure.
+    from azafea.event_processors.metrics.events import HackClubhouseProgress
+
+    # Make an invalid payload with missing keys
+    payload = GLib.Variant('mv', GLib.Variant('a{sv}', {
+        'progress': GLib.Variant('d', 95.3),
+        'complete': GLib.Variant('b', False),
+        'quest': GLib.Variant('s', 'quest'),
+        'pathways': GLib.Variant('av', [
+            GLib.Variant('s', 'pathway2'),
+            GLib.Variant('s', 'pathway1'),
+        ]),
+        'unknown': GLib.Variant('s', 'ignored'),
+    }))
+
+    event = HackClubhouseProgress(payload)
+
+    assert not event.complete
+    assert event.quest == 'quest'
+    assert event.pathways == ['pathway2', 'pathway1']
+    assert event.progress == 95.3
+    assert not hasattr(event, 'unknown')
 
 
 @pytest.mark.parametrize('event_model_name, payload, expected_attrs', [
