@@ -9,6 +9,7 @@
 
 import logging
 import sys
+import warnings
 
 
 class StdoutFilter(logging.Filter):
@@ -51,6 +52,9 @@ def setup_logging(*, verbose: bool = False) -> None:
     logging.basicConfig(level=level, handlers=[out, err], format=format_, style='{')
 
     if verbose:
+        # Enable warnings
+        warnings.simplefilter('default')
+
         # Increase verbosity
         logging.getLogger('sqlalchemy').setLevel(logging.DEBUG)
 

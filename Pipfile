@@ -12,7 +12,7 @@ sqlalchemy-stubs = {git = "https://github.com/dropbox/sqlalchemy-stubs.git",ref 
 
 [packages]
 psycopg2 = "*"
-pydantic = "*"
+pydantic = ">= 1.1"
 pygobject = "*"
 redis = "*"
 sqlalchemy = "*"
