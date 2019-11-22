@@ -123,8 +123,8 @@ def test_override_verbose_invalid(make_config, value):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'main': {'verbose': value}})
 
-    assert ('Invalid [main] configuration:\n'
-            f'* verbose: {value!r} is not a boolean') in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f'* main.verbose: {value!r} is not a boolean') in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -136,8 +136,8 @@ def test_override_number_of_workers_invalid(make_config, value):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'main': {'number_of_workers': value}})
 
-    assert ('Invalid [main] configuration:\n'
-            f'* number_of_workers: {value!r} is not an integer') in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f'* main.number_of_workers: {value!r} is not an integer') in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -148,8 +148,8 @@ def test_override_number_of_workers_negative_or_zero(make_config, value):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'main': {'number_of_workers': value}})
 
-    assert ('Invalid [main] configuration:\n'
-            f'* number_of_workers: {value!r} is not a strictly positive integer'
+    assert ('Invalid configuration:\n'
+            f'* main.number_of_workers: {value!r} is not a strictly positive integer'
             ) in str(exc_info.value)
 
 
@@ -162,16 +162,16 @@ def test_override_redis_host_invalid(make_config, value):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'redis': {'host': value}})
 
-    assert ('Invalid [redis] configuration:\n'
-            f'* host: {value!r} is not a string') in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f'* redis.host: {value!r} is not a string') in str(exc_info.value)
 
 
 def test_override_redis_host_empty(make_config):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'redis': {'host': ''}})
 
-    assert ('Invalid [redis] configuration:\n'
-            f"* host: '' is empty") in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f"* redis.host: '' is empty") in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -183,8 +183,8 @@ def test_override_redis_port_invalid(make_config, value):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'redis': {'port': value}})
 
-    assert ('Invalid [redis] configuration:\n'
-            f'* port: {value!r} is not an integer') in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f'* redis.port: {value!r} is not an integer') in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -195,8 +195,8 @@ def test_override_redis_port_not_positive(make_config, value):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'redis': {'port': value}})
 
-    assert ('Invalid [redis] configuration:\n'
-            f'* port: {value!r} is not a strictly positive integer') in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f'* redis.port: {value!r} is not a strictly positive integer') in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -208,16 +208,16 @@ def test_override_postgresql_host_invalid(make_config, value):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'postgresql': {'host': value}})
 
-    assert ('Invalid [postgresql] configuration:\n'
-            f'* host: {value!r} is not a string') in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f'* postgresql.host: {value!r} is not a string') in str(exc_info.value)
 
 
 def test_override_postgresql_host_empty(make_config):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'postgresql': {'host': ''}})
 
-    assert ('Invalid [postgresql] configuration:\n'
-            f"* host: '' is empty") in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f"* postgresql.host: '' is empty") in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -229,8 +229,8 @@ def test_override_postgresql_port_invalid(make_config, value):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'postgresql': {'port': value}})
 
-    assert ('Invalid [postgresql] configuration:\n'
-            f'* port: {value!r} is not an integer') in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f'* postgresql.port: {value!r} is not an integer') in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -241,8 +241,9 @@ def test_override_postgresql_port_not_positive(make_config, value):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'postgresql': {'port': value}})
 
-    assert ('Invalid [postgresql] configuration:\n'
-            f'* port: {value!r} is not a strictly positive integer') in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f'* postgresql.port: {value!r} is not a strictly positive integer'
+            ) in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -254,16 +255,16 @@ def test_override_postgresql_user_invalid(make_config, value):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'postgresql': {'user': value}})
 
-    assert ('Invalid [postgresql] configuration:\n'
-            f'* user: {value!r} is not a string') in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f'* postgresql.user: {value!r} is not a string') in str(exc_info.value)
 
 
 def test_override_postgresql_user_empty(make_config):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'postgresql': {'user': ''}})
 
-    assert ('Invalid [postgresql] configuration:\n'
-            f"* user: '' is empty") in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f"* postgresql.user: '' is empty") in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -275,16 +276,16 @@ def test_override_postgresql_password_invalid(make_config, value):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'postgresql': {'password': value}})
 
-    assert ('Invalid [postgresql] configuration:\n'
-            f'* password: {value!r} is not a string') in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f'* postgresql.password: {value!r} is not a string') in str(exc_info.value)
 
 
 def test_override_postgresql_password_empty(make_config):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'postgresql': {'password': ''}})
 
-    assert ('Invalid [postgresql] configuration:\n'
-            f"* password: '' is empty") in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f"* postgresql.password: '' is empty") in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -296,24 +297,24 @@ def test_override_postgresql_database_invalid(make_config, value):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'postgresql': {'database': value}})
 
-    assert ('Invalid [postgresql] configuration:\n'
-            f'* database: {value!r} is not a string') in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f'* postgresql.database: {value!r} is not a string') in str(exc_info.value)
 
 
 def test_override_postgresql_database_empty(make_config):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'postgresql': {'database': ''}})
 
-    assert ('Invalid [postgresql] configuration:\n'
-            f"* database: '' is empty") in str(exc_info.value)
+    assert ('Invalid configuration:\n'
+            f"* postgresql.database: '' is empty") in str(exc_info.value)
 
 
 def test_add_queue_with_nonexistent_handler_module(make_config):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'queues': {'some-queue': {'handler': 'no.such.module'}}})
 
-    assert ('Invalid [queues] configuration:\n'
-            f"* handler: Could not import handler module 'no.such.module'"
+    assert ('Invalid configuration:\n'
+            f"* queues.some-queue.handler: Could not import handler module 'no.such.module'"
             ) in str(exc_info.value)
 
 
@@ -321,8 +322,8 @@ def test_add_queue_with_invalid_handler_module(make_config):
     with pytest.raises(azafea.config.InvalidConfigurationError) as exc_info:
         make_config({'queues': {'some-queue': {'handler': 'azafea'}}})
 
-    assert ('Invalid [queues] configuration:\n'
-            f"* handler: Handler 'azafea' is missing a \"process\" function"
+    assert ('Invalid configuration:\n'
+            f"* queues.some-queue.handler: Handler 'azafea' is missing a \"process\" function"
             ) in str(exc_info.value)
 
 

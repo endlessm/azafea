@@ -30,16 +30,15 @@ DEFAULT_PASSWORD = 'CHANGE ME!!'
 
 
 class InvalidConfigurationError(Exception):
-    def __init__(self, section: str, errors: List[Dict[str, Any]]) -> None:
-        self.section = section
+    def __init__(self, errors: List[Dict[str, Any]]) -> None:
         self.errors = errors
 
     def __str__(self) -> str:
-        msg = [f'Invalid [{self.section}] configuration:']
+        msg = ['Invalid configuration:']
 
         for e in self.errors:
-            for loc in e['loc']:
-                msg.append(f"* {loc}: {e['msg']}")
+            loc = e['loc']
+            msg.append(f"* {'.'.join(loc)}: {e['msg']}")
 
         return '\n'.join(msg)
 
@@ -154,39 +153,21 @@ class Config(_Base):
     postgresql: PostgreSQL = dataclasses.field(default_factory=PostgreSQL)
     queues: Mapping[str, Queue] = dataclasses.field(default_factory=dict)
 
-    def __post_init__(self) -> None:
+    def __post_init_post_parse__(self) -> None:
         self.warn_about_default_passwords()
 
     @classmethod
     def from_file(cls, config_file_path: str) -> 'Config':
         overrides: MutableMapping[str, Any] = {}
-        queues: MutableMapping[str, Queue] = {}
 
         if os.path.exists(config_file_path):
             overrides = toml.load(config_file_path)
 
         try:
-            main = Main(**overrides.get('main', {}))
-        except ValidationError as e:
-            raise InvalidConfigurationError('main', e.errors())
+            return cls(**overrides)
 
-        try:
-            redis = Redis(**overrides.get('redis', {}))
         except ValidationError as e:
-            raise InvalidConfigurationError('redis', e.errors())
-
-        try:
-            postgresql = PostgreSQL(**overrides.get('postgresql', {}))
-        except ValidationError as e:
-            raise InvalidConfigurationError('postgresql', e.errors())
-
-        try:
-            for name, queue_options in overrides.get('queues', {}).items():
-                queues[name] = Queue(**queue_options)
-        except ValidationError as e:
-            raise InvalidConfigurationError('queues', e.errors())
-
-        return cls(main=main, redis=redis, postgresql=postgresql, queues=queues)
+            raise InvalidConfigurationError(e.errors())
 
     def warn_about_default_passwords(self) -> None:
         if self.postgresql.password == DEFAULT_PASSWORD:
