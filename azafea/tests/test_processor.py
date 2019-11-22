@@ -92,11 +92,11 @@ def test_start_then_sigint(capfd, monkeypatch, make_config, mock_sessionmaker):
     def process(*args, **kwargs):
         pass
 
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         return process
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
         config = make_config({
             'main': {'verbose': True},
             'queues': {'some-queue': {'handler': 'azafea.tests.test_processor'}},
@@ -127,11 +127,11 @@ def test_start_then_sigterm(capfd, monkeypatch, make_config, mock_sessionmaker):
     def process(*args, **kwargs):
         pass
 
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         return process
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
         config = make_config({
             'main': {'verbose': True},
             'queues': {'some-queue': {'handler': 'azafea.tests.test_processor'}},
@@ -162,11 +162,11 @@ def test_process_with_error(capfd, monkeypatch, make_config, mock_sessionmaker):
     def failing_process(*args, **kwargs):
         raise ValueError('Oh no!')
 
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         return failing_process
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
         config = make_config({
             'main': {'verbose': True},
             'queues': {'some-queue': {'handler': 'azafea.tests.test_processor'}},

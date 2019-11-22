@@ -63,11 +63,11 @@ def test_override(monkeypatch, make_config):
     def process(*args, **kwargs):
         pass
 
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         return process
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
         config = make_config({
             'main': {'number_of_workers': 1},
             'redis': {'port': 42},
@@ -314,7 +314,7 @@ def test_add_queue_with_nonexistent_handler_module(make_config):
         make_config({'queues': {'some-queue': {'handler': 'no.such.module'}}})
 
     assert ('Invalid configuration:\n'
-            f"* queues.some-queue.handler: Could not import handler module 'no.such.module'"
+            f"* queues.some-queue.handler: Could not import module 'no.such.module'"
             ) in str(exc_info.value)
 
 
@@ -323,7 +323,7 @@ def test_add_queue_with_invalid_handler_module(make_config):
         make_config({'queues': {'some-queue': {'handler': 'azafea'}}})
 
     assert ('Invalid configuration:\n'
-            f"* queues.some-queue.handler: Handler 'azafea' is missing a \"process\" function"
+            f"* queues.some-queue.handler: Module 'azafea' is missing a 'process' function"
             ) in str(exc_info.value)
 
 

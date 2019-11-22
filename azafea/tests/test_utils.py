@@ -41,36 +41,17 @@ def test_get_fqdn(module, name, expected):
     assert azafea.utils.get_fqdn(f) == expected
 
 
-def test_get_handler():
-    handler = azafea.utils.get_handler('azafea.tests.test_utils')
+def test_get_callable():
+    handler = azafea.utils.get_callable('azafea.tests.test_utils', 'process')
 
     assert handler == process
 
 
-def test_get_nonexistent_handler_module():
+def test_get_nonexistent_callable_module():
     with pytest.raises(ImportError):
-        azafea.utils.get_handler('no.such.module')
+        azafea.utils.get_callable('no.such.module', 'process')
 
 
-def test_get_invalid_handler_module():
+def test_get_invalid_callable_module():
     with pytest.raises(AttributeError):
-        azafea.utils.get_handler('azafea')
-
-
-def test_wrap_with_repr(capfd):
-    def some_function(some, arguments):
-        """An excellent doc string"""
-        print(f'Calling some_function({some!r}, {arguments!r})')
-
-    assert repr(some_function) != 'Some super repr'
-
-    wrapped = azafea.utils.wrap_with_repr(some_function, 'Some super repr')
-    assert repr(wrapped) == 'Some super repr'
-    assert wrapped.__doc__ == 'An excellent doc string'
-    assert wrapped.__module__ == 'azafea.tests.test_utils'
-    assert wrapped.__name__ == 'some_function'
-
-    wrapped('foo', 42)
-
-    capture = capfd.readouterr()
-    assert "Calling some_function('foo', 42)" in capture.out
+        azafea.utils.get_callable('azafea.tests.test_utils', 'no_such_method')

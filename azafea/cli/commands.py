@@ -22,15 +22,7 @@ from .errors import ConnectionErrorExit, NoEventQueueExit, UnknownErrorExit
 log = logging.getLogger(__name__)
 
 
-def get_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog='azafea',
-                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-
-    parser.add_argument('-c', '--config', default='/etc/azafea/config.toml',
-                        help='Optional path to a configuration file, if needed')
-
-    subs = parser.add_subparsers(title='subcommands', dest='subcommand', required=True)
-
+def register_commands(subs: argparse._SubParsersAction) -> None:
     dropdb = subs.add_parser('dropdb', help='Drop the tables in the database')
     dropdb.set_defaults(subcommand=do_dropdb)
 
@@ -49,8 +41,6 @@ def get_parser() -> argparse.ArgumentParser:
 
     run = subs.add_parser('run', help='Run azafea')
     run.set_defaults(subcommand=do_run)
-
-    return parser
 
 
 def do_dropdb(config: Config, args: argparse.Namespace) -> None:

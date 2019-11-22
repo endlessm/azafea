@@ -21,7 +21,7 @@ def test_dropdb(capfd, monkeypatch, make_config_file):
         def drop_all(self):
             print('Dropping the tables…')
 
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         def process(*args, **kwargs):
             pass
 
@@ -30,7 +30,7 @@ def test_dropdb(capfd, monkeypatch, make_config_file):
     config_file = make_config_file({'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}}})
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
         m.setattr(azafea.cli.commands, 'Db', MockDb)
         azafea.cli.run_command('-c', str(config_file), 'dropdb')
 
@@ -67,7 +67,7 @@ def test_initdb(capfd, monkeypatch, make_config_file):
         def create_all(self):
             print('Creating the tables…')
 
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         def process(*args, **kwargs):
             pass
 
@@ -76,7 +76,7 @@ def test_initdb(capfd, monkeypatch, make_config_file):
     config_file = make_config_file({'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}}})
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
         m.setattr(azafea.cli.commands, 'Db', MockDb)
         azafea.cli.run_command('-c', str(config_file), 'initdb')
 
@@ -106,7 +106,7 @@ def test_initdb_no_event_queue(capfd, make_config_file):
 
 
 def test_print_config(capfd, monkeypatch, make_config_file):
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         def process(*args, **kwargs):
             pass
 
@@ -120,7 +120,7 @@ def test_print_config(capfd, monkeypatch, make_config_file):
     })
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
         azafea.cli.run_command('-c', str(config_file), 'print-config')
 
     capture = capfd.readouterr()
@@ -196,7 +196,7 @@ def test_replay_errors(capfd, monkeypatch, make_config_file):
     def mock_redis(*args, **kwargs):
         return redis
 
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         def process(*args, **kwargs):
             pass
 
@@ -208,7 +208,7 @@ def test_replay_errors(capfd, monkeypatch, make_config_file):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.cli.commands, 'Redis', mock_redis)
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
         azafea.cli.run_command('-c', str(config_file), 'replay-errors', 'some-queue')
 
     assert redis._queues == {
@@ -242,7 +242,7 @@ def test_replay_errors_no_event_queue(capfd, make_config_file):
 
 
 def test_replay_errors_unknown_queue(capfd, monkeypatch, make_config_file):
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         def process(*args, **kwargs):
             pass
 
@@ -253,7 +253,7 @@ def test_replay_errors_unknown_queue(capfd, monkeypatch, make_config_file):
     })
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
 
         with pytest.raises(azafea.cli.errors.NoEventQueueExit):
             azafea.cli.run_command('-c', str(config_file), 'replay-errors', 'other-queue')
@@ -290,7 +290,7 @@ def test_replay_errors_stopped_early(capfd, monkeypatch, make_config_file):
     def mock_redis(*args, **kwargs):
         return redis
 
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         def process(*args, **kwargs):
             pass
 
@@ -302,7 +302,7 @@ def test_replay_errors_stopped_early(capfd, monkeypatch, make_config_file):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.cli.commands, 'Redis', mock_redis)
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
         azafea.cli.run_command('-c', str(config_file), 'replay-errors', 'some-queue')
 
     assert redis._queues == {
@@ -341,7 +341,7 @@ def test_replay_errors_fail_to_push(capfd, monkeypatch, make_config_file):
     def mock_redis(*args, **kwargs):
         return redis
 
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         def process(*args, **kwargs):
             pass
 
@@ -353,7 +353,7 @@ def test_replay_errors_fail_to_push(capfd, monkeypatch, make_config_file):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.cli.commands, 'Redis', mock_redis)
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
 
         with pytest.raises(azafea.cli.errors.UnknownErrorExit):
             azafea.cli.run_command('-c', str(config_file), 'replay-errors', 'some-queue')
@@ -375,7 +375,7 @@ def test_run(capfd, monkeypatch, make_config_file):
         def main(self):
             print('Running the mock controller…')
 
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         def process(*args, **kwargs):
             pass
 
@@ -384,7 +384,7 @@ def test_run(capfd, monkeypatch, make_config_file):
     config_file = make_config_file({'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}}})
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
         m.setattr(azafea.cli.commands, 'Controller', MockController)
         azafea.cli.run_command('-c', str(config_file), 'run')
 
@@ -415,7 +415,7 @@ def test_run_no_event_queue(capfd, make_config_file):
 
 
 def test_run_redis_connection_error(capfd, monkeypatch, make_config_file):
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         def process(*args, **kwargs):
             pass
 
@@ -428,7 +428,7 @@ def test_run_redis_connection_error(capfd, monkeypatch, make_config_file):
     })
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
 
         with pytest.raises(azafea.cli.errors.ConnectionErrorExit):
             azafea.cli.run_command('-c', str(config_file), 'run')
@@ -450,7 +450,7 @@ def test_run_postgresql_connection_error(capfd, monkeypatch, make_config_file):
         def connect(self):
             pass
 
-    def mock_get_handler(module):
+    def mock_get_callable(module_name, callable_name):
         def process(*args, **kwargs):
             pass
 
@@ -463,7 +463,7 @@ def test_run_postgresql_connection_error(capfd, monkeypatch, make_config_file):
     })
 
     with monkeypatch.context() as m:
-        m.setattr(azafea.config, 'get_handler', mock_get_handler)
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
         m.setattr(azafea.processor, 'Redis', MockRedis)
 
         with pytest.raises(azafea.cli.errors.ConnectionErrorExit):
@@ -472,3 +472,71 @@ def test_run_postgresql_connection_error(capfd, monkeypatch, make_config_file):
     capture = capfd.readouterr()
     assert ('Could not connect to PostgreSQL: '
             'connection refused on postgresql://azafea@no-such-host:1/azafea') in capture.err
+
+
+def test_per_queue_command(capfd, monkeypatch, make_config_file):
+    def mock_get_callable(module_name, callable_name):
+        def process(*args, **kwargs):
+            pass
+
+        def register_commands(subs) -> None:
+            do_something = subs.add_parser('do-something')
+            do_something.set_defaults(subcommand=lambda *_: print('Doing something!'))
+
+        assert callable_name in ('register_commands', 'process')
+
+        if callable_name == 'register_commands':
+            return register_commands
+
+        if callable_name == 'process':
+            return process
+
+    config_file = make_config_file({
+        'queues': {
+            'some-queue': {
+                'handler': 'azafea.tests.test_cli',
+            },
+        }
+    })
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
+        azafea.cli.run_command('-c', str(config_file), 'some-queue', 'do-something')
+
+    capture = capfd.readouterr()
+    assert 'Doing something!' in capture.out
+
+
+def test_per_queue_invalid_command(capfd, monkeypatch, make_config_file):
+    def mock_get_callable(module_name, callable_name):
+        def process(*args, **kwargs):
+            pass
+
+        def register_commands(subs) -> None:
+            do_something = subs.add_parser('do-something')
+            do_something.set_defaults(subcommand=lambda *_: print('Doing something!'))
+
+        assert callable_name in ('register_commands', 'process')
+
+        if callable_name == 'register_commands':
+            return register_commands
+
+        if callable_name == 'process':
+            return process
+
+    config_file = make_config_file({
+        'queues': {
+            'some-queue': {
+                'handler': 'azafea.tests.test_cli',
+            },
+        }
+    })
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
+
+        with pytest.raises(SystemExit):
+            azafea.cli.run_command('-c', str(config_file), 'some-queue', 'initdb')
+
+    capture = capfd.readouterr()
+    assert "invalid choice: 'initdb' (choose from 'do-something')" in capture.err

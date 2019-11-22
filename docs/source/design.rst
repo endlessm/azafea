@@ -19,7 +19,7 @@ incoming format, how to deserialize them, what to do with them and finally how
 to store them in PostgreSQL.
 
 That makes Azafea flexible so it can adapt to the needs of various
-organizations: you can :doc:`write your own event handlers <event-handlers>`
+organizations: you can :doc:`write your own event handlers <queue-plugins>`
 which will process your events just the way you want.
 
 All of this is piloted by :doc:`the configuration file <configuration>`.

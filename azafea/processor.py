@@ -82,16 +82,16 @@ class Processor(Process):
 
             log.debug('{%s} Pulled %s from the %s queue', self.name, value, queue_name)
 
-            queue_handler = self.config.queues[queue_name].handler
+            queue_processor = self.config.queues[queue_name].processor
             log.debug('{%s} Processing event from the %s queue with %s',
-                      self.name, queue_name, get_fqdn(queue_handler))
+                      self.name, queue_name, get_fqdn(queue_processor))
 
             try:
                 with self._db as dbsession:
-                    queue_handler(dbsession, value)
+                    queue_processor(dbsession, value)
 
             except Exception:
                 log.exception('{%s} An error occured while processing an event from the %s queue '
                               'with %s\nDetails:',
-                              self.name, queue_name, get_fqdn(queue_handler))
+                              self.name, queue_name, get_fqdn(queue_processor))
                 self._redis.lpush(f'errors-{queue_name}', value)

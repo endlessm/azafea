@@ -7,6 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+import argparse
 import logging
 
 from . import commands
@@ -18,14 +19,23 @@ from ..logging import setup_logging
 log = logging.getLogger(__name__)
 
 
+def _get_parser(*, add_help: bool = False) -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog='azafea', add_help=add_help,
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+    parser.add_argument('-c', '--config', default='/etc/azafea/config.toml',
+                        help='Optional path to a configuration file, if needed')
+
+    return parser
+
+
 def run_command(*argv: str) -> None:
+    parser = _get_parser(add_help=False)
+    base_args, remainder = parser.parse_known_args(argv)
     setup_logging(verbose=False)
 
-    parser = commands.get_parser()
-    args = parser.parse_args(argv)
-
     try:
-        config = Config.from_file(args.config)
+        config = Config.from_file(base_args.config)
 
     except InvalidConfigurationError as e:
         log.error(e)
@@ -34,4 +44,20 @@ def run_command(*argv: str) -> None:
 
     setup_logging(verbose=config.main.verbose)
 
+    parser = _get_parser(add_help=True)
+    subs = parser.add_subparsers(title='subcommands', dest='subcommand', required=True)
+
+    # Core commands
+    commands.register_commands(subs)
+
+    # Per-queue plugin commands
+    for queue_name, queue_config in config.queues.items():
+        if queue_config.cli is not None:
+            queue_parser = subs.add_parser(
+                queue_name, help=f'Commands related to the {queue_name} queue processor')
+            queue_subs = queue_parser.add_subparsers(title='subcommands', dest='subcommand',
+                                                     required=True)
+            queue_config.cli(queue_subs)
+
+    args = parser.parse_args(argv)
     args.subcommand(config, args)

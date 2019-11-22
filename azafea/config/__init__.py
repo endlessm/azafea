@@ -7,21 +7,20 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+import copy
 import dataclasses
 import logging
 import os
-from typing import Any, Callable, Dict, List, Mapping, MutableMapping
+from typing import Any, Callable, Dict, List, Mapping, MutableMapping, Optional
 
-from pydantic.class_validators import validator
+from pydantic.class_validators import root_validator, validator
 from pydantic.dataclasses import dataclass
 from pydantic.error_wrappers import ValidationError
-
-from sqlalchemy.orm.session import Session as DbSession
 
 import toml
 
 from ._validators import is_boolean, is_non_empty_string, is_strictly_positive_integer
-from ..utils import get_cpu_count, get_handler, wrap_with_repr
+from ..utils import get_callable, get_cpu_count
 
 
 log = logging.getLogger(__name__)
@@ -38,6 +37,12 @@ class InvalidConfigurationError(Exception):
 
         for e in self.errors:
             loc = e['loc']
+
+            # Make the output prettier
+            # FIXME: Do that better: https://github.com/samuelcolvin/pydantic/issues/982
+            if loc[0] == 'queues' and loc[-1] == '__root__':
+                loc = (*loc[0:-1], 'handler')
+
             msg.append(f"* {'.'.join(loc)}: {e['msg']}")
 
         return '\n'.join(msg)
@@ -52,17 +57,32 @@ class _Base:
         raise NoSuchConfigurationError(f'No such configuration option: {name!r}')
 
 
-class _Dictifier(dict):
-    def __init__(self, items: List = None) -> None:
-        super().__init__()
+def asdict(obj):  # type: ignore
+    # We don't use dataclasses.asdict because we want to hide some fields
+    if isinstance(obj, _Base):
+        result = {}
 
-        if items is not None:
-            for k, v in items:
-                if k == 'password':
-                    # Don't print passwords
-                    v = '** hidden **'
+        for f in dataclasses.fields(obj):
+            if not f.init:
+                # Ignore computed fields
+                continue
 
-                self[k] = v
+            k = f.name
+            if k == 'password':
+                result[k] = '** hidden **'
+            else:
+                result[k] = asdict(getattr(obj, k))
+
+        return result
+
+    elif isinstance(obj, dict):
+        return {
+            k: asdict(v)
+            for k, v in obj.items()
+        }
+
+    else:
+        return copy.deepcopy(obj)
 
 
 @dataclass(frozen=True)
@@ -130,20 +150,35 @@ class PostgreSQL(_Base):
 
 @dataclass(frozen=True)
 class Queue(_Base):
-    handler: Callable
+    handler: str
+    processor: Callable = dataclasses.field(init=False)
+    cli: Optional[Callable] = dataclasses.field(default=None, init=False)
 
-    @validator('handler', pre=True)
-    def get_handler(cls, value: str) -> Callable[[DbSession, bytes], None]:
+    @staticmethod
+    def _validate_callable(module_name: str, callable_name: str) -> Callable:
         try:
-            handler = get_handler(value)
+            return get_callable(module_name, callable_name)
 
         except ImportError:
-            raise ValueError(f'Could not import handler module {value!r}')
+            raise ValueError(f'Could not import module {module_name!r}')
 
         except AttributeError:
-            raise ValueError(f'Handler {value!r} is missing a "process" function')
+            raise ValueError(f'Module {module_name!r} is missing a {callable_name!r} function')
 
-        return wrap_with_repr(handler, value)
+    # Ignore the mypy issue: https://github.com/samuelcolvin/pydantic/issues/984
+    @root_validator(pre=True)  # type: ignore
+    def get_computed_fields(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        handler = values['handler']
+        values['processor'] = cls._validate_callable(handler, 'process')
+
+        try:
+            values['cli'] = cls._validate_callable(handler, 'register_commands')
+
+        except ValueError:
+            # No CLI then
+            pass
+
+        return values
 
 
 @dataclass(frozen=True)
@@ -177,4 +212,4 @@ class Config(_Base):
             log.warning('Did you forget to change the Redis password?')
 
     def __str__(self) -> str:
-        return toml.dumps(dataclasses.asdict(self, dict_factory=_Dictifier)).strip()
+        return toml.dumps(asdict(self)).strip()

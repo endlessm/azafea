@@ -1,6 +1,9 @@
-======================
-Writing event handlers
-======================
+=====================
+Writing Queue Plugins
+=====================
+
+Event handlers
+==============
 
 For each :ref:`configured queue <queue-config>`, Azafea needs an event handler
 to which it passes the pulled events.
@@ -141,3 +144,95 @@ you know how to process it in your handler.
 The example above assumes it is a valid UTF-8-encoded JSON string which can be
 directly used to construct the model instance. Your actual event handler can do
 any amount of processing here.
+
+
+Custom subcommands
+==================
+
+In addition to an event handler, each :ref:`configured queue <queue-config>`
+may optionally register its own subcommands, to be launched through the main
+`azafea` CLI.
+
+Any configured ``handler`` can include a ``register_commands()`` function at
+the top level of the module, defined as follows:
+
+.. code-block:: python
+
+   def register_commands(subs: argparse._SubParsersAction) -> None:
+       ...
+
+Azafea will call the function and pass it the following argument:
+
+.. |subparser-class| replace:: ``argparse._SubParsersAction``
+.. _subparser-class: https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser.add_subparsers
+
+``subs``
+  An instance of the |subparser-class|_ class.
+
+Here is an example of a complete CLI registration module, which should just work
+if you copy-paste it:
+
+.. code-block:: python
+
+    import argparse
+
+    from azafea.config import Config
+
+
+    def register_commands(subs: argparse._SubParsersAction) -> None:
+        something = subs.add_parser('do-something',
+                                    help='This will do something specific to the queue')
+        something.set_defaults(subcommand=do_something)
+
+        something_else = subs.add_parser('do-something-else',
+                                         help='This will do something else specific to the queue')
+        something_else.add_argument('-f', '--force', help='Forcefully do it')
+        something_else.set_defaults(subcommand=do_something_else)
+
+
+    def do_something(config: Config, args: argparse.Namespace) -> None:
+        print("We're doing something!")
+
+
+    def do_something_else(config: Config, args: argparse.Namespace) -> None:
+        if not args.force:
+            print("We're doing something else!")
+        else:
+            print("WE'RE DOING SOMETHING ELSE!!!")
+
+The above registers the ``do-something`` and ``do-something-else`` subcommands,
+the latter with an optional ``--force`` argument and its ``-f`` shorthand.
+
+Let's say the configuration for the queue is:
+
+.. code-block:: toml
+
+    [queues.some-queue]
+    handler = "another.python.module.processor"
+
+Then the ``do-something`` subcommand becomes accessible to the user::
+
+    $ azafea -c path/to/config.toml some-queue -h
+    usage: azafea some-queue [-h] {do-something,do-something-else} ...
+
+    optional arguments:
+      -h, --help            show this help message and exit
+
+    subcommands:
+      {do-something,do-something-else}
+        do-something        This will do something specific to the queue
+        do-something-else   This will do something else specific to the queue
+    $ azafea -c config.toml some-queue do-something
+    We're doing something!
+    $ azafea -c config.toml some-queue do-something-else --force
+    WE'RE DOING SOMETHING ELSE!!!
+
+As can be seen above, the custom subcommands specific to the ``some-queue``
+queue are available to the CLI under a ``some-queue`` command, not directly at
+the root of the ``azafea`` command.
+
+.. |argparse| replace:: ``argparse``
+.. _argparse: https://docs.python.org/3/library/argparse.html
+
+You can use any facility provided by Python's |argparse|_ module when
+registering your subcommands.

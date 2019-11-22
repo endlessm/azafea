@@ -112,7 +112,7 @@ class IntegrationTest:
         modules_to_deregister = []
 
         for queue_config in self.config.queues.values():
-            handler_root = queue_config.handler.__module__.rsplit('.', 1)[0]
+            handler_root = queue_config.handler.rsplit('.', 1)[0]
 
             for module in sys.modules:
                 if module.startswith(handler_root):
