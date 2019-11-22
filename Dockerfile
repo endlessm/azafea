@@ -26,6 +26,11 @@ RUN apt --quiet --assume-yes update \
     && pipenv install --ignore-pipfile \
     && apt --quiet --assume-yes autoremove --purge \
         gcc \
+        git \
+        libcairo2-dev \
+        libffi-dev \
+        libgirepository1.0-dev \
+        libglib2.0-dev \
         libpq-dev \
         python3-dev \
     && rm -rf /var/cache/{apt,debconf} /var/lib/apt/lists/* /var/log/{apt,dpkg.log}
