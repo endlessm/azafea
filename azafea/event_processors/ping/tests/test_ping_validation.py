@@ -11,7 +11,7 @@ import pytest
 
 
 def test_valid_country():
-    from azafea.event_processors.ping.v1 import Ping
+    from azafea.event_processors.ping.v1.handler import Ping
 
     ping = Ping(country='HKG')
     assert ping.country == 'HKG'
@@ -19,7 +19,7 @@ def test_valid_country():
 
 @pytest.mark.parametrize('country', ['', None])
 def test_empty_country(country):
-    from azafea.event_processors.ping.v1 import Ping
+    from azafea.event_processors.ping.v1.handler import Ping
 
     ping = Ping(country=country)
     assert ping.country is None
@@ -27,7 +27,7 @@ def test_empty_country(country):
 
 @pytest.mark.parametrize('country', ['HK', 'Hong Kong'])
 def test_invalid_country(country):
-    from azafea.event_processors.ping.v1 import Ping
+    from azafea.event_processors.ping.v1.handler import Ping
 
     with pytest.raises(ValueError) as excinfo:
         Ping(country=country)

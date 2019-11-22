@@ -17,7 +17,7 @@ class TestActivation(IntegrationTest):
     handler_module = 'azafea.event_processors.activation.v1'
 
     def test_activation_v1(self):
-        from azafea.event_processors.activation.v1 import Activation
+        from azafea.event_processors.activation.v1.handler import Activation
 
         # Create the table
         self.run_subcommand('initdb')

@@ -11,7 +11,7 @@ import logging
 
 from sqlalchemy.orm.session import Session as DbSession
 
-from .v2 import do_process
+from .v2.handler import do_process
 
 
 log = logging.getLogger(__name__)

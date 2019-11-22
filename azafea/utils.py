@@ -29,3 +29,11 @@ def get_callable(module_name: str, callable_name: str) -> Callable:
     module = import_module(module_name)
 
     return getattr(module, callable_name)
+
+
+def progress(current: int, total: int, end: str = '') -> None:
+    bar_length = 60
+    done = bar_length * current // total
+    remaining = bar_length - done
+
+    print(f'\r|{"#" * done}{" " * remaining}|  {current} / {total}', end=end)
