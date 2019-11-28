@@ -34,6 +34,9 @@ def get_callable(module_name: str, callable_name: str) -> Callable:
 def progress(current: int, total: int, end: str = '') -> None:
     bar_length = 60
 
+    if current > total:
+        current = total
+
     if total == 0:
         done = bar_length
 
