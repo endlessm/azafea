@@ -78,3 +78,11 @@ def test_progress(capfd):
     capture = capfd.readouterr()
     assert capture.out == (
         '\r|############################################################|  6 / 6\n')
+
+
+def test_progress_zero(capfd):
+    azafea.utils.progress(0, 0, end='\n')
+
+    capture = capfd.readouterr()
+    assert capture.out == (
+        '\r|############################################################|  0 / 0\n')
