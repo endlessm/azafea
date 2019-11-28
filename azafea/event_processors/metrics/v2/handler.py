@@ -50,9 +50,7 @@ def do_process(dbsession: DbSession, record: bytes, discard_serialized: bool = F
 
     for event_variant in request_builder.aggregates:
         aggregate_event = new_aggregate_event(request, event_variant, dbsession)
-
-        if aggregate_event is not None:
-            log.debug('Inserting aggregate metric:\n%s', aggregate_event)
+        log.debug('Inserting aggregate metric:\n%s', aggregate_event)
 
     for event_variant in request_builder.sequences:
         sequence_event = new_sequence_event(request, event_variant, dbsession)
