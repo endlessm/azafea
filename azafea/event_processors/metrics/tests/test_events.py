@@ -399,7 +399,7 @@ def test_hack_clubhouse_progress_event_with_unknown_key():
     # it to be sure.
     from azafea.event_processors.metrics.events import HackClubhouseProgress
 
-    # Make an invalid payload with missing keys
+    # Make an invalid payload with extra keys
     payload = GLib.Variant('mv', GLib.Variant('a{sv}', {
         'progress': GLib.Variant('d', 95.3),
         'complete': GLib.Variant('b', False),
