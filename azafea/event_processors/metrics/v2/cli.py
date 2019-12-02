@@ -9,10 +9,8 @@
 import argparse
 import logging
 
-from sqlalchemy.orm.session import Session as DbSession
-
 from azafea.config import Config
-from azafea.model import Db
+from azafea.model import Db, DbSession
 from azafea.utils import progress
 from azafea.vendors import normalize_vendor
 

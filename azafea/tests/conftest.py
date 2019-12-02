@@ -51,7 +51,7 @@ class MockSqlAlchemySession:
 
 @pytest.fixture()
 def mock_sessionmaker():
-    def maker(bind=None):
+    def maker(bind=None, class_=None):
         return MockSqlAlchemySession
 
     return maker

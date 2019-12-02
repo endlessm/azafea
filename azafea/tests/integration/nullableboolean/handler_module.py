@@ -7,11 +7,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-from sqlalchemy.orm.session import Session as DbSession
 from sqlalchemy.schema import Column
 from sqlalchemy.types import Integer, Unicode
 
-from azafea.model import Base, NullableBoolean
+from azafea.model import Base, DbSession, NullableBoolean
 
 
 class Event(Base):

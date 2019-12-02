@@ -12,11 +12,10 @@ import logging
 from typing import Optional
 
 from sqlalchemy.orm import validates
-from sqlalchemy.orm.session import Session as DbSession
 from sqlalchemy.schema import CheckConstraint, Column
 from sqlalchemy.types import BigInteger, Boolean, DateTime, Integer, Numeric, Unicode
 
-from azafea.model import Base
+from azafea.model import Base, DbSession
 from azafea.vendors import normalize_vendor
 
 

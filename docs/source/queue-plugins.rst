@@ -16,7 +16,7 @@ level of the module, defined as follows:
 
 .. code-block:: python
 
-   def process(dbsession: Session, record: bytes) -> None:
+   def process(dbsession: DbSession, record: bytes) -> None:
        ...
 
 Azafea will call the function and pass it the following arguments:
@@ -25,7 +25,8 @@ Azafea will call the function and pass it the following arguments:
 .. _session-class: https://docs.sqlalchemy.org/en/13/orm/session_api.html#sqlalchemy.orm.session.Session
 
 ``dbsession``
-  An instance of the |session-class|_ class.
+  An instance of the ``azafea.model.DbSession`` class, itself a subclass of the
+  |session-class|_ class.
 
   The session is connected to the PostgreSQL database, and the handler can
   simply ``add()`` model instances, and they will be automatically inserted

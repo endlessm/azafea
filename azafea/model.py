@@ -8,8 +8,8 @@
 
 
 from operator import attrgetter
-from typing import Any, Optional, Type
 from types import TracebackType
+from typing import Any, Iterator, Optional, Type
 
 from sqlalchemy.dialects.postgresql.base import PGDDLCompiler
 from sqlalchemy.engine import create_engine
@@ -17,9 +17,10 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.inspection import inspect
+from sqlalchemy.orm.query import Query
 from sqlalchemy.orm.relationships import RelationshipProperty
-from sqlalchemy.orm.session import Session as DbSession, sessionmaker
-from sqlalchemy.schema import CreateColumn, MetaData
+from sqlalchemy.orm.session import Session as SaSession, sessionmaker
+from sqlalchemy.schema import Column, CreateColumn, MetaData
 from sqlalchemy.types import Enum, TypeDecorator
 
 from .utils import get_fqdn
@@ -38,6 +39,8 @@ NAMING_CONVENTION = {
 
 
 class BaseModel:
+    id: Column
+
     def __init__(self, **kwargs: Any):
         columns = inspect(self.__class__).attrs
 
@@ -65,10 +68,36 @@ class BaseModel:
         return '\n'.join(result)
 
 
+class ChunkedQuery(Query):
+    def __init__(self, dbsession: 'DbSession', model: Type['Base'], chunk_size: int):
+        self._query = dbsession.query(model).order_by(model.id)
+        self._chunk_size = chunk_size
+        self._total_count: Optional[int] = None
+
+    def __iter__(self) -> Iterator[Query]:
+        total = self.count()
+
+        for start in range(0, total, self._chunk_size):
+            stop = min(start + self._chunk_size, total)
+
+            yield self._query.slice(start, stop)
+
+    def count(self) -> int:
+        if self._total_count is None:
+            self._total_count = self._query.count()
+
+        return self._total_count
+
+
+class DbSession(SaSession):
+    def chunked_query(self, model: Type['Base'], chunk_size: int = 5000) -> ChunkedQuery:
+        return ChunkedQuery(self, model, chunk_size)
+
+
 class Db:
     def __init__(self, host: str, port: int, user: str, password: str, db: str) -> None:
         self._engine = create_engine(f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}')
-        self._session_factory = sessionmaker(bind=self._engine)
+        self._session_factory = sessionmaker(bind=self._engine, class_=DbSession)
 
         # Store the URL to use in exceptions
         self._url = f'postgresql://{user}@{host}:{port}/{db}'

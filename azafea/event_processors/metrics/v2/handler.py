@@ -10,7 +10,8 @@
 import logging
 
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm.session import Session as DbSession
+
+from azafea.model import DbSession
 
 from ..events import new_aggregate_event, new_sequence_event, new_singular_event
 from ..request import RequestBuilder
