@@ -14,11 +14,10 @@ from typing import Optional
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import relationship, validates
-from sqlalchemy.orm.session import Session as DbSession
 from sqlalchemy.schema import CheckConstraint, Column, ForeignKey, UniqueConstraint
 from sqlalchemy.types import Boolean, DateTime, Integer, Unicode
 
-from azafea.model import Base, NullableBoolean
+from azafea.model import Base, DbSession, NullableBoolean
 from azafea.vendors import normalize_vendor
 
 

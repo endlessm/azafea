@@ -17,11 +17,10 @@ from sqlalchemy.dialects import postgresql
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm.session import Session as DbSession
 from sqlalchemy.schema import Column, ForeignKey
 from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary, Unicode
 
-from azafea.model import Base
+from azafea.model import Base, DbSession
 
 from ..request import Request
 from ..utils import get_bytes, get_child_values, get_event_datetime, get_variant

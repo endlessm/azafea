@@ -10,7 +10,7 @@ import argparse
 import logging
 
 from sqlalchemy.orm.exc import NoResultFound
-from sqlalchemy.orm.session import Session as DbSession
+from sqlalchemy.orm.query import Query
 
 from azafea.config import Config
 from azafea.model import Db
@@ -26,14 +26,16 @@ log = logging.getLogger(__name__)
 def register_commands(subs: argparse._SubParsersAction) -> None:
     normalize_vendors = subs.add_parser('normalize-vendors',
                                         help='Normalize the vendors in existing records')
+    normalize_vendors.add_argument('--chunk-size', type=int, default=5000,
+                                   help='The size of the chunks to operate on')
     normalize_vendors.set_defaults(subcommand=do_normalize_vendors)
 
 
-def _normalize_chunk(dbsession: DbSession, start: int, stop: int) -> None:
-    ping_configs = dbsession.query(PingConfiguration).order_by(PingConfiguration.id)
-    pings = dbsession.query(Ping)
+def _normalize_chunk(chunk: Query) -> None:
+    ping_configs = chunk.session.query(PingConfiguration)
+    pings = chunk.session.query(Ping)
 
-    for record in ping_configs.slice(start, stop):
+    for record in chunk:
         vendor = normalize_vendor(record.vendor)
 
         if vendor == record.vendor:
@@ -47,7 +49,7 @@ def _normalize_chunk(dbsession: DbSession, start: int, stop: int) -> None:
         except NoResultFound:
             # There isn't, so lets just normalize the vendor
             record.vendor = vendor
-            dbsession.add(record)
+            chunk.session.add(record)
 
             continue
 
@@ -58,30 +60,27 @@ def _normalize_chunk(dbsession: DbSession, start: int, stop: int) -> None:
         assert pings.filter_by(config_id=record.id).count() == 0
 
         # … and delete the now unused ping configuration
-        dbsession.delete(record)
+        chunk.session.delete(record)
 
 
 def do_normalize_vendors(config: Config, args: argparse.Namespace) -> None:
-    CHUNK_SIZE = 2000
     db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
             config.postgresql.password, config.postgresql.database)
 
     log.info('Normalizing the vendors for ping configurations')
 
     with db as dbsession:
-        num_records = dbsession.query(PingConfiguration).count()
+        query = dbsession.chunked_query(PingConfiguration, chunk_size=args.chunk_size)
+        num_records = query.count()
 
-    if num_records == 0:
-        log.info('-> No ping configuration record in database')
-        return None
+        if num_records == 0:
+            log.info('-> No ping configuration record in database')
+            return None
 
-    for i in range(0, num_records, CHUNK_SIZE):
-        stop = min(i + CHUNK_SIZE, num_records)
-
-        with db as dbsession:
-            _normalize_chunk(dbsession, i, stop)
-
-        progress(stop, num_records)
+        for chunk_number, chunk in enumerate(query, start=1):
+            _normalize_chunk(chunk)
+            dbsession.commit()
+            progress(chunk_number * args.chunk_size, num_records)
 
     progress(num_records, num_records, end='\n')
 
