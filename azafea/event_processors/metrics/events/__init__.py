@@ -21,9 +21,21 @@ from ._base import (  # noqa: F401
     SequenceEvent,
     SingularEvent,
     # Reexport some symbols
+    InvalidAggregateEvent,
+    InvalidSequence,
+    InvalidSingularEvent,
+    UnknownAggregateEvent,
+    UnknownSequence,
+    UnknownSingularEvent,
     new_aggregate_event,
     new_sequence_event,
     new_singular_event,
+    replay_invalid_aggregate_events,
+    replay_invalid_sequences,
+    replay_invalid_singular_events,
+    replay_unknown_aggregate_events,
+    replay_unknown_sequences,
+    replay_unknown_singular_events,
 )
 
 
