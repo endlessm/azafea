@@ -13,6 +13,7 @@ sphinx = "*"
 sqlalchemy-stubs = {git = "https://github.com/dropbox/sqlalchemy-stubs.git",ref = "master"}
 
 [packages]
+alembic = "*"
 psycopg2 = "*"
 pydantic = ">= 1.1"
 pygobject = "*"
