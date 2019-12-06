@@ -54,6 +54,10 @@ class NoSuchConfigurationError(Exception):
 
 class _Base:
     def __getattr__(self, name: str) -> Any:
+        # Special dunder names aren't used as config options
+        if name.startswith('__') and name.endswith('__'):
+            raise AttributeError(name)
+
         raise NoSuchConfigurationError(f'No such configuration option: {name!r}')
 
 
@@ -165,8 +169,7 @@ class Queue(_Base):
         except AttributeError:
             raise ValueError(f'Module {module_name!r} is missing a {callable_name!r} function')
 
-    # Ignore the mypy issue: https://github.com/samuelcolvin/pydantic/issues/984
-    @root_validator(pre=True)  # type: ignore
+    @root_validator(pre=True)
     def get_computed_fields(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         handler = values['handler']
         values['processor'] = cls._validate_callable(handler, 'process')

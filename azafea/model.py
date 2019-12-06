@@ -102,6 +102,9 @@ class Db:
         # Store the URL to use in exceptions
         self._url = f'postgresql://{user}@{host}:{port}/{db}'
 
+        # Try to connect, to fail early if the PostgreSQL server can't be reached.
+        self._ensure_connection()
+
     def __enter__(self) -> DbSession:
         self._sa_session = self._session_factory()
 
@@ -131,7 +134,7 @@ class Db:
         finally:
             self._sa_session.close()
 
-    def ensure_connection(self) -> None:
+    def _ensure_connection(self) -> None:
         with self as dbsession:
             try:
                 dbsession.connection()
