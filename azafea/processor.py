@@ -42,9 +42,6 @@ class Processor(Process):
                 self.config.postgresql.user, self.config.postgresql.password,
                 self.config.postgresql.database)
 
-        # Try to connect, to fail early if the PostgreSQL server can't be reached.
-        db.ensure_connection()
-
         return db
 
     def _get_redis(self) -> Redis:
