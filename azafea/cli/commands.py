@@ -29,7 +29,7 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     dropdb = subs.add_parser('dropdb', help='Drop the tables in the database')
     dropdb.set_defaults(subcommand=do_dropdb)
 
-    initdb = subs.add_parser('initdb', help='Initialize the database, creating the tables')
+    initdb = subs.add_parser('initdb', help=argparse.SUPPRESS)
     initdb.set_defaults(subcommand=do_initdb)
 
     make_migration = subs.add_parser('make-migration', help='Generate a new database migration')

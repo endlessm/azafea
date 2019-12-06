@@ -127,7 +127,7 @@ command::
 If everything is the way you want it, it is time to initialize the database,
 creating all the tables::
 
-    $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro azafea initdb
+    $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro azafea migratedb
 
 Finally, you can run Azafea::
 
