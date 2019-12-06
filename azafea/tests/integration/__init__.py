@@ -63,7 +63,8 @@ class IntegrationTest:
     def run_subcommand(self, *cmd):
         cli.run_command('-c', self.config_file, *cmd)
 
-    def setup_method(self, method):
+    @pytest.fixture(autouse=True)
+    def setup_teardown(self, request):
         # Create a config file for the test, with a common base and some per-test options
         _, config_file = tempfile.mkstemp()
 
@@ -78,7 +79,7 @@ class IntegrationTest:
                     'database': 'azafea-tests',
                 },
                 'queues': {
-                    method.__name__: {
+                    request.node.name: {
                         'handler': self.handler_module,
                     },
                 }
@@ -98,7 +99,9 @@ class IntegrationTest:
         self.ensure_no_queues()
         self.ensure_no_tables()
 
-    def teardown_method(self):
+        # Run the test function
+        yield
+
         # Ensure we finish with a clean DB
         self.db.drop_all()
         self.ensure_no_tables()
