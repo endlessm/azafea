@@ -169,6 +169,47 @@ def test_make_migration_no_migrations(capfd, monkeypatch, make_config_file):
     assert "Configured queue handlers don't have 'migrations' directories" in capture.out
 
 
+def test_migratedb_invalid_config(capfd, make_config_file):
+    # Make a wrong config file
+    config_file = make_config_file({'main': {'verbose': 'blah'}})
+
+    with pytest.raises(azafea.cli.errors.InvalidConfigExit):
+        azafea.cli.run_command('-c', str(config_file), 'migratedb')
+
+    capture = capfd.readouterr()
+    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+
+
+def test_migratedb_no_event_queue(capfd, make_config_file):
+    config_file = make_config_file({})
+
+    with pytest.raises(azafea.cli.errors.NoEventQueueExit):
+        azafea.cli.run_command('-c', str(config_file), 'migratedb')
+
+    capture = capfd.readouterr()
+    assert 'Could not migrate the database: no event queue configured' in capture.err
+
+
+def test_migratedb_no_migrations(capfd, monkeypatch, make_config_file):
+    def mock_get_callable(module_name, callable_name):
+        def process(*args, **kwargs):
+            pass
+
+        return process
+
+    config_file = make_config_file({
+        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
+    })
+
+    with monkeypatch.context() as m:
+        m.setattr(azafea.config, 'get_callable', mock_get_callable)
+
+        azafea.cli.run_command('-c', str(config_file), 'migratedb')
+
+    capture = capfd.readouterr()
+    assert "Configured queue handlers don't have migrations" in capture.out
+
+
 def test_print_config(capfd, monkeypatch, make_config_file):
     def mock_get_callable(module_name, callable_name):
         def process(*args, **kwargs):

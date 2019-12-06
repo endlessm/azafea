@@ -86,3 +86,15 @@ class TestMigrations(IntegrationTest):
             "    op.drop_table('migration_event')",
             '    # ### end Alembic commands ###',
         ]) in migration
+
+    def test_migratedb(self, handler_with_migrations):
+        from .handler_module import Event
+
+        self.run_subcommand('make-migration', 'test_migratedb')
+        self.ensure_no_tables()
+
+        generated_migrations = self._list_migrations()
+        assert len(generated_migrations) == 1
+
+        self.run_subcommand('migratedb')
+        self.ensure_tables(Event)
