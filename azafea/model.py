@@ -105,6 +105,14 @@ class Db:
         # Try to connect, to fail early if the PostgreSQL server can't be reached.
         self._ensure_connection()
 
+        try:
+            # Make sure the Alembic version table is known, this is useful when dropping all tables
+            Base.metadata.reflect(bind=self._engine, only=('alembic_version', ))
+
+        except Exception:
+            # The Alembic version table doesn't exist, migrations haven't been run yet
+            pass
+
     def __enter__(self) -> DbSession:
         self._sa_session = self._session_factory()
 
