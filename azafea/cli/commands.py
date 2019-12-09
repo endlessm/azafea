@@ -17,7 +17,7 @@ from redis.exceptions import ConnectionError as RedisConnectionError
 
 from ..config import Config
 from ..controller import Controller
-from ..migrations.utils import get_alembic_config, get_queue_migrations_path
+from ..migrations.utils import get_alembic_config, get_migration_heads, get_queue_migrations_path
 from ..model import Db, PostgresqlConnectionError
 from .errors import ConnectionErrorExit, NoEventQueueExit, UnknownErrorExit
 
@@ -100,9 +100,22 @@ def do_make_migration(config: Config, args: argparse.Namespace) -> None:
 
     with db as dbsession:
         alembic_config.attributes['connection'] = dbsession.connection()
+
+        for h in get_migration_heads(alembic_config):
+            if h.branch_labels is not None and args.queue in h.branch_labels:  # pragma: no branch
+                # This queue already had migrations
+                branch_label = None
+                head = f'{args.queue}@head'
+                break
+
+        else:
+            # This would be the first migration for this queue
+            branch_label = args.queue
+            head = 'base'
+
         make_db_revision(alembic_config, message=args.description, autogenerate=True,
                          version_path=get_queue_migrations_path(queue_handler),
-                         branch_label=args.queue)
+                         branch_label=branch_label, head=head)
 
 
 def do_migratedb(config: Config, args: argparse.Namespace) -> None:
