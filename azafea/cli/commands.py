@@ -10,11 +10,14 @@
 import argparse
 import logging
 
+from alembic.command import revision as make_db_revision, upgrade as upgrade_db
+
 from redis import Redis
 from redis.exceptions import ConnectionError as RedisConnectionError
 
 from ..config import Config
 from ..controller import Controller
+from ..migrations.utils import get_alembic_config, get_queue_migrations_path
 from ..model import Db, PostgresqlConnectionError
 from .errors import ConnectionErrorExit, NoEventQueueExit, UnknownErrorExit
 
@@ -26,8 +29,18 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     dropdb = subs.add_parser('dropdb', help='Drop the tables in the database')
     dropdb.set_defaults(subcommand=do_dropdb)
 
-    initdb = subs.add_parser('initdb', help='Initialize the database, creating the tables')
+    initdb = subs.add_parser('initdb', help=argparse.SUPPRESS)
     initdb.set_defaults(subcommand=do_initdb)
+
+    make_migration = subs.add_parser('make-migration', help='Generate a new database migration')
+    make_migration.add_argument('-d', '--description', default='Automatically generated',
+                                help='Description of the new migration')
+    make_migration.add_argument('queue',
+                                help='The name of the queue for which to generate the migration')
+    make_migration.set_defaults(subcommand=do_make_migration)
+
+    migratedb = subs.add_parser('migratedb', help='Migrate the database')
+    migratedb.set_defaults(subcommand=do_migratedb)
 
     print_config = subs.add_parser('print-config',
                                    help='Print the loaded configuration then exit')
@@ -61,6 +74,54 @@ def do_initdb(config: Config, args: argparse.Namespace) -> None:
     db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
             config.postgresql.password, config.postgresql.database)
     db.create_all()
+
+
+def do_make_migration(config: Config, args: argparse.Namespace) -> None:
+    if not config.queues:
+        log.error(f'Could not generate a migration for "{args.queue}": no event queue configured')
+        raise NoEventQueueExit()
+
+    try:
+        queue_handler = config.queues[args.queue].handler
+
+    except KeyError:
+        log.error(f'Could not generate a migration for "{args.queue}": unknown event queue '
+                  'requested')
+        raise NoEventQueueExit()
+
+    alembic_config = get_alembic_config(config)
+
+    if not alembic_config.get_main_option('version_locations'):
+        log.info("Configured queue handlers don't have 'migrations' directories")
+        return None
+
+    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
+            config.postgresql.password, config.postgresql.database)
+
+    with db as dbsession:
+        alembic_config.attributes['connection'] = dbsession.connection()
+        make_db_revision(alembic_config, message=args.description, autogenerate=True,
+                         version_path=get_queue_migrations_path(queue_handler),
+                         branch_label=args.queue)
+
+
+def do_migratedb(config: Config, args: argparse.Namespace) -> None:
+    if not config.queues:
+        log.error('Could not migrate the database: no event queue configured')
+        raise NoEventQueueExit()
+
+    alembic_config = get_alembic_config(config)
+
+    if not alembic_config.get_main_option('version_locations'):
+        log.info("Configured queue handlers don't have migrations")
+        return None
+
+    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
+            config.postgresql.password, config.postgresql.database)
+
+    with db as dbsession:
+        alembic_config.attributes['connection'] = dbsession.connection()
+        upgrade_db(alembic_config, 'heads')
 
 
 def do_print_config(config: Config, args: argparse.Namespace) -> None:

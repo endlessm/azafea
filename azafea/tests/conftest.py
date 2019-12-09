@@ -7,8 +7,10 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+from importlib import import_module
 from pathlib import Path
 from typing import Mapping
+import sys
 
 import pytest
 
@@ -78,3 +80,21 @@ def make_config(make_config_file):
         return Config.from_file(str(config_file_path))
 
     return maker
+
+
+@pytest.fixture()
+def handler_with_migrations(tmpdir):
+    # Make a fake Azafea handler with its migrations dir
+    (tmpdir / '__init__.py').write_text('def process(*args, **kwargs): pass', 'utf-8')
+    (tmpdir / 'migrations').mkdir()
+
+    # Make it importable
+    sys.path.insert(0, tmpdir.dirname)
+
+    # FIXME: Why is this needed? What does pkg_resources do here?
+    import_module(tmpdir.basename)
+
+    yield tmpdir
+
+    # Return sys.path to how it was
+    sys.path.pop(0)

@@ -127,8 +127,19 @@ command::
 If everything is the way you want it, it is time to initialize the database,
 creating all the tables::
 
-    $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro azafea initdb
+    $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro azafea migratedb
 
 Finally, you can run Azafea::
 
     $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro azafea run
+
+Upgrading the Database
+======================
+
+New versions of Azafea and/or queue handlers will sometimes modify the
+database model.
+
+To reflect the code changes into PostgreSQL, you should run the following
+command every time you update::
+
+    $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro azafea migratedb

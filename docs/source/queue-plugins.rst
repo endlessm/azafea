@@ -237,3 +237,22 @@ the root of the ``azafea`` command.
 
 You can use any facility provided by Python's |argparse|_ module when
 registering your subcommands.
+
+
+Database Migrations
+===================
+
+If your queue plugin has its own model, you will eventually want to update it.
+
+Azafea provides a handy command to automatically generate migration scripts
+based on the difference between your model and the state of the database::
+
+    $ azafea make-migration some-queue
+
+This uses `Alembic <https://alembic.sqlalchemy.org/>`_ under the hood, which will
+usually detect model changes correctly, but
+`not everything <https://alembic.sqlalchemy.org/en/latest/autogenerate.html#what-does-autogenerate-detect-and-what-does-it-not-detect>`_,
+so you might need to manually adapt some migration scripts eventually.
+
+Note that your queue plugin will need a ``migrations/`` directory inside the
+handler module.
