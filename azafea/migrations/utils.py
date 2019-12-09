@@ -8,8 +8,10 @@
 
 
 import os
+from typing import Tuple
 
 from alembic.config import Config as AlembicConfig
+from alembic.script import Script, ScriptDirectory
 from alembic.util import coerce_resource_to_filename
 
 from azafea.config import Config
@@ -29,6 +31,12 @@ def get_alembic_config(config: Config) -> AlembicConfig:
     alembic_config.set_main_option('version_locations', ' '.join(migration_dirs))
 
     return alembic_config
+
+
+def get_migration_heads(config: AlembicConfig) -> Tuple[Script]:
+    script = ScriptDirectory.from_config(config)
+
+    return script.get_revisions("heads")
 
 
 def get_queue_migrations_path(queue_handler: str) -> str:
