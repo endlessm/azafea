@@ -43,6 +43,7 @@ IGNORED_EVENTS: Set[str] = {
     '7be59566-2b23-408a-acf6-91490fc1df1c',
     '8f70276e-3f78-45b2-99f8-94db231d42dd',
     '91de63ea-c7b7-412c-93f3-6f3d9b2f864c',
+    '9a0cf836-12cd-4887-95d8-e48ccdf6e552',
     '9c33a734-7ed8-4348-9e39-3c27f4dc2e62',
     '9f06d0f7-677e-43ca-b732-ccbb40847a31',
     'ab839fd2-a927-456c-8c18-f1136722666b',
@@ -269,14 +270,20 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
 
 def new_aggregate_event(request: Request, event_variant: GLib.Variant, dbsession: DbSession
                         ) -> Optional[AggregateEvent]:
-    user_id = event_variant.get_child_value(0).get_uint32()
     event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(1))))
+
+    if event_id in IGNORED_EVENTS:
+        return None
+
+    user_id = event_variant.get_child_value(0).get_uint32()
     count = event_variant.get_child_value(2).get_int64()
     event_relative_timestamp = event_variant.get_child_value(3).get_int64()
     payload = event_variant.get_child_value(4)
 
     event_date = get_event_datetime(request.absolute_timestamp, request.relative_timestamp,
                                     event_relative_timestamp)
+
+    # We don't have any aggregate event yet, therefore it can only be unknown
 
     # Mypy complains here, even though this should be fine:
     # https://github.com/dropbox/sqlalchemy-stubs/issues/97
