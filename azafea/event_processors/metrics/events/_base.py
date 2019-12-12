@@ -531,10 +531,18 @@ def replay_unknown_singular_events(unknown_events: Query) -> None:
         unknown_events.session.delete(unknown)
 
 
-def replay_unknown_aggregate_events(unknown_events: Query) -> None:  # pragma: no cover
-    # TODO: Implement this when we actually have aggregate events
-    raise NotImplementedError("Replaying unknown aggregate events is not yet implemented as we "
-                              "don't have any")
+def replay_unknown_aggregate_events(unknown_events: Query) -> None:
+    for unknown in unknown_events:
+        event_id = str(unknown.event_id)
+
+        if event_id in IGNORED_EVENTS:
+            unknown_events.session.delete(unknown)
+            continue
+
+        # We don't have any aggregate event yet, therefore it can only be unknown
+
+        # TODO: Implement this when we actually have aggregate events
+        continue  # pragma: no cover
 
 
 def replay_unknown_sequences(unknown_events: Query) -> None:

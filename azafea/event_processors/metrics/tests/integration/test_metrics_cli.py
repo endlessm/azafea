@@ -292,7 +292,8 @@ class TestMetrics(IntegrationTest):
     def test_replay_unknown(self):
         from azafea.event_processors.metrics.events import ShellAppIsOpen, Uptime
         from azafea.event_processors.metrics.events._base import (
-            InvalidSequence, InvalidSingularEvent, UnknownSequence, UnknownSingularEvent)
+            InvalidSequence, InvalidSingularEvent,
+            UnknownAggregateEvent, UnknownSequence, UnknownSingularEvent)
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
@@ -341,7 +342,11 @@ class TestMetrics(IntegrationTest):
 
             # -- Unknown aggregate events -------
 
-            # TODO: Implement this when we actually have aggregate events to test
+            # Add an unknown aggregate event which will be ignored after the replay
+            dbsession.add(UnknownAggregateEvent(
+                request=request, event_id='9a0cf836-12cd-4887-95d8-e48ccdf6e552', user_id=1001,
+                count=10, occured_at=occured_at,
+                payload=GLib.Variant('mv', GLib.Variant('s', 'discard'))))
 
             # -- Unknown sequence events --------
 
@@ -420,7 +425,7 @@ class TestMetrics(IntegrationTest):
 
             # -- Aggregate events ---------------
 
-            # TODO: Implement this when we actually have aggregate events to test
+            assert dbsession.query(UnknownAggregateEvent).count() == 0
 
             # -- Sequence events ----------------
 
