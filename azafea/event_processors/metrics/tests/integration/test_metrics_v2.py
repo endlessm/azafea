@@ -178,7 +178,18 @@ class TestMetrics(IntegrationTest):
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(Request, LiveUsbBooted, Uptime, UnknownSingularEvent)
+        self.ensure_tables(
+            Request, Machine, InvalidSingularEvent, UnknownSingularEvent,
+            CacheIsCorrupt, CacheMetadataIsCorrupt, ControlCenterPanelOpened, CPUInfo,
+            DiscoveryFeedClicked, DiscoveryFeedClosed, DiscoveryFeedOpened, DiskSpaceExtra,
+            DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, ImageVersion,
+            LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
+            LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
+            Location, LocationLabel, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
+            OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
+            ShellAppRemovedFromDesktop, UpdaterBranchSelected, Uptime, WindowsAppOpened,
+            WindowsLicenseTables,
+        )
 
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
