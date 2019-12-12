@@ -12,10 +12,13 @@ from typing import Any, Dict
 from gi.repository import GLib
 
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB
+from sqlalchemy.event import listens_for
 from sqlalchemy.schema import Column
 from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, LargeBinary, Numeric, Unicode
 
+from azafea.model import DbSession
 from azafea.vendors import normalize_vendor
+from ..machine import insert_machine
 from ..utils import get_asv_dict, get_bytes, get_child_values, get_strings
 from ._base import (  # noqa: F401
     SequenceEvent,
@@ -300,6 +303,15 @@ class ImageVersion(SingularEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {'image_id': payload.get_string()}
+
+
+@listens_for(DbSession, 'before_commit')
+def receive_before_commit(dbsession: DbSession) -> None:
+    for instance in dbsession.new:
+        if not isinstance(instance, ImageVersion):
+            continue
+
+        insert_machine(dbsession, instance.request.machine_id, image_id=instance.image_id)
 
 
 class LaunchedEquivalentExistingFlatpak(SingularEvent):

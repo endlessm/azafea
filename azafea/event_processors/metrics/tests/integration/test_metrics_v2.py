@@ -174,6 +174,7 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.metrics.events._base import (
             InvalidSingularEvent, UnknownSingularEvent,
         )
+        from azafea.event_processors.metrics.machine import Machine
         from azafea.event_processors.metrics.request import Request
 
         # Create the table
@@ -194,6 +195,7 @@ class TestMetrics(IntegrationTest):
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
         machine_id = 'ffffffffffffffffffffffffffffffff'
+        image_id = 'oem-os1.0-arch.base'
         user_id = 2000
         request = GLib.Variant(
             '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
@@ -284,7 +286,7 @@ class TestMetrics(IntegrationTest):
                         user_id,
                         UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
                         9000000000,                    # event relative timestamp (9 secs)
-                        GLib.Variant('s', 'image')
+                        GLib.Variant('s', image_id)
                     ),
                     (
                         user_id,
@@ -480,6 +482,10 @@ class TestMetrics(IntegrationTest):
             assert request.send_number == 0
             assert request.machine_id == machine_id
 
+            machine = dbsession.query(Machine).one()
+            assert machine.machine_id == machine_id
+            assert machine.image_id == image_id
+
             corrupted_cache = dbsession.query(CacheIsCorrupt).one()
             assert corrupted_cache.request_id == request.id
             assert corrupted_cache.user_id == user_id
@@ -564,7 +570,7 @@ class TestMetrics(IntegrationTest):
             assert image.request_id == request.id
             assert image.user_id == user_id
             assert image.occured_at == now - timedelta(seconds=2) + timedelta(seconds=9)
-            assert image.image_id == 'image'
+            assert image.image_id == image_id
 
             equivalent = dbsession.query(LaunchedEquivalentExistingFlatpak).one()
             assert equivalent.request_id == request.id
@@ -795,6 +801,143 @@ class TestMetrics(IntegrationTest):
         capture = capfd.readouterr()
         assert ('Metric event 56be0b38-e47b-4578-9599-00ff9bda54bb takes no payload, but got '
                 '<int64 2>') in capture.err
+
+    def test_multiple_machines(self):
+        from azafea.event_processors.metrics.events import ImageVersion
+        from azafea.event_processors.metrics.machine import Machine
+        from azafea.event_processors.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, Machine, ImageVersion)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        image_id = 'oem-os1.0-arch.base'
+        user_id = 2000
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        user_id,
+                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
+                        1000000000,                    # event relative timestamp (1 secs)
+                        GLib.Variant('s', image_id)
+                    ),
+                    (
+                        user_id,
+                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        GLib.Variant('s', image_id)
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_multiple_machines', record)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        image_id = 'oem-os1.0-arch.base'
+        user_id = 2000
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        user_id,
+                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
+                        3000000000,                    # event relative timestamp (3 secs)
+                        GLib.Variant('s', image_id)
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_multiple_machines', record)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = '00000000000000000000000000000000'
+        image_id = 'oem-os1.1-arch.base'
+        user_id = 2000
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        user_id,
+                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
+                        4000000000,                    # event relative timestamp (4 secs)
+                        GLib.Variant('s', image_id)
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_multiple_machines', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            requests = dbsession.query(Request).order_by(Request.id).all()
+            assert len(requests) == 3
+
+            machines = dbsession.query(Machine).order_by(Machine.id).all()
+            assert len(machines) == 2
+
+            images = dbsession.query(ImageVersion).order_by(ImageVersion.id).all()
+            assert len(images) == 4
 
     def test_unknown_singular_events(self):
         from azafea.event_processors.metrics.events._base import UnknownSingularEvent
