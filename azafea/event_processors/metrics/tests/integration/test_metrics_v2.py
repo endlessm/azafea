@@ -1344,7 +1344,7 @@ class TestMetrics(IntegrationTest):
 
     def test_ignored_events(self):
         from azafea.event_processors.metrics.events._base import (
-            UnknownSequence, UnknownSingularEvent,
+            UnknownAggregateEvent, UnknownSequence, UnknownSingularEvent,
         )
         from azafea.event_processors.metrics.request import Request
 
@@ -1367,11 +1367,19 @@ class TestMetrics(IntegrationTest):
                     (
                         user_id,
                         UUID('566adb36-7701-4067-a971-a398312c2874').bytes,
-                        1000000000,                    # event relative timestamp (1 sec)
-                        None,                          # empty payload
+                        1000000000,                        # event relative timestamp (1 sec)
+                        None,                              # empty payload
                     ),
                 ],
-                [],                                        # aggregate events
+                [                                          # aggregate events
+                    (
+                        user_id,
+                        UUID('9a0cf836-12cd-4887-95d8-e48ccdf6e552').bytes,
+                        10,                                # count
+                        2000000000,                        # event relative timestamp (2 secs)
+                        None,
+                    ),
+                ],
                 [                                          # sequence events
                     (
                         user_id,
@@ -1412,6 +1420,7 @@ class TestMetrics(IntegrationTest):
             assert request.send_number == 0
             assert request.machine_id == machine_id
 
+            assert dbsession.query(UnknownAggregateEvent).count() == 0
             assert dbsession.query(UnknownSingularEvent).count() == 0
             assert dbsession.query(UnknownSequence).count() == 0
 

@@ -37,21 +37,29 @@ IGNORED_EVENTS: Set[str] = {
     '005096c4-9444-48c6-844b-6cb693c15235',
     '337fa66d-5163-46ae-ab20-dc605b5d7307',
     '3a4eff55-5d01-48c8-a827-fca5732fd767',
+    '350ac4ff-3026-4c25-9e7e-e8103b4fd5d8',
     '566adb36-7701-4067-a971-a398312c2874',
     '5fae6179-e108-4962-83be-c909259c0584',
     '6dad6c44-f52f-4bca-8b4c-dc203f175b97',
+    '72fea371-15d1-401d-8a40-c47f379f64fd',
     '7be59566-2b23-408a-acf6-91490fc1df1c',
     '8f70276e-3f78-45b2-99f8-94db231d42dd',
     '91de63ea-c7b7-412c-93f3-6f3d9b2f864c',
+    '9a0cf836-12cd-4887-95d8-e48ccdf6e552',
     '9c33a734-7ed8-4348-9e39-3c27f4dc2e62',
     '9f06d0f7-677e-43ca-b732-ccbb40847a31',
     'ab839fd2-a927-456c-8c18-f1136722666b',
     'ae391c82-1937-4ae5-8539-8d1aceed037d',
     'af3e89b2-8293-4703-809c-8e0231c128cb',
+    'b1f87a3f-a464-48d4-8e35-35dd45659010',
+    'b2b17dfd-c30e-4789-abcc-4a38323127f6',
+    'b89f9a4a-3035-4fc3-9bef-584367fe2c96',
     'bef3d12c-df9b-43cd-a67c-31abc5361f03',
     'c02a5764-7f81-48c7-aea4-1413fd4e829c',
     'ce179909-dacb-4b7e-83a5-690480bf21eb',
+    'd936cd5c-08de-4d4e-8a87-8df1f4a33cba',
     'e6541049-9462-4db5-96df-1977f3051578',
+    'fb59199e-5384-472e-af1e-00b7a419d5c2',
 }
 IGNORED_EMPTY_PAYLOAD_ERRORS: Set[str] = {
     '9af2cc74-d6dd-423f-ac44-600a6eee2d96',
@@ -269,14 +277,20 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
 
 def new_aggregate_event(request: Request, event_variant: GLib.Variant, dbsession: DbSession
                         ) -> Optional[AggregateEvent]:
-    user_id = event_variant.get_child_value(0).get_uint32()
     event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(1))))
+
+    if event_id in IGNORED_EVENTS:
+        return None
+
+    user_id = event_variant.get_child_value(0).get_uint32()
     count = event_variant.get_child_value(2).get_int64()
     event_relative_timestamp = event_variant.get_child_value(3).get_int64()
     payload = event_variant.get_child_value(4)
 
     event_date = get_event_datetime(request.absolute_timestamp, request.relative_timestamp,
                                     event_relative_timestamp)
+
+    # We don't have any aggregate event yet, therefore it can only be unknown
 
     # Mypy complains here, even though this should be fine:
     # https://github.com/dropbox/sqlalchemy-stubs/issues/97
@@ -524,10 +538,18 @@ def replay_unknown_singular_events(unknown_events: Query) -> None:
         unknown_events.session.delete(unknown)
 
 
-def replay_unknown_aggregate_events(unknown_events: Query) -> None:  # pragma: no cover
-    # TODO: Implement this when we actually have aggregate events
-    raise NotImplementedError("Replaying unknown aggregate events is not yet implemented as we "
-                              "don't have any")
+def replay_unknown_aggregate_events(unknown_events: Query) -> None:
+    for unknown in unknown_events:
+        event_id = str(unknown.event_id)
+
+        if event_id in IGNORED_EVENTS:
+            unknown_events.session.delete(unknown)
+            continue
+
+        # We don't have any aggregate event yet, therefore it can only be unknown
+
+        # TODO: Implement this when we actually have aggregate events
+        continue  # pragma: no cover
 
 
 def replay_unknown_sequences(unknown_events: Query) -> None:
