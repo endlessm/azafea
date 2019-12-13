@@ -36,6 +36,9 @@ from ._base import (  # noqa: F401
     replay_unknown_aggregate_events,
     replay_unknown_sequences,
     replay_unknown_singular_events,
+    aggregate_event_is_known,
+    sequence_is_known,
+    singular_event_is_known,
 )
 
 

@@ -493,6 +493,10 @@ def replay_invalid_sequences(invalid_events: Query) -> None:
         invalid_events.session.delete(invalid)
 
 
+def singular_event_is_known(event_id: str) -> bool:
+    return (event_id in SINGULAR_EVENT_MODELS) or (event_id in IGNORED_EVENTS)
+
+
 def replay_unknown_singular_events(unknown_events: Query) -> None:
     for unknown in unknown_events:
         event_id = str(unknown.event_id)
@@ -501,12 +505,7 @@ def replay_unknown_singular_events(unknown_events: Query) -> None:
             unknown_events.session.delete(unknown)
             continue
 
-        try:
-            event_model = SINGULAR_EVENT_MODELS[event_id]
-
-        except KeyError:
-            # This event UUID is still unknown, ignore it
-            continue
+        event_model = SINGULAR_EVENT_MODELS[event_id]
 
         # This event UUID was unknown but is now known, let's process it
         payload = GLib.Variant.new_from_bytes(GLib.VariantType('mv'),
@@ -538,6 +537,10 @@ def replay_unknown_singular_events(unknown_events: Query) -> None:
         unknown_events.session.delete(unknown)
 
 
+def aggregate_event_is_known(event_id: str) -> bool:
+    return (event_id in AGGREGATE_EVENT_MODELS) or (event_id in IGNORED_EVENTS)
+
+
 def replay_unknown_aggregate_events(unknown_events: Query) -> None:
     for unknown in unknown_events:
         event_id = str(unknown.event_id)
@@ -552,6 +555,10 @@ def replay_unknown_aggregate_events(unknown_events: Query) -> None:
         continue  # pragma: no cover
 
 
+def sequence_is_known(event_id: str) -> bool:
+    return (event_id in SEQUENCE_EVENT_MODELS) or (event_id in IGNORED_EVENTS)
+
+
 def replay_unknown_sequences(unknown_events: Query) -> None:
     for unknown in unknown_events:
         event_id = str(unknown.event_id)
@@ -560,12 +567,7 @@ def replay_unknown_sequences(unknown_events: Query) -> None:
             unknown_events.session.delete(unknown)
             continue
 
-        try:
-            event_model = SEQUENCE_EVENT_MODELS[event_id]
-
-        except KeyError:
-            # This event UUID is still unknown, ignore it
-            continue
+        event_model = SEQUENCE_EVENT_MODELS[event_id]
 
         # This event UUID was unknown but is now known, let's process it
 
