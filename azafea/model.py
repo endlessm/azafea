@@ -73,20 +73,33 @@ class ChunkedQuery:
         self._query = dbsession.query(model).order_by(model.id)
         self._chunk_size = chunk_size
         self._total_count: Optional[int] = None
+        self._descending = False
 
     def __iter__(self) -> Iterator[Query]:
         total = self.count()
 
-        for start in range(0, total, self._chunk_size):
-            stop = min(start + self._chunk_size, total)
+        if self._descending:
+            for stop in range(total, 0, -self._chunk_size):
+                start = max(stop - self._chunk_size, 0)
 
-            yield self._query.slice(start, stop)
+                yield self._query.slice(start, stop)
+
+        else:
+            for start in range(0, total, self._chunk_size):
+                stop = min(start + self._chunk_size, total)
+
+                yield self._query.slice(start, stop)
 
     def count(self) -> int:
         if self._total_count is None:
             self._total_count = self._query.count()
 
         return self._total_count
+
+    def reverse_chunks(self) -> 'ChunkedQuery':
+        self._descending = True
+
+        return self
 
 
 class DbSession(SaSession):
