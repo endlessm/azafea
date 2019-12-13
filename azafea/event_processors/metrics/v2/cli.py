@@ -101,6 +101,7 @@ def do_replay_invalid(config: Config, args: argparse.Namespace) -> None:
 
     with db as dbsession:
         query = dbsession.chunked_query(InvalidSingularEvent, chunk_size=args.chunk_size)
+        query = query.reverse_chunks()
         total = query.count()
 
         for chunk_number, chunk in enumerate(query, start=1):
@@ -114,6 +115,7 @@ def do_replay_invalid(config: Config, args: argparse.Namespace) -> None:
 
     with db as dbsession:
         query = dbsession.chunked_query(InvalidAggregateEvent, chunk_size=args.chunk_size)
+        query = query.reverse_chunks()
         total = query.count()
 
         # FIXME: Stop ignoring from coverage report once we actually have aggregate events
@@ -128,6 +130,7 @@ def do_replay_invalid(config: Config, args: argparse.Namespace) -> None:
 
     with db as dbsession:
         query = dbsession.chunked_query(InvalidSequence, chunk_size=args.chunk_size)
+        query = query.reverse_chunks()
         total = query.count()
 
         for chunk_number, chunk in enumerate(query, start=1):
@@ -146,6 +149,7 @@ def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
 
     with db as dbsession:
         query = dbsession.chunked_query(UnknownSingularEvent, chunk_size=args.chunk_size)
+        query = query.reverse_chunks()
         total = query.count()
 
         for chunk_number, chunk in enumerate(query, start=1):
@@ -159,6 +163,7 @@ def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
 
     with db as dbsession:
         query = dbsession.chunked_query(UnknownAggregateEvent, chunk_size=args.chunk_size)
+        query = query.reverse_chunks()
         total = query.count()
 
         # FIXME: Stop ignoring from coverage report once we actually have aggregate events
@@ -173,6 +178,7 @@ def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
 
     with db as dbsession:
         query = dbsession.chunked_query(UnknownSequence, chunk_size=args.chunk_size)
+        query = query.reverse_chunks()
         total = query.count()
 
         for chunk_number, chunk in enumerate(query, start=1):
