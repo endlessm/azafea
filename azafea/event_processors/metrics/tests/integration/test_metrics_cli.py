@@ -394,6 +394,7 @@ class TestMetrics(IntegrationTest):
         with self.db as dbsession:
             assert dbsession.query(Request).count() == 1
             assert dbsession.query(UnknownSingularEvent).count() == 5
+            assert dbsession.query(UnknownAggregateEvent).count() == 1
             assert dbsession.query(UnknownSequence).count() == 5
 
         # Replay the unknown events
