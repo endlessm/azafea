@@ -38,17 +38,20 @@ log = logging.getLogger(__name__)
 
 def register_commands(subs: argparse._SubParsersAction) -> None:
     normalize_vendors = subs.add_parser('normalize-vendors',
-                                        help='Normalize the vendors in existing records')
+                                        help='Normalize the vendors in existing records',
+                                        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     normalize_vendors.add_argument('--chunk-size', type=int, default=5000,
                                    help='The size of the chunks to operate on')
     normalize_vendors.set_defaults(subcommand=do_normalize_vendors)
 
-    replay_invalid = subs.add_parser('replay-invalid', help='Replay invalid events')
+    replay_invalid = subs.add_parser('replay-invalid', help='Replay invalid events',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     replay_invalid.add_argument('--chunk-size', type=int, default=5000,
                                 help='The size of the chunks to operate on')
     replay_invalid.set_defaults(subcommand=do_replay_invalid)
 
-    replay_unknown = subs.add_parser('replay-unknown', help='Replay unknown events')
+    replay_unknown = subs.add_parser('replay-unknown', help='Replay unknown events',
+                                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     replay_unknown.add_argument('--chunk-size', type=int, default=5000,
                                 help='The size of the chunks to operate on')
     replay_unknown.set_defaults(subcommand=do_replay_unknown)

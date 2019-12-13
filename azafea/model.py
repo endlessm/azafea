@@ -68,7 +68,7 @@ class BaseModel:
         return '\n'.join(result)
 
 
-class ChunkedQuery(Query):
+class ChunkedQuery:
     def __init__(self, dbsession: 'DbSession', model: Type['Base'], chunk_size: int):
         self._query = dbsession.query(model).order_by(model.id)
         self._chunk_size = chunk_size
