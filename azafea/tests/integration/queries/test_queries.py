@@ -75,3 +75,30 @@ class TestQuery(IntegrationTest):
 
         # We already checked we had all events from 1 to 60, let's ensure we have 60 in total
         assert counted == 60
+
+    def test_filtered_chunked_query(self):
+        from .handler_module import Event
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Event)
+
+        # Insert events
+        with self.db as dbsession:
+            for i in range(1, 61):
+                dbsession.add(Event(name=f'name-{i % 3}'))
+
+        CHUNK_SIZE = 7
+
+        # Now get them all with a chunked query
+        with self.db as dbsession:
+            query = dbsession.chunked_query(Event, chunk_size=CHUNK_SIZE)
+            query = query.filter(Event.name == 'name-0')
+            counted = 0
+
+            for chunk in query:
+                for event in chunk:
+                    assert event.name == f'name-0'
+                    counted += 1
+
+        assert counted == 20
