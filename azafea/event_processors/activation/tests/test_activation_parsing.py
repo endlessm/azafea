@@ -17,14 +17,14 @@ def test_from_bytes():
     created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
     activation = Activation.from_serialized(json.dumps({
         'image': 'image',
-        'vendor': 'vendor',
+        'vendor': 'the vendor',
         'product': 'product',
         'release': 'release',
         'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
     }).encode('utf-8'))
 
     assert activation.image == 'image'
-    assert activation.vendor == 'vendor'
+    assert activation.vendor == 'the vendor'
     assert activation.product == 'product'
     assert activation.release == 'release'
 

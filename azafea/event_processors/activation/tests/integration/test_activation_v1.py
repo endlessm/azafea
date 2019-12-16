@@ -27,7 +27,7 @@ class TestActivation(IntegrationTest):
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         self.redis.lpush('test_activation_v1', json.dumps({
             'image': 'image',
-            'vendor': 'vendor',
+            'vendor': 'the vendor',
             'product': 'product',
             'release': 'release',
             'country': 'FRA',
@@ -41,7 +41,7 @@ class TestActivation(IntegrationTest):
         with self.db as dbsession:
             activation = dbsession.query(Activation).one()
             assert activation.image == 'image'
-            assert activation.vendor == 'vendor'
+            assert activation.vendor == 'the vendor'
             assert activation.product == 'product'
             assert activation.release == 'release'
             assert activation.country == 'FRA'

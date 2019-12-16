@@ -34,7 +34,7 @@ MAPPING = {
 
     "bgh e-nova": "BGH",
 
-    "Biostar": "BIOSTAR",
+    "biostar": "BIOSTAR",
     "biostar group": "BIOSTAR",
 
     "casper bilgisayar sistemleri a.s": "Casper",
@@ -48,26 +48,34 @@ MAPPING = {
     "clevo co.": "CLEVO",
 
     "compal": "Compal",
+    "compal          d": "Compal",
 
     "compaq": "COMPAQ",
     "compaq presario 061": "COMPAQ",
     "compaq-presario": "COMPAQ",
     "compaq-presario 061": "COMPAQ",
 
+    "complet electro serv": "Complet Electro Serv",
+    "complet electro serv sa": "Complet Electro Serv",
+
     "compumax": "Compumax",
     "compumax computer": "Compumax",
     "compumax computer s.a.s": "Compumax",
     "compumax computer s.a.s.": "Compumax",
 
+    "connex": "Connex",
+
     "coradir s.a": "CORADIR",
     "coradir s.a.": "CORADIR",
 
     "daten": "Daten",
+    "daten ltda": "Daten",
     "daten technologia": "Daten",
     "daten tecnologia": "Daten",
     "daten tecnologia ltda": "Daten",
     "daten tecnologia ltda.": "Daten",
 
+    "dell computer corporation": "Dell",
     "dell inc": "Dell",
     "dell inc.": "Dell",
 
@@ -102,6 +110,8 @@ MAPPING = {
     "intel corp.": "Intel",
     "intel corporation": "Intel",
 
+    "intelbras": "Intelbras",
+
     "corporativo lanix s.a de c.v": "Lanix",
     "corporativo lanix s.a de c.v.": "Lanix",
     "corporativo lanix s.a. de c.v.": "Lanix",
@@ -112,6 +122,7 @@ MAPPING = {
     "lanix todos los derechos reservados": "Lanix",
 
     "lenovo": "Lenovo",
+    "lenovo.": "Lenovo",
     "lenovo product": "Lenovo",
 
     "lg electronics": "LG",
@@ -213,17 +224,23 @@ MAPPING = {
     ".": "unknown",
     "...............": "unknown",
     "_": "unknown",
+    "$(default_string)": "unknown",
     "default string": "unknown",
     "empty": "unknown",
+    "fill by oem": "unknown",
     "invalid": "unknown",
+    "jhsjlkhslkjdfhglksdfg": "unknown",
     "n/a": "unknown",
     "none": "unknown",
     "o.e.m": "unknown",
     "odm": "unknown",
+    "o.e.m.": "unknown",
     "oem": "unknown",
+    "oem manufacturer": "unknown",
     "oem pc": "unknown",
     "standard": "unknown",
     "stem manufacturer": "unknown",
+    "system manufact": "unknown",
     "system manufacter": "unknown",
     "system manufacturer": "unknown",
     "to be filled by oem": "unknown",
@@ -232,6 +249,7 @@ MAPPING = {
     "unbranded": "unknown",
     "unknow": "unknown",
     "unknown": "unknown",
+    "vendor": "unknown",
     "xxxxxx": "unknown",
 }
 
