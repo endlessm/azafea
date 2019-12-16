@@ -30,6 +30,9 @@ from ..events import (
     replay_unknown_aggregate_events,
     replay_unknown_sequences,
     replay_unknown_singular_events,
+    aggregate_event_is_known,
+    sequence_is_known,
+    singular_event_is_known,
 )
 
 
@@ -148,7 +151,12 @@ def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
     log.info('Replaying the unknown singular events…')
 
     with db as dbsession:
+        unknown_event_ids = dbsession.query(UnknownSingularEvent.event_id).distinct()
+        unknown_event_ids = (str(i[0]) for i in unknown_event_ids)
+        unknown_event_ids = [i for i in unknown_event_ids if singular_event_is_known(i)]
+
         query = dbsession.chunked_query(UnknownSingularEvent, chunk_size=args.chunk_size)
+        query = query.filter(UnknownSingularEvent.event_id.in_(unknown_event_ids))
         query = query.reverse_chunks()
         total = query.count()
 
@@ -162,7 +170,12 @@ def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
     log.info('Replaying the unknown aggregate events…')
 
     with db as dbsession:
+        unknown_event_ids = dbsession.query(UnknownAggregateEvent.event_id).distinct()
+        unknown_event_ids = (str(i[0]) for i in unknown_event_ids)
+        unknown_event_ids = [i for i in unknown_event_ids if aggregate_event_is_known(i)]
+
         query = dbsession.chunked_query(UnknownAggregateEvent, chunk_size=args.chunk_size)
+        query = query.filter(UnknownAggregateEvent.event_id.in_(unknown_event_ids))
         query = query.reverse_chunks()
         total = query.count()
 
@@ -177,7 +190,12 @@ def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
     log.info('Replaying the unknown sequences…')
 
     with db as dbsession:
+        unknown_event_ids = dbsession.query(UnknownSequence.event_id).distinct()
+        unknown_event_ids = (str(i[0]) for i in unknown_event_ids)
+        unknown_event_ids = [i for i in unknown_event_ids if sequence_is_known(i)]
+
         query = dbsession.chunked_query(UnknownSequence, chunk_size=args.chunk_size)
+        query = query.filter(UnknownSequence.event_id.in_(unknown_event_ids))
         query = query.reverse_chunks()
         total = query.count()
 

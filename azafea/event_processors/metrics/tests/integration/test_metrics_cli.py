@@ -299,7 +299,7 @@ class TestMetrics(IntegrationTest):
         # Create the table
         self.run_subcommand('initdb')
         self.ensure_tables(Request, ShellAppIsOpen, Uptime, InvalidSequence, InvalidSingularEvent,
-                           UnknownSequence, UnknownSingularEvent)
+                           UnknownAggregateEvent, UnknownSequence, UnknownSingularEvent)
 
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 

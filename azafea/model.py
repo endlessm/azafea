@@ -101,6 +101,12 @@ class ChunkedQuery:
 
         return self
 
+    # FIXME: sqlalchemy-stubs doesn't have type hints for this
+    def filter(self, expression) -> 'ChunkedQuery':  # type: ignore
+        self._query = self._query.filter(expression)
+
+        return self
+
 
 class DbSession(SaSession):
     def chunked_query(self, model: Type['Base'], chunk_size: int = 5000) -> ChunkedQuery:
