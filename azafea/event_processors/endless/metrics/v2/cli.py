@@ -37,7 +37,8 @@ from ..events import (
     sequence_is_known,
     singular_event_is_known,
 )
-from ..machine import Machine
+from ..machine import Machine, insert_machine
+from ..request import Request
 
 
 log = logging.getLogger(__name__)
@@ -64,6 +65,14 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     parse_images.add_argument('--chunk-size', type=int, default=5000,
                               help='The size of the chunks to operate on')
     parse_images.set_defaults(subcommand=do_parse_images)
+
+    replay_machine_images = subs.add_parser('replay-machine-images',
+                                            help='Replay "image version" events to populate the '
+                                                 'machine mapping table',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    replay_machine_images.add_argument('--chunk-size', type=int, default=5000,
+                                       help='The size of the chunks to operate on')
+    replay_machine_images.set_defaults(subcommand=do_replay_machine_images)
 
     replay_invalid = subs.add_parser('replay-invalid', help='Replay invalid events',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -227,6 +236,27 @@ def do_replay_invalid(config: Config, args: argparse.Namespace) -> None:
             progress(chunk_number * args.chunk_size, total)
 
     progress(total, total, end='\n')
+
+
+def do_replay_machine_images(config: Config, args: argparse.Namespace) -> None:
+    db = Db(config.postgresql)
+    log.info('Replaying the image version events…')
+
+    with db as dbsession:
+        query = dbsession.query(Request.machine_id, ImageVersion.image_id)
+        query = query.filter(Request.id == ImageVersion.request_id)
+        query = query.distinct()
+
+        total = query.count()
+
+        for i, (machine_id, image_id) in enumerate(query, start=1):
+            insert_machine(dbsession, machine_id, image_id)
+
+            if (i % args.chunk_size) == 0:
+                dbsession.commit()
+                progress(i * args.chunk_size, total)
+
+        progress(total, total)
 
 
 def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
