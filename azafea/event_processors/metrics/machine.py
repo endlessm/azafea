@@ -7,11 +7,16 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+import logging
+
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.schema import Column
 from sqlalchemy.types import Integer, Unicode
 
 from azafea.model import Base, DbSession
+
+
+log = logging.getLogger(__name__)
 
 
 class Machine(Base):
@@ -23,7 +28,9 @@ class Machine(Base):
 
 
 def insert_machine(dbsession: DbSession, machine_id: str, image_id: str) -> None:
+    log.info(f'Inserting machine mapping: ({machine_id}, {image_id})')
     stmt = insert(Machine.__table__).values(machine_id=machine_id, image_id=image_id)
+    log.info(f'With the following query:\n{stmt}')
     stmt = stmt.on_conflict_do_nothing()
 
     dbsession.connection().execute(stmt)

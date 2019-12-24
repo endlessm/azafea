@@ -7,6 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+import logging
 from typing import Any, Dict
 
 from gi.repository import GLib
@@ -43,6 +44,9 @@ from ._base import (  # noqa: F401
     sequence_is_known,
     singular_event_is_known,
 )
+
+
+log = logging.getLogger(__name__)
 
 
 # -- Singular events ----------------------------------------------------------
@@ -307,10 +311,13 @@ class ImageVersion(SingularEvent):
 
 @listens_for(DbSession, 'before_commit')
 def receive_before_commit(dbsession: DbSession) -> None:
+    session_content = '\n'.join(str(i) for i in dbsession.new)
+    log.info(f'Received a SQLAlchemy before_commit event with the following session:\n{session_content}')
     for instance in dbsession.new:
         if not isinstance(instance, ImageVersion):
             continue
 
+        log.info(f"That's an image version!\n{instance}")
         insert_machine(dbsession, instance.request.machine_id, image_id=instance.image_id)
 
 
