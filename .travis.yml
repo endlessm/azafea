@@ -1,10 +1,6 @@
 language: python
 sudo: required
 
-branches:
-  only:
-  - master
-
 #python:
 #- "3.7"
 
