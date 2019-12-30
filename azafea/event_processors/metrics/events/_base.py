@@ -165,7 +165,7 @@ class UnknownEvent(MetricEvent):
         as_bytes = maybe_payload.get_data_as_bytes()
 
         if as_bytes is None:
-            payload_data = b''
+            payload_data = b''  # pragma: no cover
 
         else:
             payload_data = as_bytes.get_data()
