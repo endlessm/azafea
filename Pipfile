@@ -8,9 +8,7 @@ pytest-cov = "*"
 pytest-flake8 = "*"
 pytest-mypy = ">=0.3.3"
 sphinx = "*"
-# FIXME: Use master for now, for a few fixes:
-#        https://github.com/dropbox/sqlalchemy-stubs/pull/80
-sqlalchemy-stubs = {git = "https://github.com/dropbox/sqlalchemy-stubs.git",ref = "master"}
+sqlalchemy-stubs = ">=0.3"
 
 [packages]
 alembic = "*"

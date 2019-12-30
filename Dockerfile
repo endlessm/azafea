@@ -10,7 +10,6 @@ RUN apt --quiet --assume-yes update \
     && apt --quiet --assume-yes --no-install-recommends install \
         gcc \
         gir1.2-glib-2.0 \
-        git \
         gobject-introspection \
         libcairo2-dev \
         libffi-dev \
@@ -26,7 +25,6 @@ RUN apt --quiet --assume-yes update \
     && pipenv install --ignore-pipfile \
     && apt --quiet --assume-yes autoremove --purge \
         gcc \
-        git \
         libcairo2-dev \
         libffi-dev \
         libgirepository1.0-dev \
