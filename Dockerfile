@@ -6,6 +6,7 @@ WORKDIR /opt/azafea/src
 
 COPY Pipfile.lock .
 
+ARG build_type
 RUN apt --quiet --assume-yes update && \
     apt --quiet --assume-yes --no-install-recommends install \
         gcc \
@@ -24,16 +25,22 @@ RUN apt --quiet --assume-yes update && \
         && \
     pip3 install pipenv && \
     pipenv install --ignore-pipfile && \
-    apt --quiet --assume-yes autoremove --purge \
-        gcc \
-        libcairo2-dev \
-        libffi-dev \
-        libgirepository1.0-dev \
-        libglib2.0-dev \
-        libpq-dev \
-        python3-dev \
-        && \
-    rm -rf /var/cache/{apt,debconf} /var/lib/apt/lists/* /var/log/{apt,dpkg.log}
+    if [ "${build_type}" = "dev" ]; then \
+        # Install the development/test dependencies
+        pipenv install --ignore-pipfile --dev \
+    ; else \
+        # Make some space for the production image
+        apt --quiet --assume-yes autoremove --purge \
+            gcc \
+            libcairo2-dev \
+            libffi-dev \
+            libgirepository1.0-dev \
+            libglib2.0-dev \
+            libpq-dev \
+            python3-dev \
+            && \
+        rm -rf /var/cache/{apt,debconf} /var/lib/apt/lists/* /var/log/{apt,dpkg.log} \
+    ; fi
 
 COPY . .
 
