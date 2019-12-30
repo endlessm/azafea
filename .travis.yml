@@ -5,10 +5,11 @@ branches:
   only:
   - master
 
-python:
-- "3.7"
+#python:
+#- "3.7"
 
 services:
+- docker
 - redis-server
 
 before_install:
@@ -18,11 +19,11 @@ before_install:
 - sudo apt --yes --quiet autoremove --purge postgresql-{,client-,contrib-}{9,10}\*
 - sudo apt --yes --quiet install postgresql-11 postgresql-client-11
 
-# Install the pygobject build deps
-- sudo apt --yes --quiet install gobject-introspection libcairo2-dev libffi-dev libgirepository1.0-dev libglib2.0-dev
+# Install Docker
+#- sudo apt --yes --quiet install docker-ce
 
-install:
-- pipenv install --deploy --dev
+# Install the pygobject build deps
+#- sudo apt --yes --quiet install gobject-introspection libcairo2-dev libffi-dev libgirepository1.0-dev libglib2.0-dev
 
 before_script:
 # Create the PostgreSQL role and database
@@ -33,11 +34,14 @@ before_script:
 - sudo -u postgres psql --command="ALTER USER azafea WITH PASSWORD 'CHANGE ME!!';"
 - redis-cli config set requirepass 'CHANGE ME!!'
 
+# Build the Docker image
+- docker build --build-arg build_type=dev --tag "azafea:tests" .
+
 matrix:
   include:
   - name: "Integration Tests"
     script:
-    - pipenv run test-all
+    - docker run --rm --network=host --entrypoint="pipenv run" "azafea:tests" test-all
   - name: "Lint and Type Checking"
     script:
-    - pipenv run lint
+    - docker run --rm --network=host --entrypoint="pipenv run" "azafea:tests" lint
