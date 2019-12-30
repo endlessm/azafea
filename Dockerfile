@@ -1,4 +1,5 @@
-FROM ubuntu:eoan
+ARG base_image=ubuntu:disco
+FROM ${base_image}
 
 ENV LANG C.UTF-8
 
