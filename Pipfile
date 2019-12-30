@@ -1,8 +1,6 @@
 [dev-packages]
 flake8-bugbear = "*"
-# FIXME: The Pydantic plugin is incompatible with Mypy 0.750
-#        https://github.com/samuelcolvin/pydantic/issues/1057
-mypy = ">=0.720,<0.750"
+mypy = ">=0.750"
 pytest = "*"
 pytest-cov = "*"
 pytest-flake8 = "*"
@@ -13,7 +11,7 @@ sqlalchemy-stubs = ">=0.3"
 [packages]
 alembic = "*"
 psycopg2 = "*"
-pydantic = ">= 1.1"
+pydantic = ">= 1.3"
 pygobject = "*"
 redis = "*"
 sqlalchemy = "*"
