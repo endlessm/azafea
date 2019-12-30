@@ -37,7 +37,7 @@ matrix:
   include:
   - name: "Integration Tests"
     script:
-    - docker run --rm --network=host --entrypoint="pipenv run" "azafea:tests" test-all
+    - docker run --rm --network=host --entrypoint="" "azafea:tests" pipenv run test-all
   - name: "Lint and Type Checking"
     script:
-    - docker run --rm --network=host --entrypoint="pipenv run" "azafea:tests" lint
+    - docker run --rm --network=host --entrypoint="" "azafea:tests" pipenv run lint
