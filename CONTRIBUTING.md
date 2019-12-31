@@ -26,15 +26,16 @@ fixing your issue as quickly as possible.
 
 ## Pre-requisites
 
-The tools required to work on Azafea are the following:
+We recommend a container-based workflow to work on Azafea using Docker.
 
-*   Python >= 3.7, with Pip
-*   [pipenv](https://docs.pipenv.org/)
+Some operating systems provide [Podman](https://podman.io) instead of Docker.
+For the purpose of this guide, both should be entirely equivalent. If you use
+Podman, simply replace ``sudo docker`` by ``podman`` (no sudo required) in all
+the commands below.
 
-Pipenv is not strictly mandatory to contribute to Azafea, you can use any way
-you prefer to manage the dependencies. We do recommend using it though, as it
-makes it very easy to manage a virtual environment dedicated to Azafea. The
-rest of this documentation will assume you use Pipenv.
+If you choose to develop outside of a container (e.g using
+[Pipenv](https://docs.pipenv.org/) directly on your workstation), have a look
+at our `Dockerfile` for how to do that.
 
 
 ## Getting the Sources
@@ -45,18 +46,29 @@ You can simply clone the Git repository:
 $ git clone https://github.com/endlessm/azafea
 ```
 
-At this point you will want to install the runtime and development
-dependencies:
+At this point you will want to build the container image you will work from:
 
 ```
-$ pipenv install --dev
+$ sudo docker build --rm --build-arg build_type=dev --tag azafea-dev .
 ```
 
 Now try running the unit tests:
 
 ```
-$ pipenv run test
+$ sudo docker run --rm --network=host --entrypoint="" azafea-dev pipenv run test
 ```
+
+To make development easier, you can open a shell inside a container with the
+source tree bind-mounted into it, and you can then directly run the tests in
+that shell:
+
+```
+$ sudo docker run --rm --network=host --entrypoint=bash --interactive --tty --volume=${PWD}:/opt/azafea/src:rw azafea-dev
+[azafea-dev]$ pipenv run test
+```
+
+In the rest of this document, commands prefixed with the `[azafea-dev]` prompt
+are to be run inside that container shell.
 
 
 ## Coding Standards
@@ -71,7 +83,7 @@ prevents a lot of problems inherent to dynamically typed languages like Python.
 Both are run automatically with the following command:
 
 ```
-$ pipenv run lint
+[azafea-dev]$ pipenv run lint
 ```
 
 
@@ -92,7 +104,7 @@ Azafea itself requires. They should specifically not require:
 You can run them with the following command:
 
 ```
-$ pipenv run test
+[azafea-dev]$ pipenv run test
 ```
 
 
@@ -126,7 +138,7 @@ Once you have everything set up, you can run all the tests, unit and
 integration, with a single command:
 
 ```
-$ pipenv run test-all
+[azafea-dev]$ pipenv run test-all
 ```
 
 Integration tests consist of directories under `azafea/tests/integration/`.
@@ -167,20 +179,20 @@ Once you're ready, you can ensure that Azafea loads your configuration
 correctly with the following command:
 
 ```
-$ pipenv run azafea -c config.toml print-config
+[azafea-dev]$ pipenv run azafea -c config.toml print-config
 ```
 
 If everything is the way you want it, it is time to initialize the database,
 creating all the tables:
 
 ```
-$ pipenv run azafea -c config.toml migratedb
+[azafea-dev]$ pipenv run azafea -c config.toml migratedb
 ```
 
 Finally, you can run Azafea itself:
 
 ```
-$ pipenv run azafea -c config.toml run
+[azafea-dev]$ pipenv run azafea -c config.toml run
 ```
 
 
@@ -193,7 +205,7 @@ The documentation pages are maintained with
 If you modify them, you can test your changes by building them:
 
 ```
-$ pipenv run doc
+[azafea-dev]$ pipenv run doc
 ```
 
 The built HTML files will be in `docs/build/html/`, so you can just open
