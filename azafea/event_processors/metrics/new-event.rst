@@ -2,6 +2,19 @@
 Implementing New Metrics
 ========================
 
+Foreword
+========
+
+This document is intended to help developers define new metrics events.
+
+Make sure you read the Azafea
+`contribution guidelines <https://github.com/endlessm/azafea/blob/master/CONTRIBUTING.md>`_
+first.
+
+
+Introduction
+============
+
 The metrics event processor implements a few events. When it receives a request
 containing events it doesn't know about, they will get stored in the following
 tables:
@@ -53,11 +66,29 @@ called, the payload has already been validated against the
 Creating the tables
 ===================
 
-After adding a new model, stop Azafea and create the new tables with Azafea's
-``initdb`` command, then restart the application.
+After adding a new model, stop Azafea and create the database migration::
+
+    [azafea-dev]$ pipenv run azafea -c config.toml make-migrations
+
+Carefully review the generated migration file, and commit it along with your
+new event.
+
+You can test that the migration is functional by running it::
+
+    [azafea-dev]$ pipenv run azafea -c config.toml migratedb
 
 
 Replaying previously unknown events
 ===================================
 
-TODO: Write a tool to do that.
+If some instances of your new event had been received by Azafea before you
+implemented it and Azafea had stored them in the corresponding "unknown" table,
+you can run the migration to create the table, then replay them to "make them
+known"::
+
+    $ pipenv run azafea -c config.toml migratedb
+    $ pipenv run azafea -c config.toml metrics-2 replay-unknown
+
+The above commands need to be run in an environment with access to Azafea
+itself. If you deployed Azafea in production using Docker, then you will want
+to run them in an instance of that production container.
