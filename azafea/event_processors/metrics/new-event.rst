@@ -81,4 +81,14 @@ You can test that the migration is functional by running it::
 Replaying previously unknown events
 ===================================
 
-TODO: Write a tool to do that.
+If some instances of your new event had been received by Azafea before you
+implemented it and Azafea had stored them in the corresponding "unknown" table,
+you can run the migration to create the table, then replay them to "make them
+known"::
+
+    $ pipenv run azafea -c config.toml migratedb
+    $ pipenv run azafea -c config.toml metrics-2 replay-unknown
+
+The above commands need to be run in an environment with access to Azafea
+itself. If you deployed Azafea in production using Docker, then you will want
+to run them in an instance of that production container.
