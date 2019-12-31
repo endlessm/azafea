@@ -4,6 +4,10 @@ sudo: required
 #python:
 #- "3.7"
 
+env:
+- OS=ubuntu:disco
+- OS=ubuntu:eoan
+
 services:
 - docker
 - redis-server
@@ -31,17 +35,13 @@ before_script:
 - redis-cli config set requirepass 'CHANGE ME!!'
 
 # Build the Docker image
-- docker build --build-arg base_image=${OS} --build-arg build_type=dev --tag "azafea:${OS}" .
+- docker build --build-arg base_image=${OS} --build-arg build_type=dev --tag "azafea-${OS}" .
 
 matrix:
-  env:
-  - OS=ubuntu:disco
-  - OS=ubuntu:eoan
-
   include:
   - name: "Integration Tests"
     script:
-    - docker run --rm --network=host --entrypoint="" "azafea:${OS}" pipenv run test-all
+    - docker run --rm --network=host --entrypoint="" "azafea-${OS}" pipenv run test-all
   - name: "Lint and Type Checking"
     script:
-    - docker run --rm --network=host --entrypoint="" "azafea:${OS}" pipenv run lint
+    - docker run --rm --network=host --entrypoint="" "azafea-${OS}" pipenv run lint
