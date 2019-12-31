@@ -2,6 +2,19 @@
 Implementing New Metrics
 ========================
 
+Foreword
+========
+
+This document is intended to help developers define new metrics events.
+
+Make sure you read the Azafea
+`contribution guidelines <https://github.com/endlessm/azafea/blob/master/CONTRIBUTING.md>`_
+first.
+
+
+Introduction
+============
+
 The metrics event processor implements a few events. When it receives a request
 containing events it doesn't know about, they will get stored in the following
 tables:
@@ -53,8 +66,16 @@ called, the payload has already been validated against the
 Creating the tables
 ===================
 
-After adding a new model, stop Azafea and create the new tables with Azafea's
-``initdb`` command, then restart the application.
+After adding a new model, stop Azafea and create the database migration::
+
+    [azafea-dev]$ pipenv run azafea -c config.toml make-migrations
+
+Carefully review the generated migration file, and commit it along with your
+new event.
+
+You can test that the migration is functional by running it::
+
+    [azafea-dev]$ pipenv run azafea -c config.toml migratedb
 
 
 Replaying previously unknown events
