@@ -25,7 +25,10 @@ matrix:
     - sudo -u postgres psql --command="ALTER USER azafea WITH PASSWORD 'CHANGE ME!!';"
     - redis-cli config set requirepass 'CHANGE ME!!'
     script:
-            - docker run --rm --network=host --entrypoint="" "azafea-tests:${OS//:/-}" pipenv run test-all
+    - docker run --rm --network=host --entrypoint="" "azafea-tests:${OS//:/-}" pipenv run test-all
+    env:
+    - OS=ubuntu:disco
+    - OS=ubuntu:eoan
 
   - name: "Lint and Type Checking"
     before_script:
