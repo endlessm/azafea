@@ -12,24 +12,27 @@ before_install:
 - sudo apt --yes --quiet autoremove --purge postgresql-{,client-,contrib-}{9,10}\*
 - sudo apt --yes --quiet install postgresql-11 postgresql-client-11
 
+before_script:
+# Build the Docker image
+- docker build --build-arg base_image=${OS} --build-arg build_type=dev --tag "azafea-tests:${OS//:/-}" .
+
+# Create the PostgreSQL role and database
+- sudo -u postgres createuser azafea
+- sudo -u postgres createdb --owner=azafea azafea-tests
+
+# Set the default passwords for PostgreSQL and Redis, as that's what the tests expect
+- sudo -u postgres psql --command="ALTER USER azafea WITH PASSWORD 'CHANGE ME!!';"
+- redis-cli config set requirepass 'CHANGE ME!!'
+
+script:
+- docker run --rm --network=host --entrypoint="" "azafea-tests:${OS//:/-}" pipenv run test-all
+
+env:
+- OS=ubuntu:disco
+- OS=ubuntu:eoan
+
 matrix:
   include:
-  - name: "Integration Tests"
-    before_script:
-    # Build the Docker image
-    - docker build --build-arg base_image=${OS} --build-arg build_type=dev --tag "azafea-tests:${OS//:/-}" .
-    # Create the PostgreSQL role and database
-    - sudo -u postgres createuser azafea
-    - sudo -u postgres createdb --owner=azafea azafea-tests
-    # Set the default passwords for PostgreSQL and Redis, as that's what the tests expect
-    - sudo -u postgres psql --command="ALTER USER azafea WITH PASSWORD 'CHANGE ME!!';"
-    - redis-cli config set requirepass 'CHANGE ME!!'
-    script:
-    - docker run --rm --network=host --entrypoint="" "azafea-tests:${OS//:/-}" pipenv run test-all
-    env:
-    - OS=ubuntu:disco
-    - OS=ubuntu:eoan
-
   - name: "Lint and Type Checking"
     before_script:
     - docker build --build-arg build_type=dev --tag "azafea-lint" .
