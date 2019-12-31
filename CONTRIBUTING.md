@@ -174,7 +174,7 @@ If everything is the way you want it, it is time to initialize the database,
 creating all the tables:
 
 ```
-$ pipenv run azafea -c config.toml initdb
+$ pipenv run azafea -c config.toml migratedb
 ```
 
 Finally, you can run Azafea itself:
