@@ -12,37 +12,23 @@ before_install:
 - sudo apt --yes --quiet autoremove --purge postgresql-{,client-,contrib-}{9,10}\*
 - sudo apt --yes --quiet install postgresql-11 postgresql-client-11
 
-before_script:
-# Create the PostgreSQL role and database
-- sudo -u postgres createuser azafea
-- sudo -u postgres createdb --owner=azafea azafea-tests
-
-# Set the default passwords for PostgreSQL and Redis, as that's what the tests expect
-- sudo -u postgres psql --command="ALTER USER azafea WITH PASSWORD 'CHANGE ME!!';"
-- redis-cli config set requirepass 'CHANGE ME!!'
-
 matrix:
   include:
-  - name: "Integration Tests: Ubuntu 19.04"
+  - name: "Integration Tests"
     before_script:
-    - docker build --build-arg base_image=ubuntu:disco --build-arg build_type=dev --tag "azafea:ubuntu-disco" .
+    # Build the Docker image
+    - docker build --build-arg base_image=${OS} --build-arg build_type=dev --tag "azafea-tests:${OS//:/-}" .
+    # Create the PostgreSQL role and database
+    - sudo -u postgres createuser azafea
+    - sudo -u postgres createdb --owner=azafea azafea-tests
+    # Set the default passwords for PostgreSQL and Redis, as that's what the tests expect
+    - sudo -u postgres psql --command="ALTER USER azafea WITH PASSWORD 'CHANGE ME!!';"
+    - redis-cli config set requirepass 'CHANGE ME!!'
     script:
-    - docker run --rm --network=host --entrypoint="" "azafea:ubuntu-disco" pipenv run test-all
+            - docker run --rm --network=host --entrypoint="" "azafea-tests:${OS//:/-}" pipenv run test-all
 
-  - name: "Integration Tests: Ubuntu 19.10"
+  - name: "Lint and Type Checking"
     before_script:
-    - docker build --build-arg base_image=ubuntu:eoan --build-arg build_type=dev --tag "azafea:ubuntu-eoan" .
+    - docker build --build-arg build_type=dev --tag "azafea-lint" .
     script:
-    - docker run --rm --network=host --entrypoint="" "azafea:ubuntu-eoan" pipenv run test-all
-
-  - name: "Lint and Type Checking: Ubuntu 19.04"
-    before_script:
-    - docker build --build-arg base_image=ubuntu:disco --build-arg build_type=dev --tag "azafea:ubuntu-disco" .
-    script:
-    - docker run --rm --network=host --entrypoint="" "azafea:ubuntu-disco" pipenv run lint
-
-  - name: "Lint and Type Checking: Ubuntu 19.10"
-    before_script:
-    - docker build --build-arg base_image=ubuntu:eoan --build-arg build_type=dev --tag "azafea:ubuntu-eoan" .
-    script:
-    - docker run --rm --network=host --entrypoint="" "azafea:ubuntu-eoan" pipenv run lint
+    - docker run --rm --network=host --entrypoint="" "azafea-lint" pipenv run lint
