@@ -21,7 +21,7 @@ before_install:
 - sudo apt --yes --quiet update
 
 # Use PostgreSQL 11
-- sudo apt --yes --quiet autoremove --purge postgresql-{,client-,contrib-}{9,10}\*
+- sudo apt --yes --quiet autoremove --purge libpq\* postgresql-{,client-,contrib-}{9,10}\*
 - sudo apt --yes --quiet install postgresql-11
 
 install:
