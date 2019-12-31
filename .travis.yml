@@ -1,5 +1,12 @@
-language: python
 sudo: required
+language: minimal
+addons:
+  apt:
+    sources:
+    - sourceline: "ppa:chris-lea/redis-server"
+    packages:
+    - redis-server
+    - redis-tools
 
 branches:
   only:
