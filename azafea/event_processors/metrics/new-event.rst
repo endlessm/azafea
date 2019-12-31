@@ -3,7 +3,7 @@ Implementing New Metrics
 ========================
 
 The metrics event processor implements a few events. When it receives a request
-containing events it doesn't know about,t hey will get stored in the following
+containing events it doesn't know about, they will get stored in the following
 tables:
 
 * ``unknown_singular_event`` for singular metrics;
