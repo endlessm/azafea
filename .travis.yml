@@ -1,13 +1,6 @@
 dist: bionic
 sudo: required
 language: minimal
-addons:
-  apt:
-    sources:
-    - sourceline: "ppa:chris-lea/redis-server"
-    packages:
-    - redis-server
-    - redis-tools
 
 branches:
   only:
@@ -15,26 +8,16 @@ branches:
 
 services:
 - docker
-- redis-server
-
-before_install:
-- sudo apt --yes --quiet update
-
-# Use PostgreSQL 11
-- sudo apt --yes --quiet autoremove --purge libpq\* postgresql-{,client-,contrib-}{9,10}\*
-- sudo apt --yes --quiet install postgresql-11
 
 install:
 - docker build --build-arg build_type=dev --tag azafea-tests .
 
 before_script:
-# Create the PostgreSQL role and database
-- sudo -u postgres createuser azafea
-- sudo -u postgres createdb --owner=azafea azafea-tests
+- docker run -d --name=redis --network=host redis:5-alpine --requirepass 'CHANGE ME!!'
+- docker run -d --name=postgres --network=host -e 'POSTGRES_PASSWORD=CHANGE ME!!' -e 'POSTGRES_USER=azafea' -e 'POSTGRES_DB=azafea-tests' postgres:11-alpine
 
-# Set the default passwords for PostgreSQL and Redis, as that's what the tests expect
-- sudo -u postgres psql --command="ALTER USER azafea WITH PASSWORD 'CHANGE ME!!';"
-- redis-cli config set requirepass 'CHANGE ME!!'
+after_script:
+- docker rm -f redis postgres
 
 matrix:
   include:
