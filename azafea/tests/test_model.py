@@ -22,9 +22,7 @@ def test_use_db_session(monkeypatch, mock_sessionmaker):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.model, 'sessionmaker', mock_sessionmaker)
-        db = azafea.model.Db(config.postgresql.host, config.postgresql.port,
-                             config.postgresql.user, config.postgresql.password,
-                             config.postgresql.database)
+        db = azafea.model.Db(config.postgresql)
 
         with db as dbsession:
             assert dbsession.open
@@ -44,9 +42,7 @@ def test_fail_committing_db_session(monkeypatch, mock_sessionmaker):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.model, 'sessionmaker', mock_sessionmaker)
-        db = azafea.model.Db(config.postgresql.host, config.postgresql.port,
-                             config.postgresql.user, config.postgresql.password,
-                             config.postgresql.database)
+        db = azafea.model.Db(config.postgresql)
 
         with pytest.raises(ValueError) as exc_info:
             with db as dbsession:
@@ -64,9 +60,7 @@ def test_exit_from_already_rolled_back_session(monkeypatch, mock_sessionmaker):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.model, 'sessionmaker', mock_sessionmaker)
-        db = azafea.model.Db(config.postgresql.host, config.postgresql.port,
-                             config.postgresql.user, config.postgresql.password,
-                             config.postgresql.database)
+        db = azafea.model.Db(config.postgresql)
 
         with db as dbsession:
             assert dbsession.open
@@ -88,9 +82,7 @@ def test_fail_in_db_session(monkeypatch, mock_sessionmaker):
 
     with monkeypatch.context() as m:
         m.setattr(azafea.model, 'sessionmaker', mock_sessionmaker)
-        db = azafea.model.Db(config.postgresql.host, config.postgresql.port,
-                             config.postgresql.user, config.postgresql.password,
-                             config.postgresql.database)
+        db = azafea.model.Db(config.postgresql)
 
         with pytest.raises(ValueError) as exc_info:
             with db as dbsession:

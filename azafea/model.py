@@ -24,6 +24,7 @@ from sqlalchemy.orm.session import Session as SaSession, sessionmaker
 from sqlalchemy.schema import Column, CreateColumn, MetaData
 from sqlalchemy.types import Enum, TypeDecorator
 
+from .config import PostgreSQL as PgConfig
 from .utils import get_fqdn
 
 
@@ -115,9 +116,10 @@ class DbSession(SaSession):
 
 
 class Db:
-    def __init__(self, host: str, port: int, user: str, password: str, db: str) -> None:
-        self._url = URL('postgresql+psycopg2', username=user, host=host, port=port, database=db)
-        self._engine = create_engine(self._url, connect_args={'password': password})
+    def __init__(self, pgconfig: PgConfig) -> None:
+        self._url = URL('postgresql+psycopg2', username=pgconfig.user, host=pgconfig.host,
+                        port=pgconfig.port, database=pgconfig.database)
+        self._engine = create_engine(self._url, connect_args={'password': pgconfig.password})
         self._session_factory = sessionmaker(bind=self._engine, class_=DbSession)
 
         # Try to connect, to fail early if the PostgreSQL server can't be reached.

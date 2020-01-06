@@ -72,9 +72,7 @@ def _normalize_chunk(chunk: Query) -> None:
 
 
 def do_normalize_vendors(config: Config, args: argparse.Namespace) -> None:
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
-
+    db = Db(config.postgresql)
     log.info('Normalizing the vendors for "updater branch selected" (%s) events',
              UpdaterBranchSelected.__event_uuid__)
 
@@ -97,9 +95,7 @@ def do_normalize_vendors(config: Config, args: argparse.Namespace) -> None:
 
 
 def do_replay_invalid(config: Config, args: argparse.Namespace) -> None:
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
-
+    db = Db(config.postgresql)
     log.info('Replaying the invalid singular events…')
 
     with db as dbsession:
@@ -145,9 +141,7 @@ def do_replay_invalid(config: Config, args: argparse.Namespace) -> None:
 
 
 def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
-
+    db = Db(config.postgresql)
     log.info('Replaying the unknown singular events…')
 
     with db as dbsession:
