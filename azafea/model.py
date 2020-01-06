@@ -13,6 +13,7 @@ from typing import Any, Iterator, Optional, Type
 
 from sqlalchemy.dialects.postgresql.base import PGDDLCompiler
 from sqlalchemy.engine import create_engine
+from sqlalchemy.engine.url import URL
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative import declarative_base
@@ -115,10 +116,8 @@ class DbSession(SaSession):
 
 class Db:
     def __init__(self, host: str, port: int, user: str, password: str, db: str) -> None:
-        # Store the URL to use in exceptions
-        self._url = f'postgresql://{user}@{host}:{port}/{db}'
-
-        self._engine = create_engine(f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}')
+        self._url = URL('postgresql+psycopg2', username=user, host=host, port=port, database=db)
+        self._engine = create_engine(self._url, connect_args={'password': password})
         self._session_factory = sessionmaker(bind=self._engine, class_=DbSession)
 
         # Try to connect, to fail early if the PostgreSQL server can't be reached.
