@@ -18,6 +18,75 @@ from azafea.vendors import normalize_vendor
 class TestMetrics(IntegrationTest):
     handler_module = 'azafea.event_processors.metrics.v2'
 
+    def test_dedupe_no_image_versions(self, capfd):
+        from azafea.event_processors.metrics.events import ImageVersion
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(ImageVersion)
+
+        with self.db as dbsession:
+            assert dbsession.query(ImageVersion).count() == 0
+
+        self.run_subcommand('test_dedupe_no_image_versions', 'dedupe-image-versions')
+
+        with self.db as dbsession:
+            assert dbsession.query(ImageVersion).count() == 0
+
+        capture = capfd.readouterr()
+        assert 'No metrics requests with deduplicate image versions found' in capture.out
+
+    def test_dedupe_image_versions(self):
+        from azafea.event_processors.metrics.events import ImageVersion
+        from azafea.event_processors.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, ImageVersion)
+
+        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+
+        with self.db as dbsession:
+            dbsession.add(Request(serialized=b'whatever', sha512='sha512-1', received_at=occured_at,
+                                  absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
+                                  send_number=0))
+            dbsession.add(Request(serialized=b'whatever', sha512='sha512-2', received_at=occured_at,
+                                  absolute_timestamp=3, relative_timestamp=4, machine_id='machine2',
+                                  send_number=0))
+            dbsession.add(Request(serialized=b'whatever', sha512='sha512-3', received_at=occured_at,
+                                  absolute_timestamp=5, relative_timestamp=6, machine_id='machine3',
+                                  send_number=0))
+
+        # Insert multiple image version events.
+        #
+        # We have to do it this way because adding them all in the same session would get them
+        # deduplicated before we ever had a chance to run the command.
+
+        with self.db as dbsession:
+            requests = dbsession.query(Request).order_by(Request.id).all()
+
+        for i in range(9):
+            with self.db as dbsession:
+                request = requests[i % 3]
+                dbsession.add(ImageVersion(request=request, user_id=i, occured_at=occured_at,
+                                           payload=GLib.Variant('mv', GLib.Variant('s', 'image'))))
+
+        with self.db as dbsession:
+            req1, req2, req3 = dbsession.query(Request).order_by(Request.id).all()
+            assert dbsession.query(ImageVersion).filter_by(request_id=req1.id).count() == 3
+            assert dbsession.query(ImageVersion).filter_by(request_id=req2.id).count() == 3
+            assert dbsession.query(ImageVersion).filter_by(request_id=req3.id).count() == 3
+
+        # Run the deduplication
+        self.run_subcommand('test_dedupe_image_versions', 'dedupe-image-versions', '--chunk-size=5')
+
+        # Verify again after the deduplication
+        with self.db as dbsession:
+            req1, req2, req3 = dbsession.query(Request).order_by(Request.id).all()
+            assert dbsession.query(ImageVersion).filter_by(request_id=req1.id).one().user_id == 0
+            assert dbsession.query(ImageVersion).filter_by(request_id=req2.id).one().user_id == 1
+            assert dbsession.query(ImageVersion).filter_by(request_id=req3.id).one().user_id == 2
+
     def test_normalize_no_vendors(self, capfd):
         from azafea.event_processors.metrics.events import UpdaterBranchSelected
 
