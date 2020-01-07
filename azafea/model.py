@@ -105,8 +105,8 @@ class ChunkedQuery:
         return self
 
     # FIXME: sqlalchemy-stubs doesn't have type hints for this
-    def filter(self, expression) -> 'ChunkedQuery':  # type: ignore
-        self._query = self._query.filter(expression)
+    def filter(self, *criterion) -> 'ChunkedQuery':  # type: ignore
+        self._query = self._query.filter(*criterion)
 
         return self
 
