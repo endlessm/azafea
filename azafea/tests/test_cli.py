@@ -248,6 +248,8 @@ def test_print_config(capfd, monkeypatch, make_config_file):
         'password = "** hidden **"',
         'database = "azafea"',
         '',
+        '[postgresql.connect_args]',
+        '',
         '[queues.some-queue]',
         'handler = "azafea.tests.test_cli"',
         '------ END ------',

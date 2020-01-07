@@ -7,6 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+import copy
 from operator import attrgetter
 from types import TracebackType
 from typing import Any, Iterator, Optional, Type
@@ -117,9 +118,12 @@ class DbSession(SaSession):
 
 class Db:
     def __init__(self, pgconfig: PgConfig) -> None:
+        connect_args = copy.deepcopy(pgconfig.connect_args)
+        connect_args['password'] = pgconfig.password
+
         self._url = URL('postgresql+psycopg2', username=pgconfig.user, host=pgconfig.host,
                         port=pgconfig.port, database=pgconfig.database)
-        self._engine = create_engine(self._url, connect_args={'password': pgconfig.password})
+        self._engine = create_engine(self._url, connect_args=connect_args)
         self._session_factory = sessionmaker(bind=self._engine, class_=DbSession)
 
         # Try to connect, to fail early if the PostgreSQL server can't be reached.

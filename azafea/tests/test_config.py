@@ -47,6 +47,8 @@ def test_defaults():
         'database = "azafea"',
         '',
         '[queues]',
+        '',
+        '[postgresql.connect_args]',
     ])
 
 
@@ -71,7 +73,10 @@ def test_override(monkeypatch, make_config):
         config = make_config({
             'main': {'number_of_workers': 1},
             'redis': {'port': 42},
-            'postgresql': {'host': 'pg-server'},
+            'postgresql': {
+                'host': 'pg-server',
+                'connect_args': {'sslmode': 'require', 'connect_timeout': 3},
+            },
             'queues': {'some-queue': {'handler': 'azafea.tests.test_config'}},
         })
 
@@ -84,6 +89,7 @@ def test_override(monkeypatch, make_config):
     assert config.postgresql.user == 'azafea'
     assert config.postgresql.password == 'CHANGE ME!!'
     assert config.postgresql.database == 'azafea'
+    assert config.postgresql.connect_args == {'sslmode': 'require', 'connect_timeout': '3'}
 
     assert str(config) == '\n'.join([
         '[main]',
@@ -102,6 +108,10 @@ def test_override(monkeypatch, make_config):
         'user = "azafea"',
         'password = "** hidden **"',
         'database = "azafea"',
+        '',
+        '[postgresql.connect_args]',
+        'sslmode = "require"',
+        'connect_timeout = "3"',
         '',
         '[queues.some-queue]',
         'handler = "azafea.tests.test_config"',

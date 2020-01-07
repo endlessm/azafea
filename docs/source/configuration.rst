@@ -34,6 +34,8 @@ the default options:
    password = "CHANGE ME!!"
    database = "azafea"
 
+   [postgresql.connect_args]
+
    [queues]
 
 
@@ -118,6 +120,26 @@ stores its data.
   The database in which Azafea will store its processed events.
 
   The default is ``"azafea"``
+
+
+The ``postgresql.connect_args`` table
+-------------------------------------
+
+This can be passed arbitrary keys and values, corresponding to libpq connection
+parameters.
+
+Refer to
+`the PostgreSQL documentation <https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-PARAMKEYWORDS>`_
+for more details.
+
+An example would be:
+
+.. code-block:: toml
+
+   [postgresql.connect_args]
+   connect_timeout = 3
+   sslmode = "require"
+
 
 .. _queue-config:
 
