@@ -61,8 +61,7 @@ def do_dropdb(config: Config, args: argparse.Namespace) -> None:
         log.error('Could not clear the database: no event queue configured')
         raise NoEventQueueExit()
 
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
+    db = Db(config.postgresql)
     db.drop_all()
 
 
@@ -71,8 +70,7 @@ def do_initdb(config: Config, args: argparse.Namespace) -> None:
         log.error('Could not initialize the database: no event queue configured')
         raise NoEventQueueExit()
 
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
+    db = Db(config.postgresql)
     db.create_all()
 
 
@@ -95,8 +93,7 @@ def do_make_migration(config: Config, args: argparse.Namespace) -> None:
         log.info("Configured queue handlers don't have 'migrations' directories")
         return None
 
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
+    db = Db(config.postgresql)
 
     with db as dbsession:
         alembic_config.attributes['connection'] = dbsession.connection()
@@ -129,8 +126,7 @@ def do_migratedb(config: Config, args: argparse.Namespace) -> None:
         log.info("Configured queue handlers don't have migrations")
         return None
 
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
+    db = Db(config.postgresql)
 
     with db as dbsession:
         alembic_config.attributes['connection'] = dbsession.connection()

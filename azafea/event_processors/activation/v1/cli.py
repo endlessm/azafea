@@ -43,9 +43,7 @@ def _normalize_chunk(chunk: Query) -> None:
 
 
 def do_normalize_vendors(config: Config, args: argparse.Namespace) -> None:
-    db = Db(config.postgresql.host, config.postgresql.port, config.postgresql.user,
-            config.postgresql.password, config.postgresql.database)
-
+    db = Db(config.postgresql)
     log.info('Normalizing the vendors for activations')
 
     with db as dbsession:

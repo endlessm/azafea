@@ -248,6 +248,8 @@ def test_print_config(capfd, monkeypatch, make_config_file):
         'password = "** hidden **"',
         'database = "azafea"',
         '',
+        '[postgresql.connect_args]',
+        '',
         '[queues.some-queue]',
         'handler = "azafea.tests.test_cli"',
         '------ END ------',
@@ -575,8 +577,8 @@ def test_run_postgresql_connection_error(capfd, monkeypatch, make_config_file):
             azafea.cli.run_command('-c', str(config_file), 'run')
 
     capture = capfd.readouterr()
-    assert ('Could not connect to PostgreSQL: '
-            'connection refused on postgresql://azafea@no-such-host:1/azafea') in capture.err
+    assert ('Could not connect to PostgreSQL: connection refused on '
+            'postgresql+psycopg2://azafea@no-such-host:1/azafea') in capture.err
 
 
 def test_per_queue_command(capfd, monkeypatch, make_config_file):

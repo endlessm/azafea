@@ -38,11 +38,7 @@ class Processor(Process):
         self._continue = False
 
     def _get_postgresql(self) -> Db:
-        db = Db(self.config.postgresql.host, self.config.postgresql.port,
-                self.config.postgresql.user, self.config.postgresql.password,
-                self.config.postgresql.database)
-
-        return db
+        return Db(self.config.postgresql)
 
     def _get_redis(self) -> Redis:
         redis = Redis(host=self.config.redis.host, port=self.config.redis.port,

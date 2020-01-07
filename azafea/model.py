@@ -7,12 +7,14 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+import copy
 from operator import attrgetter
 from types import TracebackType
 from typing import Any, Iterator, Optional, Type
 
 from sqlalchemy.dialects.postgresql.base import PGDDLCompiler
 from sqlalchemy.engine import create_engine
+from sqlalchemy.engine.url import URL
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative import declarative_base
@@ -23,6 +25,7 @@ from sqlalchemy.orm.session import Session as SaSession, sessionmaker
 from sqlalchemy.schema import Column, CreateColumn, MetaData
 from sqlalchemy.types import Enum, TypeDecorator
 
+from .config import PostgreSQL as PgConfig
 from .utils import get_fqdn
 
 
@@ -114,12 +117,14 @@ class DbSession(SaSession):
 
 
 class Db:
-    def __init__(self, host: str, port: int, user: str, password: str, db: str) -> None:
-        self._engine = create_engine(f'postgresql+psycopg2://{user}:{password}@{host}:{port}/{db}')
-        self._session_factory = sessionmaker(bind=self._engine, class_=DbSession)
+    def __init__(self, pgconfig: PgConfig) -> None:
+        connect_args = copy.deepcopy(pgconfig.connect_args)
+        connect_args['password'] = pgconfig.password
 
-        # Store the URL to use in exceptions
-        self._url = f'postgresql://{user}@{host}:{port}/{db}'
+        self._url = URL('postgresql+psycopg2', username=pgconfig.user, host=pgconfig.host,
+                        port=pgconfig.port, database=pgconfig.database)
+        self._engine = create_engine(self._url, connect_args=connect_args)
+        self._session_factory = sessionmaker(bind=self._engine, class_=DbSession)
 
         # Try to connect, to fail early if the PostgreSQL server can't be reached.
         self._ensure_connection()

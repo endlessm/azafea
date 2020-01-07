@@ -130,6 +130,7 @@ class PostgreSQL(_Base):
     user: str = 'azafea'
     password: str = DEFAULT_PASSWORD
     database: str = 'azafea'
+    connect_args: Dict[str, str] = dataclasses.field(default_factory=dict)
 
     @validator('host', pre=True)
     def host_is_non_empty_string(cls, value: Any) -> str:

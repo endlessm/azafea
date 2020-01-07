@@ -88,10 +88,7 @@ class IntegrationTest:
         self.config_file = config_file
         self.config = Config.from_file(self.config_file)
 
-        self.db = Db(self.config.postgresql.host, self.config.postgresql.port,
-                     self.config.postgresql.user, self.config.postgresql.password,
-                     self.config.postgresql.database)
-
+        self.db = Db(self.config.postgresql)
         self.redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
                            password=self.config.redis.password)
 
