@@ -46,9 +46,8 @@ class TestMetrics(IntegrationTest):
 
         # Add a request with an image version
         with self.db as dbsession:
-            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
-                              absolute_timestamp=1, relative_timestamp=2, machine_id='machine',
-                              send_number=0)
+            request = Request(sha512='whatever', received_at=occured_at, absolute_timestamp=1,
+                              relative_timestamp=2, machine_id='machine', send_number=0)
             dbsession.add(request)
 
             dbsession.add(ImageVersion(request=request, user_id=1001, occured_at=occured_at,
@@ -73,9 +72,8 @@ class TestMetrics(IntegrationTest):
 
         # Add a request without an image version
         with self.db as dbsession:
-            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
-                              absolute_timestamp=1, relative_timestamp=2, machine_id='machine',
-                              send_number=0)
+            request = Request(sha512='whatever', received_at=occured_at, absolute_timestamp=1,
+                              relative_timestamp=2, machine_id='machine', send_number=0)
             dbsession.add(request)
 
         # Ensure this machine has no product/personality

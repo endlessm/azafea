@@ -12,7 +12,7 @@ from hashlib import sha512
 from typing import Generator
 
 from sqlalchemy.schema import Column, Index
-from sqlalchemy.types import BigInteger, Date, DateTime, Integer, LargeBinary, Unicode
+from sqlalchemy.types import BigInteger, Date, DateTime, Integer, Unicode
 
 from azafea.model import Base, DbSession, View
 
@@ -25,7 +25,6 @@ class Request(Base):
     __tablename__ = 'metrics_request_v2'
 
     id = Column(Integer, primary_key=True)
-    serialized = Column(LargeBinary)
     sha512 = Column(Unicode, nullable=False, unique=True)
     received_at = Column(DateTime(timezone=True), nullable=False)
     absolute_timestamp = Column(BigInteger, nullable=False)
@@ -107,6 +106,6 @@ class RequestBuilder:
         return get_child_values(self._variant.get_child_value(6))
 
     def build_request(self) -> Request:
-        return Request(serialized=self._serialized, sha512=self.sha512, machine_id=self.machine_id,
+        return Request(sha512=self.sha512, machine_id=self.machine_id,
                        received_at=self._received_at, absolute_timestamp=self.absolute_timestamp,
                        relative_timestamp=self.relative_timestamp, send_number=self.send_number)
