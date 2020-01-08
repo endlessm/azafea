@@ -42,7 +42,7 @@ class TestMetrics(IntegrationTest):
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(UpdaterBranchSelected)
+        self.ensure_tables(Request, UpdaterBranchSelected)
 
         # Insert an event with a known bad vendor
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -86,7 +86,7 @@ class TestMetrics(IntegrationTest):
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(UpdaterBranchSelected)
+        self.ensure_tables(Request, UpdaterBranchSelected)
 
         # Insert an event with a known normalized vendor
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
