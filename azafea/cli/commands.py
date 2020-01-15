@@ -132,6 +132,8 @@ def do_migratedb(config: Config, args: argparse.Namespace) -> None:
         alembic_config.attributes['connection'] = dbsession.connection()
         upgrade_db(alembic_config, 'heads')
 
+    log.info('Successfully migrated the database')
+
 
 def do_print_config(config: Config, args: argparse.Namespace) -> None:
     print('----- BEGIN -----')
