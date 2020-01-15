@@ -39,7 +39,10 @@ RUN apt --quiet --assume-yes update && \
             libpq-dev \
             python3-dev \
             && \
-        rm -rf /var/cache/{apt,debconf} /var/lib/apt/lists/* /var/log/{apt,dpkg.log} \
+        rm -rf /var/cache/{apt,debconf} \
+               /var/lib/apt/lists/* \
+               /var/log/{apt,dpkg.log} \
+               ~/.cache \
     ; fi
 
 COPY . .
