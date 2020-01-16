@@ -7,16 +7,18 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+from operator import attrgetter
 from typing import Any, Dict
 
 from gi.repository import GLib
 
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB
 from sqlalchemy.event import listens_for
+from sqlalchemy.inspection import inspect
 from sqlalchemy.schema import Column
 from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, LargeBinary, Numeric, Unicode
 
-from azafea.model import DbSession
+from azafea.model import Base, DbSession
 from azafea.vendors import normalize_vendor
 from ..machine import insert_machine
 from ..utils import get_asv_dict, get_bytes, get_child_values, get_strings
@@ -303,6 +305,21 @@ class ImageVersion(SingularEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {'image_id': payload.get_string()}
+
+
+@listens_for(DbSession, 'after_attach')
+def receive_after_attach(dbsession: DbSession, instance: Base) -> None:
+    if not isinstance(instance, ImageVersion):
+        return
+
+    # So we have just added an ImageVersion to the session, let's only keep one new (pending)
+    image_versions = sorted(
+        (x for x in dbsession.new if isinstance(x, ImageVersion) and inspect(x).pending),
+        key=attrgetter('occured_at'))
+    to_expunge = image_versions[1:]
+
+    for x in to_expunge:
+        dbsession.expunge(x)
 
 
 @listens_for(DbSession, 'before_commit')

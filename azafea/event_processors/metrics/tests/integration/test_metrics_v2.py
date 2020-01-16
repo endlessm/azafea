@@ -830,12 +830,6 @@ class TestMetrics(IntegrationTest):
                         1000000000,                    # event relative timestamp (1 secs)
                         GLib.Variant('s', image_id)
                     ),
-                    (
-                        user_id,
-                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        GLib.Variant('s', image_id)
-                    ),
                 ],
                 [],                                    # aggregate events
                 []                                     # sequence events
@@ -930,14 +924,68 @@ class TestMetrics(IntegrationTest):
 
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
-            requests = dbsession.query(Request).order_by(Request.id).all()
-            assert len(requests) == 3
+            assert dbsession.query(Request).order_by(Request.id).count() == 3
+            assert dbsession.query(Machine).order_by(Machine.id).count() == 2
+            assert dbsession.query(ImageVersion).order_by(ImageVersion.id).count() == 3
 
-            machines = dbsession.query(Machine).order_by(Machine.id).all()
-            assert len(machines) == 2
+    def test_multiple_image_versions_in_a_request(self):
+        from azafea.event_processors.metrics.events import ImageVersion
+        from azafea.event_processors.metrics.request import Request
 
-            images = dbsession.query(ImageVersion).order_by(ImageVersion.id).all()
-            assert len(images) == 4
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, ImageVersion)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        image_id = 'oem-os1.0-arch.base'
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        1001,
+                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
+                        1000000000,                    # event relative timestamp (1 secs)
+                        GLib.Variant('s', image_id)
+                    ),
+                    (
+                        1002,
+                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        GLib.Variant('s', image_id)
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_multiple_image_versions_in_a_request', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            assert dbsession.query(Request).order_by(Request.id).count() == 1
+
+            image = dbsession.query(ImageVersion).order_by(ImageVersion.id).one()
+            assert image.user_id == 1001
 
     def test_unknown_singular_events(self):
         from azafea.event_processors.metrics.events._base import UnknownSingularEvent

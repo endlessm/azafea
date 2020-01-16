@@ -10,6 +10,7 @@ import argparse
 import logging
 
 from sqlalchemy.orm.query import Query
+from sqlalchemy.sql.functions import func
 
 from azafea.config import Config
 from azafea.model import Db
@@ -17,6 +18,7 @@ from azafea.utils import progress
 from azafea.vendors import normalize_vendor
 
 from ..events import (
+    ImageVersion,
     InvalidAggregateEvent,
     InvalidSequence,
     InvalidSingularEvent,
@@ -40,6 +42,13 @@ log = logging.getLogger(__name__)
 
 
 def register_commands(subs: argparse._SubParsersAction) -> None:
+    dedupe_image_versions = subs.add_parser('dedupe-image-versions',
+                                            help='Deduplicate the image version events',
+                                            formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    dedupe_image_versions.add_argument('--chunk-size', type=int, default=5000,
+                                       help='The size of the chunks to operate on')
+    dedupe_image_versions.set_defaults(subcommand=do_dedupe_image_versions)
+
     normalize_vendors = subs.add_parser('normalize-vendors',
                                         help='Normalize the vendors in existing records',
                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -58,6 +67,48 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     replay_unknown.add_argument('--chunk-size', type=int, default=5000,
                                 help='The size of the chunks to operate on')
     replay_unknown.set_defaults(subcommand=do_replay_unknown)
+
+
+def do_dedupe_image_versions(config: Config, args: argparse.Namespace) -> None:
+    db = Db(config.postgresql)
+    log.info('Deduplicating the metrics requests with multiple "image version" (%s) events',
+             ImageVersion.__event_uuid__)
+
+    with db as dbsession:
+        query = dbsession.query(ImageVersion.request_id)
+        query = query.group_by(ImageVersion.request_id)
+        query = query.having(func.count(ImageVersion.id) > 1)
+        num_requests_with_dupes = query.count()
+
+        if num_requests_with_dupes == 0:
+            log.info('-> No metrics requests with deduplicate image versions found')
+            return None
+
+        log.info('-> Found %s metrics requests with duplicate image versions',
+                 num_requests_with_dupes)
+        request_ids_with_dupes = [x[0] for x in query]
+
+    previous_request_id = None
+
+    for start in range(0, num_requests_with_dupes, args.chunk_size):
+        stop = min(num_requests_with_dupes, start + args.chunk_size)
+        request_id_chunk = request_ids_with_dupes[start:stop]
+
+        with db as dbsession:
+            query = dbsession.query(ImageVersion)
+            query = query.filter(ImageVersion.request_id.in_(request_id_chunk))
+            query = query.order_by(ImageVersion.request_id, ImageVersion.id)
+
+            for image_version in query:
+                if image_version.request_id == previous_request_id:
+                    dbsession.delete(image_version)
+
+                previous_request_id = image_version.request_id
+
+        progress(stop, num_requests_with_dupes)
+
+    progress(num_requests_with_dupes, num_requests_with_dupes, end='\n')
+    log.info('All done!')
 
 
 def _normalize_chunk(chunk: Query) -> None:
