@@ -9,6 +9,7 @@
 
 from importlib import import_module
 import os
+import sys
 from typing import Callable
 
 
@@ -33,6 +34,9 @@ def get_callable(module_name: str, callable_name: str) -> Callable:
 
 def progress(current: int, total: int, end: str = '') -> None:
     bar_length = 60
+
+    if not end.endswith('\n') and not sys.stdout.isatty():
+        end += '\n'
 
     if current > total:
         current = total
