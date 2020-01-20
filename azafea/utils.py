@@ -45,4 +45,4 @@ def progress(current: int, total: int, end: str = '') -> None:
 
     remaining = bar_length - done
 
-    print(f'\r|{"#" * done}{" " * remaining}|  {current} / {total}', end=end)
+    print(f'\r|{"#" * done}{" " * remaining}|  {current} / {total}', end=end, flush=True)
