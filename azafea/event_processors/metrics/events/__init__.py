@@ -255,6 +255,22 @@ class HackClubhouseMode(SingularEvent):
         return {'active': payload.get_boolean()}
 
 
+class HackClubhouseNewsQuestLink(SingularEvent):
+    __tablename__ = 'hack_clubhouse_news_quest_link'
+    __event_uuid__ = 'ebffecb9-7b31-4c30-a9a0-f896aaaa5b4f'
+    __payload_type__ = '(ss)'
+
+    character = Column(Unicode, nullable=False)
+    quest = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'character': payload.get_child_value(0).get_string(),
+            'quest': payload.get_child_value(1).get_string(),
+        }
+
+
 class HackClubhouseProgress(SingularEvent):
     __tablename__ = 'hack_clubhouse_progress'
     __event_uuid__ = '3a037364-9164-4b42-8c07-73bcc00902de'
