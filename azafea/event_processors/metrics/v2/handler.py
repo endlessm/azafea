@@ -27,19 +27,6 @@ def process(dbsession: DbSession, record: bytes) -> None:
     request = request_builder.build_request()
     dbsession.add(request)
 
-    try:
-        dbsession.commit()
-
-    except IntegrityError as e:
-        # FIXME: This is fragile, can we do better?
-        if "uq_metrics_request_v2_sha512" in str(e):
-            log.debug('Request had already been processed in the past')
-            return
-
-        # FIXME: Given how the request is built, this shouldn't ever happen; if it does though, we
-        # absolutely need an integration test
-        raise  # pragma: no cover
-
     for event_variant in request_builder.singulars:
         singular_event = new_singular_event(request, event_variant, dbsession)
 
@@ -55,3 +42,16 @@ def process(dbsession: DbSession, record: bytes) -> None:
 
         if sequence_event is not None:
             log.debug('Inserting sequence event:\n%s', sequence_event)
+
+    try:
+        dbsession.commit()
+
+    except IntegrityError as e:
+        # FIXME: This is fragile, can we do better?
+        if "uq_metrics_request_v2_sha512" in str(e):
+            log.debug('Request had already been processed in the past')
+            return
+
+        # FIXME: Given how the request is built, this shouldn't ever happen; if it does though, we
+        # absolutely need an integration test
+        raise  # pragma: no cover
