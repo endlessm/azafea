@@ -31,20 +31,20 @@ else:
 
 
 IMAGE_PARSING_RE = r"""
-^                       # e.g: eos-3.7-amd64-amd64.190419-225606.base
-(?P<product>[^-]+)      # product: eos
+^                                    # e.g: eos-3.7-amd64-amd64.190419-225606.base
+(?P<product>[^-]+)                   # product: eos
 -
-(?P<branch>[^-]+)       # branch: 3.7
+(?P<branch>[^-]+)                    # branch: 3.7
 -
-(?P<arch>[^-]+)         # arch: amd64
+(?P<arch>[^-]+)                      # arch: amd64
 -
-(?P<platform>[^-]+)     # platform: amd64
+(?P<platform>[^-]+)                  # platform: amd64
 \.
-(?P<date>\d{6}|\d{8,})  # date: 190419
+(?P<date>\d{6}|\d{8,})               # date: 190419
 -
-(?P<time>\d{6})         # time: 225606
+(?P<time>\d{6})                      # time: 225606
 \.
-(?P<personality>[^.]+)  # personality: base
+(?P<personality>[^.]+)               # personality: base
 (?:\.(?P<personality_again>[^.]+))?  # personality again, due to a temporary bug long ago
 $"""
 IMAGE_PARSING_PATTERN = re.compile(IMAGE_PARSING_RE, re.VERBOSE)
