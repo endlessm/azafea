@@ -35,6 +35,18 @@ import pytest
             'image_personality': 'pt_BR'
         }
     ),
+    (
+        # Back in 2015-2016, due to a bug images were generated with the personality field repeated
+        'eos-master-armv7hl-ec100.20190419-225606.pt_BR.pt_BR',
+        {
+            'image_product': 'eos',
+            'image_branch': 'master',
+            'image_arch': 'armv7hl',
+            'image_platform': 'ec100',
+            'image_timestamp': datetime(2019, 4, 19, 22, 56, 6, tzinfo=timezone.utc),
+            'image_personality': 'pt_BR'
+        }
+    ),
 ])
 def test_parse_endless_os_image(image_id, expected):
     from azafea.event_processors.endless.image import parse_endless_os_image

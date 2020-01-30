@@ -45,6 +45,7 @@ IMAGE_PARSING_RE = r"""
 (?P<time>\d{6})         # time: 225606
 \.
 (?P<personality>[^.]+)  # personality: base
+(?:\.(?P<personality_again>[^.]+))?  # personality again, due to a temporary bug long ago
 $"""
 IMAGE_PARSING_PATTERN = re.compile(IMAGE_PARSING_RE, re.VERBOSE)
 
