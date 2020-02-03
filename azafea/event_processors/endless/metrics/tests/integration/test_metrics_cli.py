@@ -45,6 +45,7 @@ class TestMetrics(IntegrationTest):
         self.ensure_tables(Request, ImageVersion)
 
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
 
         with self.db as dbsession:
             dbsession.add(Request(serialized=b'whatever', sha512='sha512-1', received_at=occured_at,
@@ -69,7 +70,7 @@ class TestMetrics(IntegrationTest):
             with self.db as dbsession:
                 request = requests[i % 3]
                 dbsession.add(ImageVersion(request=request, user_id=i, occured_at=occured_at,
-                                           payload=GLib.Variant('mv', GLib.Variant('s', 'image'))))
+                                           payload=GLib.Variant('mv', GLib.Variant('s', image_id))))
 
         with self.db as dbsession:
             req1, req2, req3 = dbsession.query(Request).order_by(Request.id).all()
