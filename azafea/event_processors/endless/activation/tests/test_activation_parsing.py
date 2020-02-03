@@ -16,17 +16,23 @@ def test_from_bytes():
 
     created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
     activation = Activation.from_serialized(json.dumps({
-        'image': 'image',
+        'image': 'eos-eos3.7-amd64-amd64.190419-225606.base',
         'vendor': 'the vendor',
         'product': 'product',
         'release': 'release',
         'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
     }).encode('utf-8'))
 
-    assert activation.image == 'image'
+    assert activation.image == 'eos-eos3.7-amd64-amd64.190419-225606.base'
     assert activation.vendor == 'the vendor'
     assert activation.product == 'product'
     assert activation.release == 'release'
+    assert activation.image_product == 'eos'
+    assert activation.image_branch == 'eos3.7'
+    assert activation.image_arch == 'amd64'
+    assert activation.image_platform == 'amd64'
+    assert activation.image_timestamp == datetime(2019, 4, 19, 22, 56, 6, tzinfo=timezone.utc)
+    assert activation.image_personality == 'base'
 
     # SQLAlchemy only transforms the string into a datetime when querying from the DB
     assert activation.created_at == created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ')

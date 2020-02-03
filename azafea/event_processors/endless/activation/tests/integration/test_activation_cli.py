@@ -46,8 +46,9 @@ class TestActivation(IntegrationTest):
         bad_vendor = 'EnDlEsS'
 
         with self.db as dbsession:
-            dbsession.add(Activation(image='image', product='product', release='release',
-                                     country='HKG', created_at=created_at, vendor=bad_vendor))
+            dbsession.add(Activation(image='eos-eos3.7-amd64-amd64.190419-225606.base',
+                                     product='product', release='release', country='HKG',
+                                     created_at=created_at, vendor=bad_vendor))
 
         with self.db as dbsession:
             activation = dbsession.query(Activation).one()
@@ -74,8 +75,9 @@ class TestActivation(IntegrationTest):
         assert vendor == normalize_vendor(vendor)
 
         with self.db as dbsession:
-            dbsession.add(Activation(image='image', product='product', release='release',
-                                     country='HKG', created_at=created_at, vendor=vendor))
+            dbsession.add(Activation(image='eos-eos3.7-amd64-amd64.190419-225606.base',
+                                     product='product', release='release', country='HKG',
+                                     created_at=created_at, vendor=vendor))
 
         with self.db as dbsession:
             activation = dbsession.query(Activation).one()

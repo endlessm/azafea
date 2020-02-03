@@ -18,6 +18,8 @@ from sqlalchemy.types import BigInteger, Boolean, DateTime, Integer, Numeric, Un
 from azafea.model import Base, DbSession
 from azafea.vendors import normalize_vendor
 
+from ...image import parse_endless_os_image
+
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +47,13 @@ class Activation(Base):
 
     created_at = Column(DateTime(timezone=True), nullable=False, index=True)
 
+    image_product = Column(Unicode, index=True)
+    image_branch = Column(Unicode, index=True)
+    image_arch = Column(Unicode, index=True)
+    image_platform = Column(Unicode, index=True)
+    image_timestamp = Column(DateTime(timezone=True), index=True)
+    image_personality = Column(Unicode, index=True)
+
     __table_args__ = (
         CheckConstraint('char_length(country) = 3', name='country_code_3_chars'),
     )
@@ -65,6 +74,10 @@ class Activation(Base):
         record = json.loads(serialized.decode('utf-8'))
 
         record['vendor'] = normalize_vendor(record.get('vendor', 'unknown'))
+
+        # Let's make the case of a missing "image" fail at the SQL level
+        if 'image' in record:  # pragma: no branch
+            record.update(**parse_endless_os_image(record['image']))
 
         return cls(**record)
 
