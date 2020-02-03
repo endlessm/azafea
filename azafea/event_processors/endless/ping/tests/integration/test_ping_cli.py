@@ -46,8 +46,9 @@ class TestPing(IntegrationTest):
         bad_vendor = 'EnDlEsS'
 
         with self.db as dbsession:
-            dbsession.add(PingConfiguration(image='image', product='product', dualboot=True,
-                                            created_at=created_at, vendor=bad_vendor))
+            dbsession.add(PingConfiguration(image='eos-eos3.7-amd64-amd64.190419-225606.base',
+                                            product='product', dualboot=True, created_at=created_at,
+                                            vendor=bad_vendor))
 
         with self.db as dbsession:
             ping_config = dbsession.query(PingConfiguration).one()
@@ -74,8 +75,9 @@ class TestPing(IntegrationTest):
         assert vendor == normalize_vendor(vendor)
 
         with self.db as dbsession:
-            dbsession.add(PingConfiguration(image='image', product='product', dualboot=True,
-                                            created_at=created_at, vendor=vendor))
+            dbsession.add(PingConfiguration(image='eos-eos3.7-amd64-amd64.190419-225606.base',
+                                            product='product', dualboot=True, created_at=created_at,
+                                            vendor=vendor))
 
         with self.db as dbsession:
             ping_config = dbsession.query(PingConfiguration).one()
@@ -99,8 +101,9 @@ class TestPing(IntegrationTest):
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 
         with self.db as dbsession:
-            ping_config = PingConfiguration(image='image', product='product', dualboot=True,
-                                            created_at=created_at, vendor='EnDlEsS')
+            ping_config = PingConfiguration(image='eos-eos3.7-amd64-amd64.190419-225606.base',
+                                            product='product', dualboot=True, created_at=created_at,
+                                            vendor='EnDlEsS')
             dbsession.add(ping_config)
             dbsession.add(Ping(config=ping_config, release='release', count=0,
                                created_at=created_at))
@@ -110,8 +113,9 @@ class TestPing(IntegrationTest):
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 
         with self.db as dbsession:
-            ping_config = PingConfiguration(image='image', product='product', dualboot=True,
-                                            created_at=created_at, vendor='eNdLeSs')
+            ping_config = PingConfiguration(image='eos-eos3.7-amd64-amd64.190419-225606.base',
+                                            product='product', dualboot=True, created_at=created_at,
+                                            vendor='eNdLeSs')
             dbsession.add(ping_config)
             dbsession.add(Ping(config=ping_config, release='release', count=0,
                                created_at=created_at))
@@ -162,8 +166,9 @@ class TestPing(IntegrationTest):
         bad_vendor = 'EnDlEsS'
 
         with self.db as dbsession:
-            ping_config = PingConfiguration(image='image', product='product', dualboot=True,
-                                            created_at=created_at, vendor=bad_vendor)
+            ping_config = PingConfiguration(image='eos-eos3.7-amd64-amd64.190419-225606.base',
+                                            product='product', dualboot=True, created_at=created_at,
+                                            vendor=bad_vendor)
             dbsession.add(ping_config)
             dbsession.add(Ping(config=ping_config, release='release', count=0,
                                created_at=created_at))
@@ -173,8 +178,9 @@ class TestPing(IntegrationTest):
         good_vendor = normalize_vendor(bad_vendor)
 
         with self.db as dbsession:
-            ping_config = PingConfiguration(image='image', product='product', dualboot=True,
-                                            created_at=created_at, vendor=good_vendor)
+            ping_config = PingConfiguration(image='eos-eos3.7-amd64-amd64.190419-225606.base',
+                                            product='product', dualboot=True, created_at=created_at,
+                                            vendor=good_vendor)
             dbsession.add(ping_config)
             dbsession.add(Ping(config=ping_config, release='release', count=1,
                                created_at=created_at))
