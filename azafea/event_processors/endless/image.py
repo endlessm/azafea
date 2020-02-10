@@ -9,7 +9,7 @@
 
 from datetime import datetime, timezone
 import re
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Optional
 
 if TYPE_CHECKING:  # pragma: no cover
     # FIXME: This can be taken from "typing" with Python 3.9.0:
@@ -19,12 +19,12 @@ if TYPE_CHECKING:  # pragma: no cover
     from typing_extensions import TypedDict
 
     class ParsedImage(TypedDict):
-        image_product: str
-        image_branch: str
-        image_arch: str
-        image_platform: str
-        image_timestamp: datetime
-        image_personality: str
+        image_product: Optional[str]
+        image_branch: Optional[str]
+        image_arch: Optional[str]
+        image_platform: Optional[str]
+        image_timestamp: Optional[datetime]
+        image_personality: Optional[str]
 
 else:
     ParsedImage = Dict
@@ -55,6 +55,18 @@ class ImageParsingError(Exception):
 
 
 def parse_endless_os_image(image_id: str) -> ParsedImage:
+    if image_id == 'unknown':
+        # In case of errors, the activation and pings come with an "unknown" image id which we must
+        # treat as valid
+        return {
+            'image_product': None,
+            'image_branch': None,
+            'image_arch': None,
+            'image_platform': None,
+            'image_timestamp': None,
+            'image_personality': None,
+        }
+
     match = IMAGE_PARSING_PATTERN.match(image_id)
 
     if match is None:
