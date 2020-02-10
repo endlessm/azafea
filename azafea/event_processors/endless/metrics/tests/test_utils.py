@@ -14,7 +14,7 @@ import pytest
 
 
 def test_get_asv_dict():
-    from azafea.event_processors.metrics.utils import get_asv_dict
+    from azafea.event_processors.endless.metrics.utils import get_asv_dict
 
     variant = GLib.Variant('a{sv}', {
         'b': GLib.Variant('b', True),
@@ -53,7 +53,7 @@ def test_get_asv_dict():
     ('a{sv}', {'nope': GLib.Variant('s', 'nope')}),
 ])
 def test_get_asv_dict_not_implemented(type_string, value):
-    from azafea.event_processors.metrics.utils import get_asv_dict
+    from azafea.event_processors.endless.metrics.utils import get_asv_dict
 
     variant = GLib.Variant('a{sv}', {
         'foo': GLib.Variant(type_string, value),
@@ -66,14 +66,14 @@ def test_get_asv_dict_not_implemented(type_string, value):
 
 
 def test_get_bytes():
-    from azafea.event_processors.metrics.utils import get_bytes
+    from azafea.event_processors.endless.metrics.utils import get_bytes
 
     variant = GLib.Variant('ay', b'some bytes')
     assert get_bytes(variant) == b'some bytes'
 
 
 def test_get_child_values():
-    from azafea.event_processors.metrics.utils import get_child_values
+    from azafea.event_processors.endless.metrics.utils import get_child_values
 
     variant = GLib.Variant('ay', b'123')
     assert list(get_child_values(variant)) == [
@@ -84,7 +84,7 @@ def test_get_child_values():
 
 
 def test_get_strings():
-    from azafea.event_processors.metrics.utils import get_strings
+    from azafea.event_processors.endless.metrics.utils import get_strings
 
     variant = GLib.Variant('as', ['foo', 'bar'])
     assert get_strings(variant) == ['foo', 'bar']
@@ -96,13 +96,13 @@ def test_get_strings():
     GLib.Variant('v', GLib.Variant('v', GLib.Variant('v', GLib.Variant('i', 41)))),
 ])
 def test_get_variant(variant):
-    from azafea.event_processors.metrics.utils import get_variant
+    from azafea.event_processors.endless.metrics.utils import get_variant
 
     assert get_variant(variant) == GLib.Variant('i', 41)
 
 
 def test_get_event_datetime():
-    from azafea.event_processors.metrics.utils import get_event_datetime
+    from azafea.event_processors.endless.metrics.utils import get_event_datetime
 
     assert get_event_datetime(1536122990000000000, 20000000000, 30000000000) \
         == datetime(2018, 9, 5, 4, 50, tzinfo=timezone.utc)

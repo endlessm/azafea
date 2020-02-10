@@ -11,25 +11,25 @@ import pytest
 
 
 def test_valid_country():
-    from azafea.event_processors.ping.v1.handler import Ping
+    from azafea.event_processors.endless.activation.v1.handler import Activation
 
-    ping = Ping(country='HKG')
-    assert ping.country == 'HKG'
+    activation = Activation(country='HKG')
+    assert activation.country == 'HKG'
 
 
 @pytest.mark.parametrize('country', ['', None])
 def test_empty_country(country):
-    from azafea.event_processors.ping.v1.handler import Ping
+    from azafea.event_processors.endless.activation.v1.handler import Activation
 
-    ping = Ping(country=country)
-    assert ping.country is None
+    activation = Activation(country=country)
+    assert activation.country is None
 
 
 @pytest.mark.parametrize('country', ['HK', 'Hong Kong'])
 def test_invalid_country(country):
-    from azafea.event_processors.ping.v1.handler import Ping
+    from azafea.event_processors.endless.activation.v1.handler import Activation
 
     with pytest.raises(ValueError) as excinfo:
-        Ping(country=country)
+        Activation(country=country)
 
     assert f'country has wrong length: {country}' in str(excinfo.value)

@@ -12,7 +12,7 @@ import json
 
 
 def test_from_bytes():
-    from azafea.event_processors.activation.v1.handler import Activation
+    from azafea.event_processors.endless.activation.v1.handler import Activation
 
     created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
     activation = Activation.from_serialized(json.dumps({

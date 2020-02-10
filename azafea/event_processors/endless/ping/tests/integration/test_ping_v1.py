@@ -14,10 +14,10 @@ from azafea.tests.integration import IntegrationTest
 
 
 class TestPing(IntegrationTest):
-    handler_module = 'azafea.event_processors.ping.v1'
+    handler_module = 'azafea.event_processors.endless.ping.v1'
 
     def test_ping_v1(self):
-        from azafea.event_processors.ping.v1.handler import PingConfiguration, Ping
+        from azafea.event_processors.endless.ping.v1.handler import PingConfiguration, Ping
 
         # Create the tables
         self.run_subcommand('initdb')
@@ -53,7 +53,7 @@ class TestPing(IntegrationTest):
             assert ping.created_at == created_at
 
     def test_ping_configuration_v1_dualboot_unicity(self):
-        from azafea.event_processors.ping.v1.handler import PingConfiguration, Ping
+        from azafea.event_processors.endless.ping.v1.handler import PingConfiguration, Ping
 
         # Create the tables
         self.run_subcommand('initdb')

@@ -17,10 +17,10 @@ from azafea.tests.integration import IntegrationTest
 
 
 class TestMetrics(IntegrationTest):
-    handler_module = 'azafea.event_processors.metrics.v2'
+    handler_module = 'azafea.event_processors.endless.metrics.v2'
 
     def test_request(self):
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -66,8 +66,8 @@ class TestMetrics(IntegrationTest):
             assert request.received_at == received_at
 
     def test_duplicate_request(self):
-        from azafea.event_processors.metrics.events._base import UnknownSingularEvent
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events._base import UnknownSingularEvent
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -124,7 +124,7 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(UnknownSingularEvent).count() == 1
 
     def test_invalid_request(self):
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -160,7 +160,7 @@ class TestMetrics(IntegrationTest):
         assert self.redis.rpop('errors-test_invalid_request') == record
 
     def test_singular_events(self):
-        from azafea.event_processors.metrics.events import (
+        from azafea.event_processors.endless.metrics.events import (
             CacheIsCorrupt, CacheMetadataIsCorrupt, ControlCenterPanelOpened, CPUInfo,
             DiscoveryFeedClicked, DiscoveryFeedClosed, DiscoveryFeedOpened, DiskSpaceExtra,
             DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, ImageVersion,
@@ -171,11 +171,11 @@ class TestMetrics(IntegrationTest):
             ShellAppRemovedFromDesktop, UpdaterBranchSelected, Uptime, WindowsAppOpened,
             WindowsLicenseTables,
         )
-        from azafea.event_processors.metrics.events._base import (
+        from azafea.event_processors.endless.metrics.events._base import (
             InvalidSingularEvent, UnknownSingularEvent,
         )
-        from azafea.event_processors.metrics.machine import Machine
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -742,8 +742,8 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(UnknownSingularEvent).count() == 0
 
     def test_no_payload_singular_event_with_payload(self, capfd):
-        from azafea.event_processors.metrics.events import LiveUsbBooted
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events import LiveUsbBooted
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -803,9 +803,9 @@ class TestMetrics(IntegrationTest):
                 '<int64 2>') in capture.err
 
     def test_multiple_machines(self):
-        from azafea.event_processors.metrics.events import ImageVersion
-        from azafea.event_processors.metrics.machine import Machine
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events import ImageVersion
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -929,8 +929,8 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(ImageVersion).order_by(ImageVersion.id).count() == 3
 
     def test_multiple_image_versions_in_a_request(self):
-        from azafea.event_processors.metrics.events import ImageVersion
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events import ImageVersion
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -988,8 +988,8 @@ class TestMetrics(IntegrationTest):
             assert image.user_id == 1001
 
     def test_unknown_singular_events(self):
-        from azafea.event_processors.metrics.events._base import UnknownSingularEvent
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events._base import UnknownSingularEvent
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -1068,9 +1068,9 @@ class TestMetrics(IntegrationTest):
                                                False).unpack() == (1, 2)
 
     def test_invalid_singular_event_payload(self, capfd):
-        from azafea.event_processors.metrics.events import Uptime
-        from azafea.event_processors.metrics.events._base import InvalidSingularEvent
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events import Uptime
+        from azafea.event_processors.endless.metrics.events._base import InvalidSingularEvent
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -1164,8 +1164,8 @@ class TestMetrics(IntegrationTest):
                 "but got 'Up!' (s)") in capture.err
 
     def test_unknown_aggregate_events(self):
-        from azafea.event_processors.metrics.events._base import UnknownAggregateEvent
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events._base import UnknownAggregateEvent
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -1249,8 +1249,8 @@ class TestMetrics(IntegrationTest):
                                                False).unpack() == (1, 2)
 
     def test_sequence_events(self):
-        from azafea.event_processors.metrics.events import ShellAppIsOpen, UserIsLoggedIn
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events import ShellAppIsOpen, UserIsLoggedIn
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -1366,8 +1366,8 @@ class TestMetrics(IntegrationTest):
             assert logged_in.logged_in_user_id == user_id
 
     def test_unknown_sequence(self):
-        from azafea.event_processors.metrics.events._base import UnknownSequence
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events._base import UnknownSequence
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -1445,8 +1445,8 @@ class TestMetrics(IntegrationTest):
                                                                    (180000000000, None)]
 
     def test_invalid_sequence(self, capfd):
-        from azafea.event_processors.metrics.events._base import InvalidSequence
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events._base import InvalidSequence
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -1545,10 +1545,10 @@ class TestMetrics(IntegrationTest):
                 "but got uint32 42 (u)") in capture.err
 
     def test_ignored_events(self):
-        from azafea.event_processors.metrics.events._base import (
+        from azafea.event_processors.endless.metrics.events._base import (
             UnknownAggregateEvent, UnknownSequence, UnknownSingularEvent,
         )
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -1627,10 +1627,10 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(UnknownSequence).count() == 0
 
     def test_ignored_empty_payload_errors(self):
-        from azafea.event_processors.metrics.events import Uptime, UserIsLoggedIn
-        from azafea.event_processors.metrics.events._base import (
+        from azafea.event_processors.endless.metrics.events import Uptime, UserIsLoggedIn
+        from azafea.event_processors.endless.metrics.events._base import (
             InvalidSequence, InvalidSingularEvent)
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')

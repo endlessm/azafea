@@ -14,10 +14,10 @@ from azafea.vendors import normalize_vendor
 
 
 class TestPing(IntegrationTest):
-    handler_module = 'azafea.event_processors.ping.v1'
+    handler_module = 'azafea.event_processors.endless.ping.v1'
 
     def test_normalize_no_vendors(self, capfd):
-        from azafea.event_processors.ping.v1.handler import PingConfiguration
+        from azafea.event_processors.endless.ping.v1.handler import PingConfiguration
 
         # Create the table
         self.run_subcommand('initdb')
@@ -35,7 +35,7 @@ class TestPing(IntegrationTest):
         assert 'No ping configuration record in database' in capture.out
 
     def test_normalize_existing_vendor(self):
-        from azafea.event_processors.ping.v1.handler import PingConfiguration
+        from azafea.event_processors.endless.ping.v1.handler import PingConfiguration
 
         # Create the table
         self.run_subcommand('initdb')
@@ -62,7 +62,7 @@ class TestPing(IntegrationTest):
             assert ping_config.vendor == good_vendor
 
     def test_normalize_already_normalized_vendor(self):
-        from azafea.event_processors.ping.v1.handler import PingConfiguration
+        from azafea.event_processors.endless.ping.v1.handler import PingConfiguration
 
         # Create the table
         self.run_subcommand('initdb')
@@ -89,7 +89,7 @@ class TestPing(IntegrationTest):
             assert ping_config.vendor == vendor
 
     def test_normalize_vendors_to_same_new_vendor(self):
-        from azafea.event_processors.ping.v1.handler import Ping, PingConfiguration
+        from azafea.event_processors.endless.ping.v1.handler import Ping, PingConfiguration
 
         # Create the table
         self.run_subcommand('initdb')
@@ -151,7 +151,7 @@ class TestPing(IntegrationTest):
             assert pings[1].config_id == kept_config_id
 
     def test_normalize_vendor_with_conflict_and_pings(self):
-        from azafea.event_processors.ping.v1.handler import Ping, PingConfiguration
+        from azafea.event_processors.endless.ping.v1.handler import Ping, PingConfiguration
 
         # Create the table
         self.run_subcommand('initdb')
