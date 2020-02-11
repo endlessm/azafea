@@ -16,10 +16,10 @@ from azafea.vendors import normalize_vendor
 
 
 class TestMetrics(IntegrationTest):
-    handler_module = 'azafea.event_processors.metrics.v2'
+    handler_module = 'azafea.event_processors.endless.metrics.v2'
 
     def test_dedupe_no_image_versions(self, capfd):
-        from azafea.event_processors.metrics.events import ImageVersion
+        from azafea.event_processors.endless.metrics.events import ImageVersion
 
         # Create the table
         self.run_subcommand('initdb')
@@ -37,8 +37,8 @@ class TestMetrics(IntegrationTest):
         assert 'No metrics requests with deduplicate image versions found' in capture.out
 
     def test_dedupe_image_versions(self):
-        from azafea.event_processors.metrics.events import ImageVersion
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events import ImageVersion
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -88,7 +88,7 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(ImageVersion).filter_by(request_id=req3.id).one().user_id == 2
 
     def test_normalize_no_vendors(self, capfd):
-        from azafea.event_processors.metrics.events import UpdaterBranchSelected
+        from azafea.event_processors.endless.metrics.events import UpdaterBranchSelected
 
         # Create the table
         self.run_subcommand('initdb')
@@ -106,8 +106,8 @@ class TestMetrics(IntegrationTest):
         assert 'No "updater branch selected" record in database' in capture.out
 
     def test_normalize_vendor(self):
-        from azafea.event_processors.metrics.events import UpdaterBranchSelected
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events import UpdaterBranchSelected
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -150,8 +150,8 @@ class TestMetrics(IntegrationTest):
             assert event.hardware_vendor == good_vendor
 
     def test_normalize_already_normalized_vendor(self):
-        from azafea.event_processors.metrics.events import UpdaterBranchSelected
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events import UpdaterBranchSelected
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -188,10 +188,10 @@ class TestMetrics(IntegrationTest):
             assert event.hardware_vendor == vendor
 
     def test_replay_invalid(self):
-        from azafea.event_processors.metrics.events import ShellAppIsOpen, Uptime
-        from azafea.event_processors.metrics.events._base import (
+        from azafea.event_processors.endless.metrics.events import ShellAppIsOpen, Uptime
+        from azafea.event_processors.endless.metrics.events._base import (
             InvalidSequence, InvalidSingularEvent, UnknownSequence, UnknownSingularEvent)
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -359,11 +359,11 @@ class TestMetrics(IntegrationTest):
             assert invalid.payload_data == missing_events.get_data_as_bytes().get_data()
 
     def test_replay_unknown(self):
-        from azafea.event_processors.metrics.events import ShellAppIsOpen, Uptime
-        from azafea.event_processors.metrics.events._base import (
+        from azafea.event_processors.endless.metrics.events import ShellAppIsOpen, Uptime
+        from azafea.event_processors.endless.metrics.events._base import (
             InvalidSequence, InvalidSingularEvent,
             UnknownAggregateEvent, UnknownSequence, UnknownSingularEvent)
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')

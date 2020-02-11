@@ -14,10 +14,10 @@ from azafea.vendors import normalize_vendor
 
 
 class TestActivation(IntegrationTest):
-    handler_module = 'azafea.event_processors.activation.v1'
+    handler_module = 'azafea.event_processors.endless.activation.v1'
 
     def test_normalize_no_vendors(self, capfd):
-        from azafea.event_processors.activation.v1.handler import Activation
+        from azafea.event_processors.endless.activation.v1.handler import Activation
 
         # Create the table
         self.run_subcommand('initdb')
@@ -35,7 +35,7 @@ class TestActivation(IntegrationTest):
         assert 'No activation record in database' in capture.out
 
     def test_normalize_existing_vendor(self):
-        from azafea.event_processors.activation.v1.handler import Activation
+        from azafea.event_processors.endless.activation.v1.handler import Activation
 
         # Create the table
         self.run_subcommand('initdb')
@@ -62,7 +62,7 @@ class TestActivation(IntegrationTest):
             assert activation.vendor == good_vendor
 
     def test_normalize_already_normalized_vendor(self):
-        from azafea.event_processors.activation.v1.handler import Activation
+        from azafea.event_processors.endless.activation.v1.handler import Activation
 
         # Create the table
         self.run_subcommand('initdb')

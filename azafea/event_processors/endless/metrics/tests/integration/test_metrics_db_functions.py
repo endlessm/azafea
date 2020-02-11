@@ -19,7 +19,7 @@ from azafea.tests.integration import IntegrationTest
 
 
 class TestMetrics(IntegrationTest):
-    handler_module = 'azafea.event_processors.metrics.v2'
+    handler_module = 'azafea.event_processors.endless.metrics.v2'
 
     @pytest.fixture(autouse=True)
     def drop_functions(self):
@@ -34,9 +34,9 @@ class TestMetrics(IntegrationTest):
             dbsession.execute('DROP TABLE alembic_version')
 
     def test_get_image_product_personality(self):
-        from azafea.event_processors.metrics.events import ImageVersion
-        from azafea.event_processors.metrics.machine import Machine
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events import ImageVersion
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
 
         self.run_subcommand('migratedb')
         self.ensure_tables(ImageVersion, Machine, Request)
@@ -62,9 +62,9 @@ class TestMetrics(IntegrationTest):
             assert personality == 'base'
 
     def test_get_image_product_personality_without_machine_mapping(self):
-        from azafea.event_processors.metrics.events import ImageVersion
-        from azafea.event_processors.metrics.machine import Machine
-        from azafea.event_processors.metrics.request import Request
+        from azafea.event_processors.endless.metrics.events import ImageVersion
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
 
         self.run_subcommand('migratedb')
         self.ensure_tables(ImageVersion, Machine, Request)

@@ -12,7 +12,7 @@ import json
 
 
 def test_from_bytes():
-    from azafea.event_processors.ping.v1.handler import Ping
+    from azafea.event_processors.endless.ping.v1.handler import Ping
 
     created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
     ping = Ping.from_serialized(json.dumps({
@@ -29,7 +29,7 @@ def test_from_bytes():
 
 
 def test_from_bytes_missing_count():
-    from azafea.event_processors.ping.v1.handler import Ping
+    from azafea.event_processors.endless.ping.v1.handler import Ping
 
     created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
     ping = Ping.from_serialized(json.dumps({
