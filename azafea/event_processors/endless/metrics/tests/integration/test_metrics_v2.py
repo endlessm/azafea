@@ -195,7 +195,7 @@ class TestMetrics(IntegrationTest):
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
         machine_id = 'ffffffffffffffffffffffffffffffff'
-        image_id = 'oem-os1.0-arch.base'
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
         user_id = 2000
         request = GLib.Variant(
             '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
@@ -485,6 +485,12 @@ class TestMetrics(IntegrationTest):
             machine = dbsession.query(Machine).one()
             assert machine.machine_id == machine_id
             assert machine.image_id == image_id
+            assert machine.image_product == 'eos'
+            assert machine.image_branch == 'eos3.7'
+            assert machine.image_arch == 'amd64'
+            assert machine.image_platform == 'amd64'
+            assert machine.image_timestamp == datetime(2019, 4, 19, 22, 56, 6, tzinfo=timezone.utc)
+            assert machine.image_personality == 'base'
 
             corrupted_cache = dbsession.query(CacheIsCorrupt).one()
             assert corrupted_cache.request_id == request.id
@@ -802,6 +808,63 @@ class TestMetrics(IntegrationTest):
         assert ('Metric event 56be0b38-e47b-4578-9599-00ff9bda54bb takes no payload, but got '
                 '<int64 2>') in capture.err
 
+    def test_machine_invalid_image_id(self, capfd):
+        from azafea.event_processors.endless.metrics.events import ImageVersion
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, Machine, ImageVersion)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        image_id = 'image'
+        user_id = 2000
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        user_id,
+                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
+                        1000000000,                    # event relative timestamp (1 secs)
+                        GLib.Variant('s', image_id)
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_machine_invalid_image_id', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            assert dbsession.query(Request).order_by(Request.id).count() == 0
+            assert dbsession.query(Machine).order_by(Machine.id).count() == 0
+            assert dbsession.query(ImageVersion).order_by(ImageVersion.id).count() == 0
+
+        capture = capfd.readouterr()
+        assert f'Invalid image id {image_id!r}: Did not match the expected format' in capture.err
+
     def test_multiple_machines(self):
         from azafea.event_processors.endless.metrics.events import ImageVersion
         from azafea.event_processors.endless.metrics.machine import Machine
@@ -814,7 +877,7 @@ class TestMetrics(IntegrationTest):
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
         machine_id = 'ffffffffffffffffffffffffffffffff'
-        image_id = 'oem-os1.0-arch.base'
+        image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
         user_id = 2000
         request = GLib.Variant(
             '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
@@ -850,7 +913,7 @@ class TestMetrics(IntegrationTest):
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
         machine_id = 'ffffffffffffffffffffffffffffffff'
-        image_id = 'oem-os1.0-arch.base'
+        image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
         user_id = 2000
         request = GLib.Variant(
             '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
@@ -886,7 +949,7 @@ class TestMetrics(IntegrationTest):
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
         machine_id = '00000000000000000000000000000000'
-        image_id = 'oem-os1.1-arch.base'
+        image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
         user_id = 2000
         request = GLib.Variant(
             '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
@@ -939,7 +1002,7 @@ class TestMetrics(IntegrationTest):
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
         machine_id = 'ffffffffffffffffffffffffffffffff'
-        image_id = 'oem-os1.0-arch.base'
+        image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
         request = GLib.Variant(
             '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
             (

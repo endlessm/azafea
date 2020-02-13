@@ -41,7 +41,7 @@ class TestMetrics(IntegrationTest):
         self.run_subcommand('migratedb')
         self.ensure_tables(ImageVersion, Machine, Request)
 
-        image_id = 'oem-os1.0-arch.base'
+        image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 
         # Add a request with an image version
@@ -57,7 +57,7 @@ class TestMetrics(IntegrationTest):
         # Ensure this machine has the right product/personality
         with self.db as dbsession:
             product = dbsession.query(func.get_image_product(Request.machine_id)).one()[0]
-            assert product == 'oem'
+            assert product == 'eosoem'
             personality = dbsession.query(func.get_image_personality(Request.machine_id)).one()[0]
             assert personality == 'base'
 
