@@ -89,3 +89,130 @@ class TestActivation(IntegrationTest):
         with self.db as dbsession:
             activation = dbsession.query(Activation).one()
             assert activation.vendor == vendor
+
+    def test_parse_old_images(self):
+        from azafea.event_processors.endless.activation.v1.handler import Activation
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Activation)
+
+        # Insert an activation without parsed image components
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
+        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+
+        with self.db as dbsession:
+            dbsession.add(Activation(image=image_id, product='product', release='release',
+                                     country='HKG', created_at=created_at, vendor='vendor'))
+
+        with self.db as dbsession:
+            activation = dbsession.query(Activation).one()
+            assert activation.image == image_id
+            assert activation.image_product is None
+            assert activation.image_branch is None
+            assert activation.image_arch is None
+            assert activation.image_platform is None
+            assert activation.image_timestamp is None
+            assert activation.image_personality is None
+
+        # Parse the image for old activation records
+        self.run_subcommand('test_parse_old_images', 'parse-old-images')
+
+        with self.db as dbsession:
+            activation = dbsession.query(Activation).one()
+            assert activation.image == image_id
+            assert activation.image_product == 'eos'
+            assert activation.image_branch == 'eos3.7'
+            assert activation.image_arch == 'amd64'
+            assert activation.image_platform == 'amd64'
+            assert activation.image_timestamp == datetime(2019, 4, 19, 22, 56, 6,
+                                                          tzinfo=timezone.utc)
+            assert activation.image_personality == 'base'
+
+    def test_parse_old_images_skips_already_done(self, capfd):
+        from azafea.event_processors.endless.activation.v1.handler import Activation
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Activation)
+
+        # Insert an activation without parsed image components
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
+        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+
+        with self.db as dbsession:
+            dbsession.add(Activation(image=image_id, image_product='eos', image_branch='eos3.7',
+                                     image_arch='amd64', image_platform='amd64',
+                                     image_timestamp=datetime(2019, 4, 19, 22, 56, 6,
+                                                              tzinfo=timezone.utc),
+                                     image_personality='base', product='product', release='release',
+                                     country='HKG', created_at=created_at, vendor='vendor'))
+
+        with self.db as dbsession:
+            activation = dbsession.query(Activation).one()
+            assert activation.image == image_id
+            assert activation.image_product == 'eos'
+            assert activation.image_branch == 'eos3.7'
+            assert activation.image_arch == 'amd64'
+            assert activation.image_platform == 'amd64'
+            assert activation.image_timestamp == datetime(2019, 4, 19, 22, 56, 6,
+                                                          tzinfo=timezone.utc)
+            assert activation.image_personality == 'base'
+
+        # Parse the image for old activation records
+        self.run_subcommand('test_parse_old_images_skips_already_done', 'parse-old-images')
+
+        with self.db as dbsession:
+            activation = dbsession.query(Activation).one()
+            assert activation.image == image_id
+            assert activation.image_product == 'eos'
+            assert activation.image_branch == 'eos3.7'
+            assert activation.image_arch == 'amd64'
+            assert activation.image_platform == 'amd64'
+            assert activation.image_timestamp == datetime(2019, 4, 19, 22, 56, 6,
+                                                          tzinfo=timezone.utc)
+            assert activation.image_personality == 'base'
+
+        capture = capfd.readouterr()
+        assert 'No activation record with unparsed image ids' in capture.out
+
+    def test_parse_old_unknown_images(self, capfd):
+        from azafea.event_processors.endless.activation.v1.handler import Activation
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Activation)
+
+        # Insert an activation with an unknown image
+        image_id = 'unknown'
+        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+
+        with self.db as dbsession:
+            dbsession.add(Activation(image=image_id, product='product', release='release',
+                                     country='HKG', created_at=created_at, vendor='vendor'))
+
+        with self.db as dbsession:
+            activation = dbsession.query(Activation).one()
+            assert activation.image == image_id
+            assert activation.image_product is None
+            assert activation.image_branch is None
+            assert activation.image_arch is None
+            assert activation.image_platform is None
+            assert activation.image_timestamp is None
+            assert activation.image_personality is None
+
+        # Parse the image for old activation records
+        self.run_subcommand('test_parse_old_unknown_images', 'parse-old-images')
+
+        with self.db as dbsession:
+            activation = dbsession.query(Activation).one()
+            assert activation.image == image_id
+            assert activation.image_product is None
+            assert activation.image_branch is None
+            assert activation.image_arch is None
+            assert activation.image_platform is None
+            assert activation.image_timestamp is None
+            assert activation.image_personality is None
+
+        capture = capfd.readouterr()
+        assert 'No activation record with unparsed image ids' in capture.out

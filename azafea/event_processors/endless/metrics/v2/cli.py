@@ -17,6 +17,7 @@ from azafea.model import Db
 from azafea.utils import progress
 from azafea.vendors import normalize_vendor
 
+from ...image import parse_endless_os_image
 from ..events import (
     ImageVersion,
     InvalidAggregateEvent,
@@ -36,6 +37,7 @@ from ..events import (
     sequence_is_known,
     singular_event_is_known,
 )
+from ..machine import Machine
 
 
 log = logging.getLogger(__name__)
@@ -55,6 +57,13 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     normalize_vendors.add_argument('--chunk-size', type=int, default=5000,
                                    help='The size of the chunks to operate on')
     normalize_vendors.set_defaults(subcommand=do_normalize_vendors)
+
+    parse_images = subs.add_parser('parse-old-images',
+                                   help='Parse the image ids in existing records',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parse_images.add_argument('--chunk-size', type=int, default=5000,
+                              help='The size of the chunks to operate on')
+    parse_images.set_defaults(subcommand=do_parse_images)
 
     replay_invalid = subs.add_parser('replay-invalid', help='Replay invalid events',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -137,6 +146,35 @@ def do_normalize_vendors(config: Config, args: argparse.Namespace) -> None:
 
         for chunk_number, chunk in enumerate(query, start=1):
             _normalize_chunk(chunk)
+            dbsession.commit()
+            progress(chunk_number * args.chunk_size, num_records)
+
+    progress(num_records, num_records, end='\n')
+
+    log.info('All done!')
+
+
+def do_parse_images(config: Config, args: argparse.Namespace) -> None:
+    db = Db(config.postgresql)
+    log.info('Parsing the image ids for old activations')
+
+    with db as dbsession:
+        query = dbsession.chunked_query(Machine, chunk_size=args.chunk_size)
+        query = query.filter(Machine.image_product.is_(None))
+        query = query.reverse_chunks()
+        num_records = query.count()
+
+        if num_records == 0:
+            log.info('-> No machine record with unparsed image ids')
+            return None
+
+        for chunk_number, chunk in enumerate(query, start=1):
+            for machine in chunk:
+                parsed_image = parse_endless_os_image(machine.image_id)
+
+                for k, v in parsed_image.items():
+                    setattr(machine, k, v)
+
             dbsession.commit()
             progress(chunk_number * args.chunk_size, num_records)
 

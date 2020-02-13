@@ -220,3 +220,129 @@ class TestPing(IntegrationTest):
             assert pings[0].count == 0
             assert pings[1].config_id == kept_config_id
             assert pings[1].count == 1
+
+    def test_parse_old_images(self):
+        from azafea.event_processors.endless.ping.v1.handler import PingConfiguration
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(PingConfiguration)
+
+        # Insert a ping configuration without parsed image components
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
+        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+
+        with self.db as dbsession:
+            dbsession.add(PingConfiguration(image=image_id, product='product', release='release',
+                                            dualboot=True, created_at=created_at, vendor='vendor'))
+
+        with self.db as dbsession:
+            config = dbsession.query(PingConfiguration).one()
+            assert config.image == image_id
+            assert config.image_product is None
+            assert config.image_branch is None
+            assert config.image_arch is None
+            assert config.image_platform is None
+            assert config.image_timestamp is None
+            assert config.image_personality is None
+
+        # Parse the image for old ping configuration records
+        self.run_subcommand('test_parse_old_images', 'parse-old-images')
+
+        with self.db as dbsession:
+            config = dbsession.query(PingConfiguration).one()
+            assert config.image == image_id
+            assert config.image_product == 'eos'
+            assert config.image_branch == 'eos3.7'
+            assert config.image_arch == 'amd64'
+            assert config.image_platform == 'amd64'
+            assert config.image_timestamp == datetime(2019, 4, 19, 22, 56, 6, tzinfo=timezone.utc)
+            assert config.image_personality == 'base'
+
+    def test_parse_old_images_skips_already_done(self, capfd):
+        from azafea.event_processors.endless.ping.v1.handler import PingConfiguration
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(PingConfiguration)
+
+        # Insert a ping configuration without parsed image components
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
+        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+
+        with self.db as dbsession:
+            dbsession.add(PingConfiguration(image=image_id, image_product='eos',
+                                            image_branch='eos3.7', image_arch='amd64',
+                                            image_platform='amd64',
+                                            image_timestamp=datetime(2019, 4, 19, 22, 56, 6,
+                                                                     tzinfo=timezone.utc),
+                                            image_personality='base', product='product',
+                                            release='release', dualboot=True, created_at=created_at,
+                                            vendor='vendor'))
+
+        with self.db as dbsession:
+            config = dbsession.query(PingConfiguration).one()
+            assert config.image == image_id
+            assert config.image_product == 'eos'
+            assert config.image_branch == 'eos3.7'
+            assert config.image_arch == 'amd64'
+            assert config.image_platform == 'amd64'
+            assert config.image_timestamp == datetime(2019, 4, 19, 22, 56, 6, tzinfo=timezone.utc)
+            assert config.image_personality == 'base'
+
+        # Parse the image for old ping configuration records
+        self.run_subcommand('test_parse_old_images_skips_already_done', 'parse-old-images')
+
+        with self.db as dbsession:
+            config = dbsession.query(PingConfiguration).one()
+            assert config.image == image_id
+            assert config.image_product == 'eos'
+            assert config.image_branch == 'eos3.7'
+            assert config.image_arch == 'amd64'
+            assert config.image_platform == 'amd64'
+            assert config.image_timestamp == datetime(2019, 4, 19, 22, 56, 6, tzinfo=timezone.utc)
+            assert config.image_personality == 'base'
+
+        capture = capfd.readouterr()
+        assert 'No ping record with unparsed image ids' in capture.out
+
+    def test_parse_old_unknown_images(self, capfd):
+        from azafea.event_processors.endless.ping.v1.handler import PingConfiguration
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(PingConfiguration)
+
+        # Insert a ping configuration without parsed image components
+        image_id = 'unknown'
+        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+
+        with self.db as dbsession:
+            dbsession.add(PingConfiguration(image=image_id, product='product', release='release',
+                                            dualboot=True, created_at=created_at, vendor='vendor'))
+
+        with self.db as dbsession:
+            config = dbsession.query(PingConfiguration).one()
+            assert config.image == image_id
+            assert config.image_product is None
+            assert config.image_branch is None
+            assert config.image_arch is None
+            assert config.image_platform is None
+            assert config.image_timestamp is None
+            assert config.image_personality is None
+
+        # Parse the image for old ping configuration records
+        self.run_subcommand('test_parse_old_unknown_images', 'parse-old-images')
+
+        with self.db as dbsession:
+            config = dbsession.query(PingConfiguration).one()
+            assert config.image == image_id
+            assert config.image_product is None
+            assert config.image_branch is None
+            assert config.image_arch is None
+            assert config.image_platform is None
+            assert config.image_timestamp is None
+            assert config.image_personality is None
+
+        capture = capfd.readouterr()
+        assert 'No ping record with unparsed image ids' in capture.out
