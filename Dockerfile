@@ -22,6 +22,8 @@ RUN apt --quiet --assume-yes update && \
         python3 \
         python3-dev \
         python3-pip \
+        python3-setuptools \
+        python3-wheel \
         && \
     pip3 install pipenv && \
     pipenv install --ignore-pipfile && \
