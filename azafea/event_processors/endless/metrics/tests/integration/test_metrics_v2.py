@@ -1050,6 +1050,60 @@ class TestMetrics(IntegrationTest):
             image = dbsession.query(ImageVersion).order_by(ImageVersion.id).one()
             assert image.user_id == 1001
 
+    def test_deduplicate_image_versions_per_request(self):
+        # This test is a bit different from the others, because it does not push a request to Redis
+        # for Azafea to process, it operates directly on the model.
+        #
+        # This is because the goal here is to test what happens when we process multiple metrics
+        # requests in a single database transaction, but Azafea (currently) always opens a new
+        # database transaction for each request.
+
+        from azafea.event_processors.endless.metrics.events import ImageVersion
+        from azafea.event_processors.endless.metrics.request import Request
+
+        self.run_subcommand('initdb')
+        self.ensure_tables(ImageVersion, Request)
+
+        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+
+        with self.db as dbsession:
+            # Add a first request with 2 image version events
+            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+                              absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
+                              send_number=0)
+            dbsession.add(request)
+
+            image_id_1 = 'eos-eos3.6-amd64-amd64.190619-225606.base'
+            dbsession.add(ImageVersion(request=request, user_id=1001, occured_at=occured_at,
+                                       payload=GLib.Variant('mv', GLib.Variant('s', image_id_1))))
+            dbsession.add(ImageVersion(request=request, user_id=1002, occured_at=occured_at,
+                                       payload=GLib.Variant('mv', GLib.Variant('s', image_id_1))))
+
+            # Add a second request with 2 image version events
+            request = Request(serialized=b'whatever2', sha512='whatever2', received_at=occured_at,
+                              absolute_timestamp=1, relative_timestamp=2, machine_id='machine2',
+                              send_number=0)
+            dbsession.add(request)
+
+            image_id_2 = 'eos-eos3.7-amd64-amd64.191019-225606.base'
+            dbsession.add(ImageVersion(request=request, user_id=2001, occured_at=occured_at,
+                                       payload=GLib.Variant('mv', GLib.Variant('s', image_id_2))))
+            dbsession.add(ImageVersion(request=request, user_id=2002, occured_at=occured_at,
+                                       payload=GLib.Variant('mv', GLib.Variant('s', image_id_2))))
+
+        with self.db as dbsession:
+            requests = dbsession.query(Request).order_by(Request.id).all()
+            assert len(requests) == 2
+
+            images = dbsession.query(ImageVersion).order_by(ImageVersion.request_id).all()
+            assert len(images) == 2
+            assert images[0].image_id == image_id_1
+            assert images[0].request_id == requests[0].id
+            assert images[0].user_id == 1001
+            assert images[1].image_id == image_id_2
+            assert images[1].request_id == requests[1].id
+            assert images[1].user_id == 2001
+
     def test_unknown_singular_events(self):
         from azafea.event_processors.endless.metrics.events._base import UnknownSingularEvent
         from azafea.event_processors.endless.metrics.request import Request
