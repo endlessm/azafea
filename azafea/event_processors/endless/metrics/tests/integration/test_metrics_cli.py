@@ -63,12 +63,9 @@ class TestMetrics(IntegrationTest):
         # We have to do it this way because adding them all in the same session would get them
         # deduplicated before we ever had a chance to run the command.
 
-        with self.db as dbsession:
-            requests = dbsession.query(Request).order_by(Request.id).all()
-
         for i in range(9):
             with self.db as dbsession:
-                request = requests[i % 3]
+                request = dbsession.query(Request).order_by(Request.id).all()[i % 3]
                 dbsession.add(ImageVersion(request=request, user_id=i, occured_at=occured_at,
                                            payload=GLib.Variant('mv', GLib.Variant('s', image_id))))
 
