@@ -254,7 +254,7 @@ def do_replay_machine_images(config: Config, args: argparse.Namespace) -> None:
 
             if (i % args.chunk_size) == 0:
                 dbsession.commit()
-                progress(i * args.chunk_size, total)
+                progress(i, total)
 
         progress(total, total)
 
