@@ -31,8 +31,17 @@ class Machine(Base):
     image_platform = Column(Unicode, index=True)
     image_timestamp = Column(DateTime(timezone=True), index=True)
     image_personality = Column(Unicode, index=True)
+    demo = Column(Boolean, server_default=expression.false())
     dualboot = Column(Boolean, server_default=expression.false())
     live = Column(Boolean, server_default=expression.false())
+
+
+def upsert_machine_demo(dbsession: DbSession, machine_id: str) -> None:
+    stmt = insert(Machine.__table__).values(machine_id=machine_id, demo=True)
+    stmt = stmt.on_conflict_do_update(constraint='uq_metrics_machine_machine_id',
+                                      set_={'demo': True})
+
+    dbsession.connection().execute(stmt)
 
 
 def upsert_machine_dualboot(dbsession: DbSession, machine_id: str) -> None:

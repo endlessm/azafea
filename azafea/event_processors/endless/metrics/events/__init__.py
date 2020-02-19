@@ -19,7 +19,12 @@ from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, LargeBinary, N
 
 from azafea.model import Base, DbSession
 from azafea.vendors import normalize_vendor
-from ..machine import upsert_machine_dualboot, upsert_machine_image, upsert_machine_live
+from ..machine import (
+    upsert_machine_demo,
+    upsert_machine_dualboot,
+    upsert_machine_image,
+    upsert_machine_live,
+)
 from ..utils import get_asv_dict, get_bytes, get_child_values, get_strings
 from ._base import (  # noqa: F401
     SequenceEvent,
@@ -727,6 +732,9 @@ def receive_before_commit(dbsession: DbSession) -> None:
 
         elif isinstance(instance, DualBootBooted):
             upsert_machine_dualboot(dbsession, instance.request.machine_id)
+
+        elif isinstance(instance, EnteredDemoMode):
+            upsert_machine_demo(dbsession, instance.request.machine_id)
 
         elif isinstance(instance, LiveUsbBooted):
             upsert_machine_live(dbsession, instance.request.machine_id)
