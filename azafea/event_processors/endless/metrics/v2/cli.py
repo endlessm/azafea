@@ -39,7 +39,7 @@ from ..events import (
     sequence_is_known,
     singular_event_is_known,
 )
-from ..machine import Machine, insert_machine
+from ..machine import Machine, upsert_machine_image
 from ..request import Request
 
 
@@ -350,7 +350,7 @@ def do_replay_machine_images(config: Config, args: argparse.Namespace) -> None:
         total = query.count()
 
         for i, (machine_id, image_id) in enumerate(query, start=1):
-            insert_machine(dbsession, machine_id, image_id)
+            upsert_machine_image(dbsession, machine_id, image_id)
 
             if (i % args.chunk_size) == 0:
                 dbsession.commit()

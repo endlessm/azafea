@@ -7,6 +7,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+from typing import Any, Dict
+
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.schema import Column
 from sqlalchemy.types import DateTime, Integer, Unicode
@@ -30,9 +32,10 @@ class Machine(Base):
     image_personality = Column(Unicode, index=True)
 
 
-def insert_machine(dbsession: DbSession, machine_id: str, image_id: str) -> None:
-    stmt = insert(Machine.__table__).values(machine_id=machine_id, image_id=image_id,
-                                            **parse_endless_os_image(image_id))
-    stmt = stmt.on_conflict_do_nothing()
+def upsert_machine_image(dbsession: DbSession, machine_id: str, image_id: str) -> None:
+    image_values: Dict[str, Any] = {'image_id': image_id, **parse_endless_os_image(image_id)}
+
+    stmt = insert(Machine.__table__).values(machine_id=machine_id, **image_values)
+    stmt = stmt.on_conflict_do_update(constraint='uq_metrics_machine_machine_id', set_=image_values)
 
     dbsession.connection().execute(stmt)
