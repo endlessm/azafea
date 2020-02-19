@@ -323,44 +323,6 @@ class ImageVersion(SingularEvent):
         return {'image_id': payload.get_string()}
 
 
-@listens_for(DbSession, 'after_attach')
-def receive_after_attach(dbsession: DbSession, instance: Base) -> None:
-    if not isinstance(instance, ImageVersion):
-        return
-
-    # So we have just added an ImageVersion to the session, let's only keep one new (pending)
-    all_image_versions = (x for x in dbsession.new if isinstance(x, ImageVersion))
-    all_image_versions = (x for x in all_image_versions if inspect(x).pending)
-
-    image_versions_per_request: Dict[str, List[ImageVersion]] = {}
-
-    for image_version in all_image_versions:
-        # Requests don't have an id yet, because they have just been added to the db session which
-        # hasn't been committed yet; their sha512 is a good replacement identifier given that we
-        # have a unicity constraint on them
-        request_id = image_version.request.sha512
-
-        image_versions_per_request.setdefault(request_id, [])
-        image_versions_per_request[request_id].append(image_version)
-        image_versions_per_request[request_id].sort(key=attrgetter('occured_at'))
-
-    for _request_id, image_versions in image_versions_per_request.items():
-        # Keep only the first image version for each request
-        to_expunge = image_versions[1:]
-
-        for image_version in to_expunge:
-            dbsession.expunge(image_version)
-
-
-@listens_for(DbSession, 'before_commit')
-def receive_before_commit(dbsession: DbSession) -> None:
-    for instance in dbsession.new:
-        if not isinstance(instance, ImageVersion):
-            continue
-
-        insert_machine(dbsession, instance.request.machine_id, image_id=instance.image_id)
-
-
 class LaunchedEquivalentExistingFlatpak(SingularEvent):
     __tablename__ = 'launched_equivalent_existing_flatpak'
     __event_uuid__ = '00d7bc1e-ec93-4c53-ae78-a6b40450be4a'
@@ -723,3 +685,43 @@ class UserIsLoggedIn(SequenceEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {'logged_in_user_id': payload.get_uint32()}
+
+
+# -- Model listeners ----------------------------------------------------------
+
+@listens_for(DbSession, 'after_attach')
+def receive_after_attach(dbsession: DbSession, instance: Base) -> None:
+    if not isinstance(instance, ImageVersion):
+        return
+
+    # So we have just added an ImageVersion to the session, let's only keep one new (pending)
+    all_image_versions = (x for x in dbsession.new if isinstance(x, ImageVersion))
+    all_image_versions = (x for x in all_image_versions if inspect(x).pending)
+
+    image_versions_per_request: Dict[str, List[ImageVersion]] = {}
+
+    for image_version in all_image_versions:
+        # Requests don't have an id yet, because they have just been added to the db session which
+        # hasn't been committed yet; their sha512 is a good replacement identifier given that we
+        # have a unicity constraint on them
+        request_id = image_version.request.sha512
+
+        image_versions_per_request.setdefault(request_id, [])
+        image_versions_per_request[request_id].append(image_version)
+        image_versions_per_request[request_id].sort(key=attrgetter('occured_at'))
+
+    for _request_id, image_versions in image_versions_per_request.items():
+        # Keep only the first image version for each request
+        to_expunge = image_versions[1:]
+
+        for image_version in to_expunge:
+            dbsession.expunge(image_version)
+
+
+@listens_for(DbSession, 'before_commit')
+def receive_before_commit(dbsession: DbSession) -> None:
+    for instance in dbsession.new:
+        if not isinstance(instance, ImageVersion):
+            continue
+
+        insert_machine(dbsession, instance.request.machine_id, image_id=instance.image_id)
