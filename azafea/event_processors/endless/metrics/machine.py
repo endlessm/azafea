@@ -21,7 +21,7 @@ class Machine(Base):
 
     id = Column(Integer, primary_key=True)
     machine_id = Column(Unicode(32), nullable=False, unique=True)
-    image_id = Column(Unicode, nullable=False)
+    image_id = Column(Unicode)
     image_product = Column(Unicode, index=True)
     image_branch = Column(Unicode, index=True)
     image_arch = Column(Unicode, index=True)
