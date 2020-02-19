@@ -11,7 +11,8 @@ from typing import Any, Dict
 
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.schema import Column
-from sqlalchemy.types import DateTime, Integer, Unicode
+from sqlalchemy.sql import expression
+from sqlalchemy.types import Boolean, DateTime, Integer, Unicode
 
 from azafea.model import Base, DbSession
 
@@ -30,6 +31,15 @@ class Machine(Base):
     image_platform = Column(Unicode, index=True)
     image_timestamp = Column(DateTime(timezone=True), index=True)
     image_personality = Column(Unicode, index=True)
+    dualboot = Column(Boolean, server_default=expression.false())
+
+
+def upsert_machine_dualboot(dbsession: DbSession, machine_id: str) -> None:
+    stmt = insert(Machine.__table__).values(machine_id=machine_id, dualboot=True)
+    stmt = stmt.on_conflict_do_update(constraint='uq_metrics_machine_machine_id',
+                                      set_={'dualboot': True})
+
+    dbsession.connection().execute(stmt)
 
 
 def upsert_machine_image(dbsession: DbSession, machine_id: str, image_id: str) -> None:

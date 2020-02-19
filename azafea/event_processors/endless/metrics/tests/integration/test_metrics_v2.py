@@ -867,6 +867,7 @@ class TestMetrics(IntegrationTest):
             machine = dbsession.query(Machine).one()
             assert machine.machine_id == request.machine_id
             assert machine.image_id == image_id
+            assert machine.dualboot is False
 
     def test_insert_machine_invalid_image_id(self, capfd):
         from azafea.event_processors.endless.metrics.events import ImageVersion
@@ -924,6 +925,64 @@ class TestMetrics(IntegrationTest):
 
         capture = capfd.readouterr()
         assert f'Invalid image id {image_id!r}: Did not match the expected format' in capture.err
+
+    def test_insert_machine_dualboot(self):
+        from azafea.event_processors.endless.metrics.events import DualBootBooted
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, Machine, DualBootBooted)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        1001,
+                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        None
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_insert_machine_dualboot', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).one()
+
+            dualboot = dbsession.query(DualBootBooted).one()
+            assert dualboot.request_id == request.id
+
+            machine = dbsession.query(Machine).one()
+            assert machine.machine_id == request.machine_id
+            assert machine.image_id is None
+            assert machine.dualboot is True
 
     def test_multiple_machines(self):
         from azafea.event_processors.endless.metrics.events import ImageVersion

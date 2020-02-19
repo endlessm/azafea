@@ -39,7 +39,7 @@ from ..events import (
     sequence_is_known,
     singular_event_is_known,
 )
-from ..machine import Machine, upsert_machine_image
+from ..machine import Machine, upsert_machine_dualboot, upsert_machine_image
 from ..request import Request
 
 
@@ -81,6 +81,14 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     parse_images.add_argument('--chunk-size', type=int, default=5000,
                               help='The size of the chunks to operate on')
     parse_images.set_defaults(subcommand=do_parse_images)
+
+    replay_machine_dualboots = subs.add_parser(
+        'replay-machine-dual-boots',
+        help='Replay "dual boot" events to populate the machine mapping table',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    replay_machine_dualboots.add_argument('--chunk-size', type=int, default=5000,
+                                          help='The size of the chunks to operate on')
+    replay_machine_dualboots.set_defaults(subcommand=do_replay_machine_dualboots)
 
     replay_machine_images = subs.add_parser('replay-machine-images',
                                             help='Replay "image version" events to populate the '
@@ -336,6 +344,27 @@ def do_replay_invalid(config: Config, args: argparse.Namespace) -> None:
             progress(chunk_number * args.chunk_size, total)
 
     progress(total, total, end='\n')
+
+
+def do_replay_machine_dualboots(config: Config, args: argparse.Namespace) -> None:
+    db = Db(config.postgresql)
+    log.info('Replaying the dual boot events…')
+
+    with db as dbsession:
+        query = dbsession.query(Request.machine_id)
+        query = query.join(DualBootBooted)
+        query = query.distinct()
+
+        total = query.count()
+
+        for i, (machine_id, ) in enumerate(query, start=1):
+            upsert_machine_dualboot(dbsession, machine_id)
+
+            if (i % args.chunk_size) == 0:
+                dbsession.commit()
+                progress(i, total)
+
+        progress(total, total)
 
 
 def do_replay_machine_images(config: Config, args: argparse.Namespace) -> None:
