@@ -808,7 +808,67 @@ class TestMetrics(IntegrationTest):
         assert ('Metric event 56be0b38-e47b-4578-9599-00ff9bda54bb takes no payload, but got '
                 '<int64 2>') in capture.err
 
-    def test_machine_invalid_image_id(self, capfd):
+    def test_insert_machine_image_id(self):
+        from azafea.event_processors.endless.metrics.events import ImageVersion
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, Machine, ImageVersion)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
+        user_id = 2000
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        user_id,
+                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
+                        1000000000,                    # event relative timestamp (1 secs)
+                        GLib.Variant('s', image_id)
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_insert_machine_image_id', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).one()
+
+            image = dbsession.query(ImageVersion).one()
+            assert image.request_id == request.id
+            assert image.image_id == image_id
+
+            machine = dbsession.query(Machine).one()
+            assert machine.machine_id == request.machine_id
+            assert machine.image_id == image_id
+
+    def test_insert_machine_invalid_image_id(self, capfd):
         from azafea.event_processors.endless.metrics.events import ImageVersion
         from azafea.event_processors.endless.metrics.machine import Machine
         from azafea.event_processors.endless.metrics.request import Request
@@ -851,7 +911,7 @@ class TestMetrics(IntegrationTest):
         record = received_at_timestamp_bytes + request_body
 
         # Send the event request to the Redis queue
-        self.redis.lpush('test_machine_invalid_image_id', record)
+        self.redis.lpush('test_insert_machine_invalid_image_id', record)
 
         # Run Azafea so it processes the event
         self.run_azafea()
@@ -1818,82 +1878,3 @@ class TestMetrics(IntegrationTest):
 
             assert dbsession.query(InvalidSequence).count() == 0
             assert dbsession.query(UserIsLoggedIn).count() == 0
-
-    def test_parse_old_images(self):
-        from azafea.event_processors.endless.metrics.machine import Machine
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Machine)
-
-        # Insert a machine without parsed image components
-        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
-
-        with self.db as dbsession:
-            dbsession.add(Machine(machine_id='ffffffffffffffffffffffffffffffff', image_id=image_id))
-
-        with self.db as dbsession:
-            machine = dbsession.query(Machine).one()
-            assert machine.image_id == image_id
-            assert machine.image_product is None
-            assert machine.image_branch is None
-            assert machine.image_arch is None
-            assert machine.image_platform is None
-            assert machine.image_timestamp is None
-            assert machine.image_personality is None
-
-        # Parse the image for old machine records
-        self.run_subcommand('test_parse_old_images', 'parse-old-images')
-
-        with self.db as dbsession:
-            machine = dbsession.query(Machine).one()
-            assert machine.image_id == image_id
-            assert machine.image_product == 'eos'
-            assert machine.image_branch == 'eos3.7'
-            assert machine.image_arch == 'amd64'
-            assert machine.image_platform == 'amd64'
-            assert machine.image_timestamp == datetime(2019, 4, 19, 22, 56, 6, tzinfo=timezone.utc)
-            assert machine.image_personality == 'base'
-
-    def test_parse_old_images_skips_already_done(self, capfd):
-        from azafea.event_processors.endless.metrics.machine import Machine
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Machine)
-
-        # Insert a machine without parsed image components
-        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
-
-        with self.db as dbsession:
-            dbsession.add(Machine(machine_id='ffffffffffffffffffffffffffffffff', image_id=image_id,
-                                  image_product='eos', image_branch='eos3.7', image_arch='amd64',
-                                  image_platform='amd64', image_personality='base',
-                                  image_timestamp=datetime(2019, 4, 19, 22, 56, 6,
-                                                           tzinfo=timezone.utc)))
-
-        with self.db as dbsession:
-            machine = dbsession.query(Machine).one()
-            assert machine.image_id == image_id
-            assert machine.image_product == 'eos'
-            assert machine.image_branch == 'eos3.7'
-            assert machine.image_arch == 'amd64'
-            assert machine.image_platform == 'amd64'
-            assert machine.image_timestamp == datetime(2019, 4, 19, 22, 56, 6, tzinfo=timezone.utc)
-            assert machine.image_personality == 'base'
-
-        # Parse the image for old machine records
-        self.run_subcommand('test_parse_old_images_skips_already_done', 'parse-old-images')
-
-        with self.db as dbsession:
-            machine = dbsession.query(Machine).one()
-            assert machine.image_id == image_id
-            assert machine.image_product == 'eos'
-            assert machine.image_branch == 'eos3.7'
-            assert machine.image_arch == 'amd64'
-            assert machine.image_platform == 'amd64'
-            assert machine.image_timestamp == datetime(2019, 4, 19, 22, 56, 6, tzinfo=timezone.utc)
-            assert machine.image_personality == 'base'
-
-        capture = capfd.readouterr()
-        assert 'No machine record with unparsed image ids' in capture.out
