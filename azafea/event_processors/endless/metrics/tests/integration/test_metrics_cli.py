@@ -466,6 +466,81 @@ class TestMetrics(IntegrationTest):
             assert machine.machine_id == 'machine2'
             assert machine.image_id == image_id_2
 
+    def test_replay_machine_live_usbs(self):
+        from azafea.event_processors.endless.metrics.events import LiveUsbBooted
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
+
+        self.run_subcommand('initdb')
+        self.ensure_tables(LiveUsbBooted, Machine, Request)
+
+        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+
+        with self.db as dbsession:
+            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+                              absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
+                              send_number=0)
+            dbsession.add(request)
+
+            request = Request(serialized=b'whatever2', sha512='whatever2', received_at=occured_at,
+                              absolute_timestamp=1, relative_timestamp=2, machine_id='machine2',
+                              send_number=0)
+            dbsession.add(request)
+            dbsession.add(LiveUsbBooted(request=request, user_id=1001, occured_at=occured_at,
+                                        payload=GLib.Variant('mv', None)))
+
+            request = Request(serialized=b'whatever3', sha512='whatever3', received_at=occured_at,
+                              absolute_timestamp=1, relative_timestamp=2, machine_id='machine3',
+                              send_number=0)
+            dbsession.add(request)
+            dbsession.add(LiveUsbBooted(request=request, user_id=1001, occured_at=occured_at,
+                                        payload=GLib.Variant('mv', None)))
+
+        # Pretend these events had been received before we created the Machine model by simply
+        # removing them
+        with self.db as dbsession:
+            dbsession.query(Machine).delete()
+
+        with self.db as dbsession:
+            assert dbsession.query(Request).count() == 3
+            assert dbsession.query(LiveUsbBooted).count() == 2
+            assert dbsession.query(Machine).count() == 0
+
+        # The machine2 has sent a new event after creating the Machine model, but before running
+        # the replay command
+        with self.db as dbsession:
+            request = Request(serialized=b'whatever4', sha512='whatever4', received_at=occured_at,
+                              absolute_timestamp=1, relative_timestamp=2, machine_id='machine2',
+                              send_number=0)
+            dbsession.add(request)
+            dbsession.add(LiveUsbBooted(request=request, user_id=1001, occured_at=occured_at,
+                                        payload=GLib.Variant('mv', None)))
+
+        with self.db as dbsession:
+            assert dbsession.query(Request).count() == 4
+            assert dbsession.query(LiveUsbBooted).count() == 3
+            assert dbsession.query(Machine).count() == 1
+            assert dbsession.query(Machine).one().machine_id == 'machine2'
+
+        # Replay the image version events
+        self.run_subcommand('test_replay_machine_live_usbs', 'replay-machine-live-usbs',
+                            '--chunk-size=2')
+
+        with self.db as dbsession:
+            assert dbsession.query(Request).count() == 4
+            assert dbsession.query(LiveUsbBooted).count() == 3
+            assert dbsession.query(Machine).count() == 2
+
+            machines = dbsession.query(Machine).order_by(Machine.machine_id).all()
+
+            machine = machines[0]
+            assert machine.machine_id == 'machine2'
+            assert machine.live is True
+
+            machine = machines[1]
+            assert machine.machine_id == 'machine3'
+            assert machine.live is True
+
     def test_replay_invalid(self):
         from azafea.event_processors.endless.metrics.events import ShellAppIsOpen, Uptime
         from azafea.event_processors.endless.metrics.events._base import (

@@ -39,7 +39,7 @@ from ..events import (
     sequence_is_known,
     singular_event_is_known,
 )
-from ..machine import Machine, upsert_machine_dualboot, upsert_machine_image
+from ..machine import Machine, upsert_machine_dualboot, upsert_machine_image, upsert_machine_live
 from ..request import Request
 
 
@@ -97,6 +97,14 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     replay_machine_images.add_argument('--chunk-size', type=int, default=5000,
                                        help='The size of the chunks to operate on')
     replay_machine_images.set_defaults(subcommand=do_replay_machine_images)
+
+    replay_machine_live_usbs = subs.add_parser(
+        'replay-machine-live-usbs',
+        help='Replay "live usb" events to populate the machine mapping table',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    replay_machine_live_usbs.add_argument('--chunk-size', type=int, default=5000,
+                                          help='The size of the chunks to operate on')
+    replay_machine_live_usbs.set_defaults(subcommand=do_replay_machine_live_usbs)
 
     replay_invalid = subs.add_parser('replay-invalid', help='Replay invalid events',
                                      formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -380,6 +388,27 @@ def do_replay_machine_images(config: Config, args: argparse.Namespace) -> None:
 
         for i, (machine_id, image_id) in enumerate(query, start=1):
             upsert_machine_image(dbsession, machine_id, image_id)
+
+            if (i % args.chunk_size) == 0:
+                dbsession.commit()
+                progress(i, total)
+
+        progress(total, total)
+
+
+def do_replay_machine_live_usbs(config: Config, args: argparse.Namespace) -> None:
+    db = Db(config.postgresql)
+    log.info('Replaying the live USB events…')
+
+    with db as dbsession:
+        query = dbsession.query(Request.machine_id)
+        query = query.join(LiveUsbBooted)
+        query = query.distinct()
+
+        total = query.count()
+
+        for i, (machine_id, ) in enumerate(query, start=1):
+            upsert_machine_live(dbsession, machine_id)
 
             if (i % args.chunk_size) == 0:
                 dbsession.commit()
