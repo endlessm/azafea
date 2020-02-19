@@ -716,7 +716,5 @@ def receive_after_attach(dbsession: DbSession, instance: Base) -> None:
 @listens_for(DbSession, 'before_commit')
 def receive_before_commit(dbsession: DbSession) -> None:
     for instance in dbsession.new:
-        if not isinstance(instance, ImageVersion):
-            continue
-
-        insert_machine(dbsession, instance.request.machine_id, image_id=instance.image_id)
+        if isinstance(instance, ImageVersion):
+            insert_machine(dbsession, instance.request.machine_id, image_id=instance.image_id)
