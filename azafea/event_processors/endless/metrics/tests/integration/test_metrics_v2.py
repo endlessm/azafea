@@ -163,8 +163,8 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.endless.metrics.events import (
             CacheIsCorrupt, CacheMetadataIsCorrupt, ControlCenterPanelOpened, CPUInfo,
             DiscoveryFeedClicked, DiscoveryFeedClosed, DiscoveryFeedOpened, DiskSpaceExtra,
-            DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, ImageVersion,
-            LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
+            DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, EnteredDemoMode,
+            ImageVersion, LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
             Location, LocationLabel, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
             OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
@@ -183,8 +183,8 @@ class TestMetrics(IntegrationTest):
             Request, Machine, InvalidSingularEvent, UnknownSingularEvent,
             CacheIsCorrupt, CacheMetadataIsCorrupt, ControlCenterPanelOpened, CPUInfo,
             DiscoveryFeedClicked, DiscoveryFeedClosed, DiscoveryFeedOpened, DiskSpaceExtra,
-            DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, ImageVersion,
-            LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
+            DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, EnteredDemoMode,
+            ImageVersion, LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
             Location, LocationLabel, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
             OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
@@ -281,6 +281,12 @@ class TestMetrics(IntegrationTest):
                         UUID('2b5c044d-d819-4e2c-a3a6-c485c1ac371e').bytes,
                         32000000000,                   # event relative timestamp (32 secs)
                         GLib.Variant('s', 'org.gnome.Calendar')
+                    ),
+                    (
+                        user_id,
+                        UUID('c75af67f-cf2f-433d-a060-a670087d93a1').bytes,
+                        36000000000,                   # event relative timestamp (36 secs)
+                        None
                     ),
                     (
                         user_id,
@@ -571,6 +577,11 @@ class TestMetrics(IntegrationTest):
             assert unmaximized.user_id == user_id
             assert unmaximized.occured_at == now - timedelta(seconds=2) + timedelta(seconds=32)
             assert unmaximized.app_id == 'org.gnome.Calendar'
+
+            demo = dbsession.query(EnteredDemoMode).one()
+            assert demo.request_id == request.id
+            assert demo.user_id == user_id
+            assert demo.occured_at == now - timedelta(seconds=2) + timedelta(seconds=36)
 
             image = dbsession.query(ImageVersion).one()
             assert image.request_id == request.id

@@ -190,6 +190,7 @@ def test_new_unknown_event():
         GLib.Variant('s', 'org.gnome.Calendar'),
         {'app_id': 'org.gnome.Calendar'}
     ),
+    ('EnteredDemoMode', None, {}),
     (
         'HackClubhouseAchievement',
         GLib.Variant('(ss)', ('id', 'name')),

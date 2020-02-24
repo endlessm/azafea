@@ -184,6 +184,12 @@ class EndlessApplicationUnmaximized(SingularEvent):
         return {'app_id': payload.get_string()}
 
 
+class EnteredDemoMode(SingularEvent):
+    __tablename__ = 'entered_demo_mode'
+    __event_uuid__ = 'c75af67f-cf2f-433d-a060-a670087d93a1'
+    __payload_type__ = None
+
+
 class HackClubhouseAchievement(SingularEvent):
     __tablename__ = 'hack_clubhouse_achievement'
     __event_uuid__ = '62ce2e93-bfdc-4cae-af4c-54068abfaf02'
