@@ -1051,7 +1051,7 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(Machine).order_by(Machine.id).count() == 2
             assert dbsession.query(ImageVersion).order_by(ImageVersion.id).count() == 3
 
-    def test_multiple_image_versions_in_a_request(self):
+    def test_deduplicate_image_versions(self):
         from azafea.event_processors.endless.metrics.events import ImageVersion
         from azafea.event_processors.endless.metrics.request import Request
 
@@ -1098,7 +1098,7 @@ class TestMetrics(IntegrationTest):
         record = received_at_timestamp_bytes + request_body
 
         # Send the event request to the Redis queue
-        self.redis.lpush('test_multiple_image_versions_in_a_request', record)
+        self.redis.lpush('test_deduplicate_image_versions', record)
 
         # Run Azafea so it processes the event
         self.run_azafea()
