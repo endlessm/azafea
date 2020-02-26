@@ -690,7 +690,7 @@ class UserIsLoggedIn(SequenceEvent):
 
 @listens_for(DbSession, 'after_attach')
 def receive_after_attach(dbsession: DbSession, instance: Base) -> None:
-    if not isinstance(instance, ImageVersion):
+    if not isinstance(instance, (DualBootBooted, ImageVersion)):
         return
 
     # So we have just added an event to the session, but we only want to keep it if there
