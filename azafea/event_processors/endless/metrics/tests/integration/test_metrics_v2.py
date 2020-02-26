@@ -1051,7 +1051,65 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(Machine).order_by(Machine.id).count() == 2
             assert dbsession.query(ImageVersion).order_by(ImageVersion.id).count() == 3
 
-    def test_multiple_image_versions_in_a_request(self):
+    def test_deduplicate_dualboots(self):
+        from azafea.event_processors.endless.metrics.events import DualBootBooted
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, DualBootBooted)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        1001,
+                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
+                        1000000000,                    # event relative timestamp (1 secs)
+                        None
+                    ),
+                    (
+                        1002,
+                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        None
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_deduplicate_dualboots', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            assert dbsession.query(Request).order_by(Request.id).count() == 1
+
+            dualboot = dbsession.query(DualBootBooted).one()
+            assert dualboot.user_id == 1001
+
+    def test_deduplicate_image_versions(self):
         from azafea.event_processors.endless.metrics.events import ImageVersion
         from azafea.event_processors.endless.metrics.request import Request
 
@@ -1098,7 +1156,7 @@ class TestMetrics(IntegrationTest):
         record = received_at_timestamp_bytes + request_body
 
         # Send the event request to the Redis queue
-        self.redis.lpush('test_multiple_image_versions_in_a_request', record)
+        self.redis.lpush('test_deduplicate_image_versions', record)
 
         # Run Azafea so it processes the event
         self.run_azafea()
@@ -1110,7 +1168,65 @@ class TestMetrics(IntegrationTest):
             image = dbsession.query(ImageVersion).order_by(ImageVersion.id).one()
             assert image.user_id == 1001
 
-    def test_deduplicate_image_versions_per_request(self):
+    def test_deduplicate_live_usb_booted(self):
+        from azafea.event_processors.endless.metrics.events import LiveUsbBooted
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, LiveUsbBooted)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        1001,
+                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
+                        1000000000,                    # event relative timestamp (1 secs)
+                        None
+                    ),
+                    (
+                        1002,
+                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        None
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_deduplicate_live_usb_booted', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            assert dbsession.query(Request).order_by(Request.id).count() == 1
+
+            live = dbsession.query(LiveUsbBooted).one()
+            assert live.user_id == 1001
+
+    def test_deduplicate_multiple_events_per_request(self):
         # This test is a bit different from the others, because it does not push a request to Redis
         # for Azafea to process, it operates directly on the model.
         #
@@ -1118,42 +1234,66 @@ class TestMetrics(IntegrationTest):
         # requests in a single database transaction, but Azafea (currently) always opens a new
         # database transaction for each request.
 
-        from azafea.event_processors.endless.metrics.events import ImageVersion
+        from azafea.event_processors.endless.metrics.events import (
+            DualBootBooted, ImageVersion, LiveUsbBooted)
         from azafea.event_processors.endless.metrics.request import Request
 
         self.run_subcommand('initdb')
-        self.ensure_tables(ImageVersion, Request)
+        self.ensure_tables(Request, DualBootBooted, ImageVersion, LiveUsbBooted)
 
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 
         with self.db as dbsession:
-            # Add a first request with 2 image version events
+            # Add a first request with 1 dualboot, 2 image version and 3 live usb events
             request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
                               send_number=0)
             dbsession.add(request)
 
             image_id_1 = 'eos-eos3.6-amd64-amd64.190619-225606.base'
+            dbsession.add(DualBootBooted(request=request, user_id=1001, occured_at=occured_at,
+                                         payload=GLib.Variant('mv', None)))
             dbsession.add(ImageVersion(request=request, user_id=1001, occured_at=occured_at,
                                        payload=GLib.Variant('mv', GLib.Variant('s', image_id_1))))
             dbsession.add(ImageVersion(request=request, user_id=1002, occured_at=occured_at,
                                        payload=GLib.Variant('mv', GLib.Variant('s', image_id_1))))
+            dbsession.add(LiveUsbBooted(request=request, user_id=1001, occured_at=occured_at,
+                                        payload=GLib.Variant('mv', None)))
+            dbsession.add(LiveUsbBooted(request=request, user_id=1002, occured_at=occured_at,
+                                        payload=GLib.Variant('mv', None)))
+            dbsession.add(LiveUsbBooted(request=request, user_id=1003, occured_at=occured_at,
+                                        payload=GLib.Variant('mv', None)))
 
-            # Add a second request with 2 image version events
+            # Add a second request with 1 dualboot, 2 image version and 3 live usb events
             request = Request(serialized=b'whatever2', sha512='whatever2', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine2',
                               send_number=0)
             dbsession.add(request)
 
             image_id_2 = 'eos-eos3.7-amd64-amd64.191019-225606.base'
+            dbsession.add(DualBootBooted(request=request, user_id=2001, occured_at=occured_at,
+                                         payload=GLib.Variant('mv', None)))
             dbsession.add(ImageVersion(request=request, user_id=2001, occured_at=occured_at,
                                        payload=GLib.Variant('mv', GLib.Variant('s', image_id_2))))
             dbsession.add(ImageVersion(request=request, user_id=2002, occured_at=occured_at,
                                        payload=GLib.Variant('mv', GLib.Variant('s', image_id_2))))
+            dbsession.add(LiveUsbBooted(request=request, user_id=2001, occured_at=occured_at,
+                                        payload=GLib.Variant('mv', None)))
+            dbsession.add(LiveUsbBooted(request=request, user_id=2002, occured_at=occured_at,
+                                        payload=GLib.Variant('mv', None)))
+            dbsession.add(LiveUsbBooted(request=request, user_id=2003, occured_at=occured_at,
+                                        payload=GLib.Variant('mv', None)))
 
         with self.db as dbsession:
             requests = dbsession.query(Request).order_by(Request.id).all()
             assert len(requests) == 2
+
+            dualboots = dbsession.query(DualBootBooted).order_by(DualBootBooted.request_id).all()
+            assert len(dualboots) == 2
+            assert dualboots[0].request_id == requests[0].id
+            assert dualboots[0].user_id == 1001
+            assert dualboots[1].request_id == requests[1].id
+            assert dualboots[1].user_id == 2001
 
             images = dbsession.query(ImageVersion).order_by(ImageVersion.request_id).all()
             assert len(images) == 2
@@ -1163,6 +1303,13 @@ class TestMetrics(IntegrationTest):
             assert images[1].image_id == image_id_2
             assert images[1].request_id == requests[1].id
             assert images[1].user_id == 2001
+
+            live_usbs = dbsession.query(LiveUsbBooted).order_by(LiveUsbBooted.request_id).all()
+            assert len(live_usbs) == 2
+            assert live_usbs[0].request_id == requests[0].id
+            assert live_usbs[0].user_id == 1001
+            assert live_usbs[1].request_id == requests[1].id
+            assert live_usbs[1].user_id == 2001
 
     def test_unknown_singular_events(self):
         from azafea.event_processors.endless.metrics.events._base import UnknownSingularEvent
