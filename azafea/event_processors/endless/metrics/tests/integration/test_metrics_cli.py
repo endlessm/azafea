@@ -151,6 +151,72 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(ImageVersion).filter_by(request_id=req2.id).one().user_id == 1
             assert dbsession.query(ImageVersion).filter_by(request_id=req3.id).one().user_id == 2
 
+    def test_dedupe_no_live_usbs(self, capfd):
+        from azafea.event_processors.endless.metrics.events import LiveUsbBooted
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(LiveUsbBooted)
+
+        with self.db as dbsession:
+            assert dbsession.query(LiveUsbBooted).count() == 0
+
+        self.run_subcommand('test_dedupe_no_live_usbs', 'dedupe-live-usbs')
+
+        with self.db as dbsession:
+            assert dbsession.query(LiveUsbBooted).count() == 0
+
+        capture = capfd.readouterr()
+        assert 'No metrics requests with deduplicate live usb events found' in capture.out
+
+    def test_dedupe_live_usbs(self):
+        from azafea.event_processors.endless.metrics.events import LiveUsbBooted
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, LiveUsbBooted)
+
+        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+
+        with self.db as dbsession:
+            dbsession.add(Request(serialized=b'whatever', sha512='sha512-1', received_at=occured_at,
+                                  absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
+                                  send_number=0))
+            dbsession.add(Request(serialized=b'whatever', sha512='sha512-2', received_at=occured_at,
+                                  absolute_timestamp=3, relative_timestamp=4, machine_id='machine2',
+                                  send_number=0))
+            dbsession.add(Request(serialized=b'whatever', sha512='sha512-3', received_at=occured_at,
+                                  absolute_timestamp=5, relative_timestamp=6, machine_id='machine3',
+                                  send_number=0))
+
+        # Insert multiple live usb events.
+        #
+        # We have to do it this way because adding them all in the same session would get them
+        # deduplicated before we ever had a chance to run the command.
+
+        for i in range(9):
+            with self.db as dbsession:
+                request = dbsession.query(Request).order_by(Request.id).all()[i % 3]
+                dbsession.add(LiveUsbBooted(request=request, user_id=i, occured_at=occured_at,
+                                            payload=GLib.Variant('mv', None)))
+
+        with self.db as dbsession:
+            req1, req2, req3 = dbsession.query(Request).order_by(Request.id).all()
+            assert dbsession.query(LiveUsbBooted).filter_by(request_id=req1.id).count() == 3
+            assert dbsession.query(LiveUsbBooted).filter_by(request_id=req2.id).count() == 3
+            assert dbsession.query(LiveUsbBooted).filter_by(request_id=req3.id).count() == 3
+
+        # Run the deduplication
+        self.run_subcommand('test_dedupe_live_usbs', 'dedupe-live-usbs', '--chunk-size=5')
+
+        # Verify again after the deduplication
+        with self.db as dbsession:
+            req1, req2, req3 = dbsession.query(Request).order_by(Request.id).all()
+            assert dbsession.query(LiveUsbBooted).filter_by(request_id=req1.id).one().user_id == 0
+            assert dbsession.query(LiveUsbBooted).filter_by(request_id=req2.id).one().user_id == 1
+            assert dbsession.query(LiveUsbBooted).filter_by(request_id=req3.id).one().user_id == 2
+
     def test_normalize_no_vendors(self, capfd):
         from azafea.event_processors.endless.metrics.events import UpdaterBranchSelected
 

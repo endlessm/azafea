@@ -21,6 +21,7 @@ from ...image import parse_endless_os_image
 from ..events import (
     DualBootBooted,
     ImageVersion,
+    LiveUsbBooted,
     InvalidAggregateEvent,
     InvalidSequence,
     InvalidSingularEvent,
@@ -59,6 +60,13 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     dedupe_image_versions.add_argument('--chunk-size', type=int, default=5000,
                                        help='The size of the chunks to operate on')
     dedupe_image_versions.set_defaults(subcommand=do_dedupe_image_versions)
+
+    dedupe_live_usbs = subs.add_parser('dedupe-live-usbs',
+                                       help='Deduplicate the live usb events',
+                                       formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    dedupe_live_usbs.add_argument('--chunk-size', type=int, default=5000,
+                                  help='The size of the chunks to operate on')
+    dedupe_live_usbs.set_defaults(subcommand=do_dedupe_live_usbs)
 
     normalize_vendors = subs.add_parser('normalize-vendors',
                                         help='Normalize the vendors in existing records',
@@ -172,6 +180,48 @@ def do_dedupe_image_versions(config: Config, args: argparse.Namespace) -> None:
                     dbsession.delete(image_version)
 
                 previous_request_id = image_version.request_id
+
+        progress(stop, num_requests_with_dupes)
+
+    progress(num_requests_with_dupes, num_requests_with_dupes, end='\n')
+    log.info('All done!')
+
+
+def do_dedupe_live_usbs(config: Config, args: argparse.Namespace) -> None:
+    db = Db(config.postgresql)
+    log.info('Deduplicating the metrics requests with multiple "live USB" (%s) events',
+             LiveUsbBooted.__event_uuid__)
+
+    with db as dbsession:
+        query = dbsession.query(LiveUsbBooted.request_id)
+        query = query.group_by(LiveUsbBooted.request_id)
+        query = query.having(func.count(LiveUsbBooted.id) > 1)
+        num_requests_with_dupes = query.count()
+
+        if num_requests_with_dupes == 0:
+            log.info('-> No metrics requests with deduplicate live usb events found')
+            return None
+
+        log.info('-> Found %s metrics requests with duplicate live usb events',
+                 num_requests_with_dupes)
+        request_ids_with_dupes = [x[0] for x in query]
+
+    previous_request_id = None
+
+    for start in range(0, num_requests_with_dupes, args.chunk_size):
+        stop = min(num_requests_with_dupes, start + args.chunk_size)
+        request_id_chunk = request_ids_with_dupes[start:stop]
+
+        with db as dbsession:
+            query = dbsession.query(LiveUsbBooted)
+            query = query.filter(LiveUsbBooted.request_id.in_(request_id_chunk))
+            query = query.order_by(LiveUsbBooted.request_id, LiveUsbBooted.id)
+
+            for live_usb in query:
+                if live_usb.request_id == previous_request_id:
+                    dbsession.delete(live_usb)
+
+                previous_request_id = live_usb.request_id
 
         progress(stop, num_requests_with_dupes)
 
