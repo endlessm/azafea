@@ -693,19 +693,23 @@ def receive_after_attach(dbsession: DbSession, instance: Base) -> None:
     if not isinstance(instance, ImageVersion):
         return
 
-    # So we have just added an ImageVersion to the session, but we only want to keep it if there
+    # So we have just added an event to the session, but we only want to keep it if there
     # wasn't already a pending one for the same metrics request
 
-    all_image_versions = (x for x in dbsession.new if isinstance(x, ImageVersion))
-    all_image_versions = (x for x in all_image_versions if inspect(x).pending)
-    image_versions_in_this_request = [
+    instance_type = type(instance)
+
+    pending_events_of_same_type = (
+        x for x in dbsession.new
+        if isinstance(x, instance_type) and inspect(x).pending
+    )
+    pending_events_of_same_type_in_same_request = [
         # Requests don't have an id yet, because they have just been added to the db session which
         # hasn't been committed yet; their sha512 is a good replacement identifier given that we
         # have a unicity constraint on them
-        x for x in all_image_versions if x.request.sha512 == instance.request.sha512
+        x for x in pending_events_of_same_type if x.request.sha512 == instance.request.sha512
     ]
 
-    if len(image_versions_in_this_request) > 1:
+    if len(pending_events_of_same_type_in_same_request) > 1:
         dbsession.expunge(instance)
 
 
