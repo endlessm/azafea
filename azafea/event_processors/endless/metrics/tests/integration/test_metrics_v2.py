@@ -163,8 +163,8 @@ class TestMetrics(IntegrationTest):
         from azafea.event_processors.endless.metrics.events import (
             CacheIsCorrupt, CacheMetadataIsCorrupt, ControlCenterPanelOpened, CPUInfo,
             DiscoveryFeedClicked, DiscoveryFeedClosed, DiscoveryFeedOpened, DiskSpaceExtra,
-            DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, ImageVersion,
-            LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
+            DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, EnteredDemoMode,
+            ImageVersion, LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
             Location, LocationLabel, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
             OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
@@ -183,8 +183,8 @@ class TestMetrics(IntegrationTest):
             Request, Machine, InvalidSingularEvent, UnknownSingularEvent,
             CacheIsCorrupt, CacheMetadataIsCorrupt, ControlCenterPanelOpened, CPUInfo,
             DiscoveryFeedClicked, DiscoveryFeedClosed, DiscoveryFeedOpened, DiskSpaceExtra,
-            DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, ImageVersion,
-            LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
+            DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, EnteredDemoMode,
+            ImageVersion, LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
             Location, LocationLabel, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
             OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
@@ -281,6 +281,12 @@ class TestMetrics(IntegrationTest):
                         UUID('2b5c044d-d819-4e2c-a3a6-c485c1ac371e').bytes,
                         32000000000,                   # event relative timestamp (32 secs)
                         GLib.Variant('s', 'org.gnome.Calendar')
+                    ),
+                    (
+                        user_id,
+                        UUID('c75af67f-cf2f-433d-a060-a670087d93a1').bytes,
+                        36000000000,                   # event relative timestamp (36 secs)
+                        None
                     ),
                     (
                         user_id,
@@ -571,6 +577,11 @@ class TestMetrics(IntegrationTest):
             assert unmaximized.user_id == user_id
             assert unmaximized.occured_at == now - timedelta(seconds=2) + timedelta(seconds=32)
             assert unmaximized.app_id == 'org.gnome.Calendar'
+
+            demo = dbsession.query(EnteredDemoMode).one()
+            assert demo.request_id == request.id
+            assert demo.user_id == user_id
+            assert demo.occured_at == now - timedelta(seconds=2) + timedelta(seconds=36)
 
             image = dbsession.query(ImageVersion).one()
             assert image.request_id == request.id
@@ -867,6 +878,9 @@ class TestMetrics(IntegrationTest):
             machine = dbsession.query(Machine).one()
             assert machine.machine_id == request.machine_id
             assert machine.image_id == image_id
+            assert machine.dualboot is False
+            assert machine.live is False
+            assert machine.demo is False
 
     def test_insert_machine_invalid_image_id(self, capfd):
         from azafea.event_processors.endless.metrics.events import ImageVersion
@@ -925,14 +939,194 @@ class TestMetrics(IntegrationTest):
         capture = capfd.readouterr()
         assert f'Invalid image id {image_id!r}: Did not match the expected format' in capture.err
 
-    def test_multiple_machines(self):
-        from azafea.event_processors.endless.metrics.events import ImageVersion
+    def test_insert_machine_demo(self):
+        from azafea.event_processors.endless.metrics.events import EnteredDemoMode
         from azafea.event_processors.endless.metrics.machine import Machine
         from azafea.event_processors.endless.metrics.request import Request
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(Request, Machine, ImageVersion)
+        self.ensure_tables(Request, Machine, EnteredDemoMode)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        1001,
+                        UUID('c75af67f-cf2f-433d-a060-a670087d93a1').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        None
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_insert_machine_demo', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).one()
+
+            demo = dbsession.query(EnteredDemoMode).one()
+            assert demo.request_id == request.id
+
+            machine = dbsession.query(Machine).one()
+            assert machine.machine_id == request.machine_id
+            assert machine.image_id is None
+            assert machine.dualboot is False
+            assert machine.live is False
+            assert machine.demo is True
+
+    def test_insert_machine_dualboot(self):
+        from azafea.event_processors.endless.metrics.events import DualBootBooted
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, Machine, DualBootBooted)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        1001,
+                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        None
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_insert_machine_dualboot', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).one()
+
+            dualboot = dbsession.query(DualBootBooted).one()
+            assert dualboot.request_id == request.id
+
+            machine = dbsession.query(Machine).one()
+            assert machine.machine_id == request.machine_id
+            assert machine.image_id is None
+            assert machine.dualboot is True
+            assert machine.live is False
+            assert machine.demo is False
+
+    def test_insert_machine_live(self):
+        from azafea.event_processors.endless.metrics.events import LiveUsbBooted
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, Machine, LiveUsbBooted)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        1001,
+                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        None
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_insert_machine_live', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).one()
+
+            live = dbsession.query(LiveUsbBooted).one()
+            assert live.request_id == request.id
+
+            machine = dbsession.query(Machine).one()
+            assert machine.machine_id == request.machine_id
+            assert machine.image_id is None
+            assert machine.dualboot is False
+            assert machine.live is True
+            assert machine.demo is False
+
+    def test_upsert_machine_image_id_then_dualboot(self):
+        from azafea.event_processors.endless.metrics.events import DualBootBooted, ImageVersion
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, Machine, DualBootBooted, ImageVersion)
 
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
@@ -968,7 +1162,133 @@ class TestMetrics(IntegrationTest):
         record = received_at_timestamp_bytes + request_body
 
         # Send the event request to the Redis queue
-        self.redis.lpush('test_multiple_machines', record)
+        self.redis.lpush('test_upsert_machine_image_id_then_dualboot', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).one()
+
+            image = dbsession.query(ImageVersion).one()
+            assert image.request_id == request.id
+            assert image.image_id == image_id
+
+            machine = dbsession.query(Machine).one()
+            assert machine.machine_id == request.machine_id
+            assert machine.image_id == image_id
+            assert machine.dualboot is False
+            assert machine.live is False
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        1001,
+                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        None
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_upsert_machine_image_id_then_dualboot', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).order_by(Request.received_at.desc()).first()
+
+            dualboot = dbsession.query(DualBootBooted).one()
+            assert dualboot.request_id == request.id
+
+            machine = dbsession.query(Machine).one()
+            assert machine.machine_id == request.machine_id
+            assert machine.image_id == image_id
+            assert machine.dualboot is True
+            assert machine.live is False
+
+    def test_upsert_machine_live_then_image_id(self):
+        from azafea.event_processors.endless.metrics.events import ImageVersion, LiveUsbBooted
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, Machine, ImageVersion, LiveUsbBooted)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        1001,
+                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        None
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_upsert_machine_live_then_image_id', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).one()
+
+            live = dbsession.query(LiveUsbBooted).one()
+            assert live.request_id == request.id
+
+            machine = dbsession.query(Machine).one()
+            assert machine.machine_id == request.machine_id
+            assert machine.image_id is None
+            assert machine.dualboot is False
+            assert machine.live is True
 
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
@@ -986,7 +1306,7 @@ class TestMetrics(IntegrationTest):
                     (
                         user_id,
                         UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        3000000000,                    # event relative timestamp (3 secs)
+                        1000000000,                    # event relative timestamp (1 secs)
                         GLib.Variant('s', image_id)
                     ),
                 ],
@@ -1004,11 +1324,39 @@ class TestMetrics(IntegrationTest):
         record = received_at_timestamp_bytes + request_body
 
         # Send the event request to the Redis queue
-        self.redis.lpush('test_multiple_machines', record)
+        self.redis.lpush('test_upsert_machine_live_then_image_id', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            request = dbsession.query(Request).order_by(Request.received_at.desc()).first()
+
+            image = dbsession.query(ImageVersion).one()
+            assert image.request_id == request.id
+            assert image.image_id == image_id
+
+            machine = dbsession.query(Machine).one()
+            assert machine.machine_id == request.machine_id
+            assert machine.image_id == image_id
+            assert machine.dualboot is False
+            assert machine.live is True
+
+    def test_upsert_machine_all_at_once(self):
+        from azafea.event_processors.endless.metrics.events import (
+            DualBootBooted, EnteredDemoMode, ImageVersion, LiveUsbBooted)
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, Machine, DualBootBooted, EnteredDemoMode, ImageVersion,
+                           LiveUsbBooted)
 
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
-        machine_id = '00000000000000000000000000000000'
+        machine_id = 'ffffffffffffffffffffffffffffffff'
         image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
         user_id = 2000
         request = GLib.Variant(
@@ -1022,8 +1370,26 @@ class TestMetrics(IntegrationTest):
                     (
                         user_id,
                         UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        4000000000,                    # event relative timestamp (4 secs)
+                        1000000000,                    # event relative timestamp (1 secs)
                         GLib.Variant('s', image_id)
+                    ),
+                    (
+                        1001,
+                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        None
+                    ),
+                    (
+                        1001,
+                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
+                        2000000000,                    # event relative timestamp (3 secs)
+                        None
+                    ),
+                    (
+                        1001,
+                        UUID('c75af67f-cf2f-433d-a060-a670087d93a1').bytes,
+                        2000000000,                    # event relative timestamp (4 secs)
+                        None
                     ),
                 ],
                 [],                                    # aggregate events
@@ -1040,16 +1406,207 @@ class TestMetrics(IntegrationTest):
         record = received_at_timestamp_bytes + request_body
 
         # Send the event request to the Redis queue
-        self.redis.lpush('test_multiple_machines', record)
+        self.redis.lpush('test_upsert_machine_all_at_once', record)
 
         # Run Azafea so it processes the event
         self.run_azafea()
 
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
-            assert dbsession.query(Request).order_by(Request.id).count() == 3
-            assert dbsession.query(Machine).order_by(Machine.id).count() == 2
-            assert dbsession.query(ImageVersion).order_by(ImageVersion.id).count() == 3
+            request = dbsession.query(Request).one()
+
+            live = dbsession.query(LiveUsbBooted).one()
+            assert live.request_id == request.id
+
+            machine = dbsession.query(Machine).one()
+            assert machine.machine_id == request.machine_id
+            assert machine.image_id == image_id
+            assert machine.dualboot is True
+            assert machine.live is True
+            assert machine.demo is True
+
+    def test_upsert_multiple_machines(self):
+        from azafea.event_processors.endless.metrics.events import (
+            DualBootBooted, EnteredDemoMode, ImageVersion, LiveUsbBooted)
+        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, Machine, DualBootBooted, EnteredDemoMode, ImageVersion,
+                           LiveUsbBooted)
+
+        # Build a request as it would have been sent to us, with an image version event
+        now = datetime.now(tz=timezone.utc)
+        machine_id_1 = 'ffffffffffffffffffffffffffffffff'
+        image_id_1 = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
+        user_id = 2000
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id_1),
+                [                                      # singular events
+                    (
+                        user_id,
+                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
+                        1000000000,                    # event relative timestamp (1 secs)
+                        GLib.Variant('s', image_id_1)
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=1)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_upsert_multiple_machines', record)
+
+        # Build a request as it would have been sent to us, with an image version and a live events
+        user_id = 2000
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id_1),
+                [                                      # singular events
+                    (
+                        user_id,
+                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
+                        3000000000,                    # event relative timestamp (3 secs)
+                        GLib.Variant('s', image_id_1)
+                    ),
+                    (
+                        user_id,
+                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        None
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_upsert_multiple_machines', record)
+
+        # Build a request as it would have been sent to us, with a dualboot event
+        machine_id_2 = '00000000000000000000000000000000'
+        user_id = 2000
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id_2),
+                [                                      # singular events
+                    (
+                        user_id,
+                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        None
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=3)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_upsert_multiple_machines', record)
+
+        # Build a request as it would have been sent to us, with a demo mode event
+        user_id = 2000
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id_2),
+                [                                      # singular events
+                    (
+                        user_id,
+                        UUID('c75af67f-cf2f-433d-a060-a670087d93a1').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        None
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=3)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_upsert_multiple_machines', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            requests = dbsession.query(Request).order_by(Request.received_at).all()
+            assert len(requests) == 4
+            assert requests[0].machine_id == machine_id_1
+            assert requests[1].machine_id == machine_id_1
+            assert requests[2].machine_id == machine_id_2
+            assert requests[3].machine_id == machine_id_2
+
+            machines = dbsession.query(Machine).order_by(Machine.id).all()
+            assert len(machines) == 2
+            assert machines[0].machine_id == machine_id_1
+            assert machines[0].image_id == image_id_1
+            assert machines[0].dualboot is False
+            assert machines[0].live is True
+            assert machines[0].demo is False
+            assert machines[1].machine_id == machine_id_2
+            assert machines[1].image_id is None
+            assert machines[1].dualboot is True
+            assert machines[1].live is False
+            assert machines[1].demo is True
+
+            assert dbsession.query(DualBootBooted).count() == 1
+            assert dbsession.query(EnteredDemoMode).count() == 1
+            assert dbsession.query(ImageVersion).count() == 2
+            assert dbsession.query(LiveUsbBooted).count() == 1
 
     def test_deduplicate_dualboots(self):
         from azafea.event_processors.endless.metrics.events import DualBootBooted

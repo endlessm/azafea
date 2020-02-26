@@ -19,7 +19,12 @@ from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, LargeBinary, N
 
 from azafea.model import Base, DbSession
 from azafea.vendors import normalize_vendor
-from ..machine import insert_machine
+from ..machine import (
+    upsert_machine_demo,
+    upsert_machine_dualboot,
+    upsert_machine_image,
+    upsert_machine_live,
+)
 from ..utils import get_asv_dict, get_bytes, get_child_values, get_strings
 from ._base import (  # noqa: F401
     SequenceEvent,
@@ -182,6 +187,12 @@ class EndlessApplicationUnmaximized(SingularEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {'app_id': payload.get_string()}
+
+
+class EnteredDemoMode(SingularEvent):
+    __tablename__ = 'entered_demo_mode'
+    __event_uuid__ = 'c75af67f-cf2f-433d-a060-a670087d93a1'
+    __payload_type__ = None
 
 
 class HackClubhouseAchievement(SingularEvent):
@@ -716,7 +727,14 @@ def receive_after_attach(dbsession: DbSession, instance: Base) -> None:
 @listens_for(DbSession, 'before_commit')
 def receive_before_commit(dbsession: DbSession) -> None:
     for instance in dbsession.new:
-        if not isinstance(instance, ImageVersion):
-            continue
+        if isinstance(instance, ImageVersion):
+            upsert_machine_image(dbsession, instance.request.machine_id, image_id=instance.image_id)
 
-        insert_machine(dbsession, instance.request.machine_id, image_id=instance.image_id)
+        elif isinstance(instance, DualBootBooted):
+            upsert_machine_dualboot(dbsession, instance.request.machine_id)
+
+        elif isinstance(instance, EnteredDemoMode):
+            upsert_machine_demo(dbsession, instance.request.machine_id)
+
+        elif isinstance(instance, LiveUsbBooted):
+            upsert_machine_live(dbsession, instance.request.machine_id)

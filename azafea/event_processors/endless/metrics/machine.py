@@ -7,9 +7,12 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+from typing import Any, Dict
+
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.schema import Column
-from sqlalchemy.types import DateTime, Integer, Unicode
+from sqlalchemy.sql import expression
+from sqlalchemy.types import Boolean, DateTime, Integer, Unicode
 
 from azafea.model import Base, DbSession
 
@@ -21,18 +24,46 @@ class Machine(Base):
 
     id = Column(Integer, primary_key=True)
     machine_id = Column(Unicode(32), nullable=False, unique=True)
-    image_id = Column(Unicode, nullable=False)
+    image_id = Column(Unicode)
     image_product = Column(Unicode, index=True)
     image_branch = Column(Unicode, index=True)
     image_arch = Column(Unicode, index=True)
     image_platform = Column(Unicode, index=True)
     image_timestamp = Column(DateTime(timezone=True), index=True)
     image_personality = Column(Unicode, index=True)
+    demo = Column(Boolean, server_default=expression.false())
+    dualboot = Column(Boolean, server_default=expression.false())
+    live = Column(Boolean, server_default=expression.false())
 
 
-def insert_machine(dbsession: DbSession, machine_id: str, image_id: str) -> None:
-    stmt = insert(Machine.__table__).values(machine_id=machine_id, image_id=image_id,
-                                            **parse_endless_os_image(image_id))
-    stmt = stmt.on_conflict_do_nothing()
+def upsert_machine_demo(dbsession: DbSession, machine_id: str) -> None:
+    stmt = insert(Machine.__table__).values(machine_id=machine_id, demo=True)
+    stmt = stmt.on_conflict_do_update(constraint='uq_metrics_machine_machine_id',
+                                      set_={'demo': True})
+
+    dbsession.connection().execute(stmt)
+
+
+def upsert_machine_dualboot(dbsession: DbSession, machine_id: str) -> None:
+    stmt = insert(Machine.__table__).values(machine_id=machine_id, dualboot=True)
+    stmt = stmt.on_conflict_do_update(constraint='uq_metrics_machine_machine_id',
+                                      set_={'dualboot': True})
+
+    dbsession.connection().execute(stmt)
+
+
+def upsert_machine_image(dbsession: DbSession, machine_id: str, image_id: str) -> None:
+    image_values: Dict[str, Any] = {'image_id': image_id, **parse_endless_os_image(image_id)}
+
+    stmt = insert(Machine.__table__).values(machine_id=machine_id, **image_values)
+    stmt = stmt.on_conflict_do_update(constraint='uq_metrics_machine_machine_id', set_=image_values)
+
+    dbsession.connection().execute(stmt)
+
+
+def upsert_machine_live(dbsession: DbSession, machine_id: str) -> None:
+    stmt = insert(Machine.__table__).values(machine_id=machine_id, live=True)
+    stmt = stmt.on_conflict_do_update(constraint='uq_metrics_machine_machine_id',
+                                      set_={'live': True})
 
     dbsession.connection().execute(stmt)
