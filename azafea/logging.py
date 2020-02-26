@@ -59,4 +59,5 @@ def setup_logging(*, verbose: bool = False) -> None:
         logging.getLogger('sqlalchemy').setLevel(logging.DEBUG)
 
         # Decrease verbosity
+        logging.getLogger('filelock').setLevel(logging.WARNING)
         logging.getLogger('flake8').setLevel(logging.WARNING)
