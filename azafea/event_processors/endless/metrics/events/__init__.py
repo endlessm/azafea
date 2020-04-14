@@ -555,6 +555,111 @@ class OSVersion(SingularEvent):
         }
 
 
+class ParentalControlsBlockedFlatpakInstall(SingularEvent):
+    __tablename__ = 'parental_controls_blocked_flatpak_install'
+    __event_uuid__ = '9d03daad-f1ed-41a8-bc5a-6b532c075832'
+    __payload_type__ = 's'
+
+    app = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'app': payload.get_string(),
+        }
+
+
+class ParentalControlsBlockedFlatpakRun(SingularEvent):
+    __tablename__ = 'parental_controls_blocked_flatpak_run'
+    __event_uuid__ = 'afca2515-e9ce-43aa-b355-7663c770b4b6'
+    __payload_type__ = 's'
+
+    app = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'app': payload.get_string(),
+        }
+
+
+class ParentalControlsChanged(SingularEvent):
+    __tablename__ = 'parental_controls_changed'
+    __event_uuid__ = '449ec188-cb7b-45d3-a0ed-291d943b9aa6'
+    __payload_type__ = 'a{sv}'
+
+    # The a{sv} contains the fields from
+    # `com.endlessm.ParentalControls.AppFilter`. The a{sv} describes the new
+    # parental controls settings for one user. It may also contain the following
+    # additional optional fields:
+    #  - IsAdministrator (`b`): whether the user is an administrator
+    #  - IsInitialSetup (`b`): whether this event is happening during gnome-initial-setup
+    app_filter_is_whitelist = Column(Boolean, nullable=False)
+    app_filter = Column(ARRAY(Unicode, dimensions=1), nullable=False)
+    oars_filter = Column(JSONB, nullable=False)
+    allow_user_installation = Column(Boolean, nullable=False)
+    allow_system_installation = Column(Boolean, nullable=False)
+    is_administrator = Column(Boolean, nullable=False)
+    is_initial_setup = Column(Boolean, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        # Default values, as some a{sv} fields are optional:
+        result: Dict[str, Any] = {
+            'is_administrator': False,
+            'is_initial_setup': False,
+        }
+
+        for item in get_child_values(payload):
+            name = item.get_child_value(0).get_string()
+            value = item.get_child_value(1).get_variant()
+
+            if name == 'AppFilter':
+                result['app_filter_is_whitelist'] = \
+                    value.get_child_value(0).get_boolean()
+                result['app_filter'] = get_strings(value.get_child_value(1))
+
+            elif name == 'OarsFilter':
+                result['oars_filter'] = get_asv_dict(value)
+
+            elif name == 'AllowUserInstallation':
+                result['allow_user_installation'] = value.get_boolean()
+
+            elif name == 'AllowSystemInstallation':
+                result['allow_system_installation'] = value.get_boolean()
+
+            elif name == 'IsAdministrator':
+                result['is_administrator'] = value.get_boolean()
+
+            elif name == 'IsInitialSetup':
+                result['is_initial_setup'] = value.get_boolean()
+
+        if result.keys() < {'app_filter_is_whitelist', 'app_filter',
+                            'oars_filter', 'allow_user_installation',
+                            'allow_system_installation', 'is_administrator',
+                            'is_initial_setup'}:
+            raise ValueError('Metric event '
+                             f'{ParentalControlsChanged.__event_uuid__} '
+                             'needs an "a{sv}" payload with certain keys, but '
+                             f'some were missing: got {payload}')
+
+        return result
+
+
+class ParentalControlsEnabled(SingularEvent):
+    __tablename__ = 'parental_controls_enabled'
+    __event_uuid__ = 'c227a817-808c-4fcb-b797-21002d17b69a'
+    __payload_type__ = 'b'
+
+    enabled = Column(Boolean, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'enabled': payload.get_boolean(),
+        }
+
+
 class ProgramDumpedCore(SingularEvent):
     __tablename__ = 'program_dumped_core'
     __event_uuid__ = 'ed57b607-4a56-47f1-b1e4-5dc3e74335ec'

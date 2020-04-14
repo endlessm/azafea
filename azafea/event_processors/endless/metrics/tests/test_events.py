@@ -341,6 +341,70 @@ def test_new_unknown_event():
         {'name': 'Endless', 'version': '3.5.3'}
     ),
     (
+        'ParentalControlsBlockedFlatpakInstall',
+        GLib.Variant('s', 'com.realm667.WolfenDoom_Blade_of_Agony'),
+        {'app': 'com.realm667.WolfenDoom_Blade_of_Agony'}
+    ),
+    (
+        'ParentalControlsBlockedFlatpakRun',
+        GLib.Variant('s', 'com.realm667.WolfenDoom_Blade_of_Agony'),
+        {'app': 'com.realm667.WolfenDoom_Blade_of_Agony'}
+    ),
+    (
+        'ParentalControlsChanged',
+        GLib.Variant('a{sv}', {
+            'AppFilter': GLib.Variant('(bas)', (False, [
+                'org.libreoffice.LibreOffice',
+                'org.gnome.Totem',
+            ])),
+            'OarsFilter': GLib.Variant('a{ss}', {
+                'violence-bloodshed': 'mild',
+                'violence-realistic': 'intense',
+            }),
+            'AllowUserInstallation': GLib.Variant('b', True),
+            'AllowSystemInstallation': GLib.Variant('b', True),
+            'IsAdministrator': GLib.Variant('b', True),
+            'IsInitialSetup': GLib.Variant('b', True),
+        }),
+        {
+            'app_filter_is_whitelist': False,
+            'app_filter': [
+                'org.libreoffice.LibreOffice',
+                'org.gnome.Totem',
+            ],
+            'oars_filter': {
+                'violence-bloodshed': 'mild',
+                'violence-realistic': 'intense',
+            },
+            'allow_user_installation': True,
+            'allow_system_installation': True,
+            'is_administrator': True,
+            'is_initial_setup': True,
+        }
+    ),
+    (
+        'ParentalControlsChanged',
+        GLib.Variant('a{sv}', {
+            'AppFilter': GLib.Variant('(bas)', (True, [])),
+            'OarsFilter': GLib.Variant('a{ss}', {}),
+            'AllowUserInstallation': GLib.Variant('b', False),
+            'AllowSystemInstallation': GLib.Variant('b', False),
+            'UnexpectedKey': GLib.Variant('s', 'should be ignored'),
+        }),
+        {
+            'app_filter_is_whitelist': True,
+            'app_filter': [],
+            'oars_filter': {},
+            'allow_user_installation': False,
+            'allow_system_installation': False,
+        }
+    ),
+    (
+        'ParentalControlsEnabled',
+        GLib.Variant('b', False),
+        {'enabled': False}
+    ),
+    (
         'ProgramDumpedCore',
         GLib.Variant('a{sv}', {
             'binary': GLib.Variant('s', '/app/bin/evolution'),
@@ -429,6 +493,25 @@ def test_hack_clubhouse_progress_event_with_unknown_key():
     assert event.pathways == ['pathway2', 'pathway1']
     assert event.progress == 95.3
     assert not hasattr(event, 'unknown')
+
+
+def test_invalid_parental_controls_changed_event():
+    from azafea.event_processors.endless.metrics.events import ParentalControlsChanged
+
+    # Make an invalid payload with missing keys
+    payload = GLib.Variant('mv', GLib.Variant('a{sv}', {
+        'AllowUserInstallation': GLib.Variant('b', False),
+        'AllowSystemInstallation': GLib.Variant('b', False),
+        'UnexpectedKey': GLib.Variant('s', 'should be ignored'),
+    }))
+
+    with pytest.raises(ValueError) as excinfo:
+        ParentalControlsChanged(payload)
+
+    assert str(excinfo.value) == ('Metric event 449ec188-cb7b-45d3-a0ed-291d943b9aa6 needs an '
+                                  '"a{sv}" payload with certain keys, but some were missing: got '
+                                  "{'AllowUserInstallation': <false>, 'AllowSystemInstallation': "
+                                  "<false>, 'UnexpectedKey': <'should be ignored'>}")
 
 
 @pytest.mark.parametrize('event_model_name, payload, expected_attrs', [
