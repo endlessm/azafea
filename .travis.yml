@@ -10,7 +10,7 @@ services:
 - docker
 
 install:
-- docker build --build-arg build_type=dev --tag azafea-tests .
+- docker build --tag azafea-tests .
 
 matrix:
   include:

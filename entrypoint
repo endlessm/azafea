@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eux
+
+template config.toml.j2 -o /tmp/config.toml
+eval exec "$@"
