@@ -68,7 +68,10 @@ Creating the tables
 
 After adding a new model, stop Azafea and create the database migration::
 
-    [azafea-dev]$ pipenv run azafea -c config.toml make-migrations
+    [azafea-dev]$ pipenv run azafea -c config.toml make-migration queue-name
+
+The queue-name is the configured name of a :ref:`queue <queue-config>` set up
+with the handler which contains the new model.
 
 Carefully review the generated migration file, and commit it along with your
 new event.
