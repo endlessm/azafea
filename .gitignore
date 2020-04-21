@@ -4,3 +4,4 @@
 /dist/
 /docs/build/
 __pycache__/
+config.toml
