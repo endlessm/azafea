@@ -54,10 +54,10 @@ Azafea requires PostgreSQL 11 or later. Installing it with Docker is simply::
 Before running PostgreSQL, you need to choose a directory in which to store the
 database files.
 
-In this example we will use ``/var/lib/pgsql/azafea/data``, so let's create
+In this example we will use ``/var/lib/postgresql/azafea/data``, so let's create
 it::
 
-    $ sudo mkdir -p /var/lib/pgsql/azafea/data
+    $ sudo mkdir -p /var/lib/postgresql/azafea/data
 
 We can now run PostgreSQL, telling it to use that directory::
 
