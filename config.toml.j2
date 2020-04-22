@@ -20,5 +20,5 @@ handler = "azafea.event_processors.endless.ping.v1"
 handler = "azafea.event_processors.endless.metrics.v2"
 
 [postgresql.connect_args]
-sslmode = "verify-full"
+sslmode = "{{ POSTGRES_SSL_MODE }}"
 sslrootcert = "/etc/ssl/certs/ca-certificates.crt"
