@@ -46,9 +46,34 @@ You can simply clone the Git repository:
 $ git clone https://github.com/endlessm/azafea
 ```
 
-At this point you will want to build the container image you will work from:
+At this point you will want to build the container image you will work from.
+If you are planning on [adding a new event](azafea/event_processors/endless/metrics/new-event.rst)
+you should create a `config.toml` file in the source root of the project before
+running this command.
 
 ```
+$ cat config.toml
+[main]
+verbose = false
+number_of_workers = 8
+exit_on_empty_queues = false
+
+[redis]
+host = "localhost"
+port = 6379
+password = "** hidden **"
+
+[postgresql]
+host = "localhost"
+port = 5432
+user = "azafea"
+password = "** hidden **"
+database = "azafea"
+
+[queues.metrics]
+handler = "azafea.event_processors.endless.metrics.v2"
+
+[postgresql.connect_args]
 $ sudo docker build --rm --build-arg build_type=dev --tag azafea-dev .
 ```
 
