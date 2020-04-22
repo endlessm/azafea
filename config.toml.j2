@@ -1,0 +1,24 @@
+[main]
+verbose = {{ VERBOSE }}
+number_of_workers = {{ NUM_OF_WORKERS }}
+
+[redis]
+host = "{{ REDIS_HOST }}"
+password = "{{ REDIS_PASSWORD }}"
+
+[postgresql]
+host = "{{ POSTGRES_HOST }}"
+password = "{{ POSTGRES_PASSWORD }}"
+
+[queues.activation-1]
+handler = "azafea.event_processors.endless.activation.v1"
+
+[queues.ping-1]
+handler = "azafea.event_processors.endless.ping.v1"
+
+[queues.metrics-2]
+handler = "azafea.event_processors.endless.metrics.v2"
+
+[postgresql.connect_args]
+sslmode = "verify-full"
+sslrootcert = "/etc/ssl/certs/ca-certificates.crt"

@@ -1,52 +1,36 @@
-FROM ubuntu:disco
+FROM python:3.8-alpine3.11
 
-ENV LANG C.UTF-8
+RUN apk add --update --no-cache ca-certificates && \
+    wget https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem -O /usr/local/share/ca-certificates/rds.crt && \
+    update-ca-certificates
 
+RUN pip install --no-cache-dir pipenv template && \
+    apk add --update --no-cache \
+        build-base \
+        cairo-dev \
+        git \
+        glib-dev \
+        gobject-introspection-dev \
+        libffi-dev \
+        postgresql-dev
+
+RUN adduser --system --shell /sbin/nologin --home /opt/azafea azafea && \
+    install -d -m 755 -o azafea /opt/azafea/src
+USER azafea
 WORKDIR /opt/azafea/src
 
 COPY Pipfile.lock .
+RUN pipenv install --ignore-pipfile --dev
 
-ARG build_type
-RUN apt --quiet --assume-yes update && \
-    apt --quiet --assume-yes --no-install-recommends install \
-        gcc \
-        gir1.2-glib-2.0 \
-        gobject-introspection \
-        libcairo2-dev \
-        libffi-dev \
-        libgirepository-1.0-1 \
-        libgirepository1.0-dev \
-        libglib2.0-dev \
-        libpq5 \
-        libpq-dev \
-        python3 \
-        python3-dev \
-        python3-pip \
-        python3-setuptools \
-        python3-wheel \
-        && \
-    pip3 install pipenv && \
-    pipenv install --ignore-pipfile && \
-    if [ "${build_type}" = "dev" ]; then \
-        # Install the development/test dependencies
-        pipenv install --ignore-pipfile --dev \
-    ; else \
-        # Make some space for the production image
-        apt --quiet --assume-yes autoremove --purge \
-            gcc \
-            libcairo2-dev \
-            libffi-dev \
-            libgirepository1.0-dev \
-            libglib2.0-dev \
-            libpq-dev \
-            python3-dev \
-            && \
-        rm -rf /var/cache/{apt,debconf} \
-               /var/lib/apt/lists/* \
-               /var/log/{apt,dpkg.log} \
-               ~/.cache \
-    ; fi
+COPY --chown=azafea:root . .
 
-COPY . .
+ENV VERBOSE=false \
+    NUM_OF_WORKERS=1 \
+    REDIS_HOST=localhost \
+    REDIS_PASSWORD="CHANGE ME!!" \
+    POSTGRES_HOST=localhost \
+    POSTGRES_PASSWORD="CHANGE ME!!" \
+    POSTGRES_SSL_MODE=allow
 
-ENTRYPOINT ["pipenv", "run", "azafea"]
+ENTRYPOINT ["./entrypoint", "pipenv", "run", "azafea"]
+HEALTHCHECK CMD pgrep python || exit 1
