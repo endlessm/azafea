@@ -400,6 +400,56 @@ def test_new_unknown_event():
         }
     ),
     (
+        'ParentalControlsChanged',
+        GLib.Variant('a{sv}', {
+            'AllowSystemInstallation': GLib.Variant('b', True),
+            'AllowUserInstallation': GLib.Variant('b', True),
+            'IsAdministrator': GLib.Variant('b', True),
+            'OarsFilter': GLib.Variant('(sa{ss})', ('oars-1.1', {})),
+            'AppFilter': GLib.Variant('(bas)', (False, [])),
+            'IsInitialSetup': GLib.Variant('b', False),
+        }),
+        {
+            'app_filter_is_whitelist': False,
+            'app_filter': [],
+            'oars_filter': {},
+            'allow_user_installation': True,
+            'allow_system_installation': True,
+        }
+    ),
+    (
+        'ParentalControlsChanged',
+        GLib.Variant('a{sv}', {
+            'AllowSystemInstallation': GLib.Variant('b', False),
+            'AllowUserInstallation': GLib.Variant('b', False),
+            'IsAdministrator': GLib.Variant('b', False),
+            'OarsFilter': GLib.Variant('(sa{ss})', ('oars-1.1', {})),
+            'AppFilter': GLib.Variant('(bas)', (False, [
+                'app/com.hack_computer.ProjectLibrary/x86_64/eos3',
+                'app/com.hack_computer.Clubhouse/x86_64/eos3',
+                'app/com.hack_computer.Sidetrack/x86_64/eos3',
+                'app/org.libreoffice.LibreOffice/x86_64/stable',
+                'x-scheme-handler/http',
+            ])),
+            'IsInitialSetup': GLib.Variant('b', False),
+        }),
+        {
+            'app_filter_is_whitelist': False,
+            'app_filter': [
+                'app/com.hack_computer.ProjectLibrary/x86_64/eos3',
+                'app/com.hack_computer.Clubhouse/x86_64/eos3',
+                'app/com.hack_computer.Sidetrack/x86_64/eos3',
+                'app/org.libreoffice.LibreOffice/x86_64/stable',
+                'x-scheme-handler/http',
+            ],
+            'oars_filter': {},
+            'allow_user_installation': False,
+            'allow_system_installation': False,
+            'is_administrator': False,
+            'is_initial_setup': False,
+        }
+    ),
+    (
         'ParentalControlsEnabled',
         GLib.Variant('b', False),
         {'enabled': False}
