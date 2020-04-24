@@ -620,7 +620,13 @@ class ParentalControlsChanged(SingularEvent):
                 result['app_filter'] = get_strings(value.get_child_value(1))
 
             elif name == 'OarsFilter':
-                result['oars_filter'] = get_asv_dict(value)
+                if value.get_child_value(0).get_string() not in ['oars-1.0', 'oars-1.1']:
+                    raise ValueError('Metric event '
+                                     f'{ParentalControlsChanged.__event_uuid__} '
+                                     'needs an "OarsFilter" key in oars-1.0 '
+                                     'or oars-1.1 format, but actually got '
+                                     f'{payload}')
+                result['oars_filter'] = get_asv_dict(value.get_child_value(1))
 
             elif name == 'AllowUserInstallation':
                 result['allow_user_installation'] = value.get_boolean()

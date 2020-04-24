@@ -357,10 +357,10 @@ def test_new_unknown_event():
                 'org.libreoffice.LibreOffice',
                 'org.gnome.Totem',
             ])),
-            'OarsFilter': GLib.Variant('a{ss}', {
+            'OarsFilter': GLib.Variant('(sa{ss})', ('oars-1.0', {
                 'violence-bloodshed': 'mild',
                 'violence-realistic': 'intense',
-            }),
+            })),
             'AllowUserInstallation': GLib.Variant('b', True),
             'AllowSystemInstallation': GLib.Variant('b', True),
             'IsAdministrator': GLib.Variant('b', True),
@@ -386,7 +386,7 @@ def test_new_unknown_event():
         'ParentalControlsChanged',
         GLib.Variant('a{sv}', {
             'AppFilter': GLib.Variant('(bas)', (True, [])),
-            'OarsFilter': GLib.Variant('a{ss}', {}),
+            'OarsFilter': GLib.Variant('(sa{ss})', ('oars-1.1', {})),
             'AllowUserInstallation': GLib.Variant('b', False),
             'AllowSystemInstallation': GLib.Variant('b', False),
             'UnexpectedKey': GLib.Variant('s', 'should be ignored'),
@@ -512,6 +512,28 @@ def test_invalid_parental_controls_changed_event():
                                   '"a{sv}" payload with certain keys, but some were missing: got '
                                   "{'AllowUserInstallation': <false>, 'AllowSystemInstallation': "
                                   "<false>, 'UnexpectedKey': <'should be ignored'>}")
+
+
+def test_invalid_parental_controls_changed_oars_event():
+    from azafea.event_processors.endless.metrics.events import ParentalControlsChanged
+
+    # Make an invalid payload with an unknown OARS filter type
+    payload = GLib.Variant('mv', GLib.Variant('a{sv}', {
+        'AppFilter': GLib.Variant('(bas)', (True, [])),
+        'OarsFilter': GLib.Variant('(sa{ss})', ('not right', {})),
+        'AllowUserInstallation': GLib.Variant('b', False),
+        'AllowSystemInstallation': GLib.Variant('b', False),
+    }))
+
+    with pytest.raises(ValueError) as excinfo:
+        ParentalControlsChanged(payload)
+
+    assert str(excinfo.value) == ('Metric event 449ec188-cb7b-45d3-a0ed-291d943b9aa6 needs an '
+                                  '"OarsFilter" key in oars-1.0 or oars-1.1 format, but '
+                                  'actually got '
+                                  "{'AppFilter': <(true, @as [])>, 'OarsFilter': <('not right', "
+                                  "@a{ss} {})>, 'AllowUserInstallation': <false>, "
+                                  "'AllowSystemInstallation': <false>}")
 
 
 @pytest.mark.parametrize('event_model_name, payload, expected_attrs', [
