@@ -51,39 +51,18 @@ Azafea requires PostgreSQL 11 or later. Installing it with Docker is simply::
 
     $ sudo docker pull postgres:latest
 
-Before running PostgreSQL, you need to choose a directory in which to store the
-database files.
+We'll create a Docker volume to store the data:::
 
-In this example we will use ``/var/lib/postgresql/azafea/data``, so let's create
-it::
+    # sudo docker volume create postgresql
 
-    $ sudo mkdir -p /var/lib/postgresql/azafea/data
+We can now run PostgreSQL, telling it to use that volume::
 
-We can now run PostgreSQL, telling it to use that directory::
-
-    $ sudo docker run --env=PGDATA=/var/lib/postgresql/azafea/data/pgdata \
+    $ sudo docker run --env=POSTGRES_USER=azafea \
                       --env=POSTGRES_PASSWORD=S3cretPgAdminP@ssw0rd \
+                      --env=POSTGRES_DB=azafea \
                       --publish=5432:5432 \
-                      --volume=/var/lib/postgresql/azafea/data:/var/lib/postgresql/azafea/data:rw \
+                      --volume=postgresql:/var/lib/postgresql:rw \
                       postgres:latest
-
-.. note::
-    PostgreSQL creates a ``postgres`` super user which can administrate the
-    whole database. Its password is given in the ``POSTGRES_PASSWORD``
-    environment variable above.
-
-With PostgreSQL running, we can now create the user and database for Azafea
-(enter a password when prompted) ::
-
-    $ sudo docker run --env=PGDATA=/var/lib/postgresql/azafea/data/pgdata \
-                      --env=POSTGRES_PASSWORD=S3cretPgAdminP@ssw0rd \
-                      --volume=/var/lib/postgresql/azafea/data:/var/lib/postgresql/azafea/data:rw \
-                      --interactive --tty --rm \
-                      postgres:latest bash
-    [docker]# su - postgres
-    [docker]$ createuser -h [container-ip] --pwprompt azafea
-    [docker]$ createdb -h [container-ip] --owner=azafea azafea
-
 
 Azafea
 ------
