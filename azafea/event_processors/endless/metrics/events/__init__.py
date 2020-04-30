@@ -12,10 +12,20 @@ from typing import Any, Dict
 from gi.repository import GLib
 
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB
+from sqlalchemy.engine.default import DefaultExecutionContext
 from sqlalchemy.event import listens_for
 from sqlalchemy.inspection import inspect
 from sqlalchemy.schema import Column, Index
-from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, LargeBinary, Numeric, Unicode
+from sqlalchemy.types import (
+    ARRAY,
+    BigInteger,
+    Boolean,
+    Float,
+    Integer,
+    LargeBinary,
+    Numeric,
+    Unicode,
+)
 
 from azafea.model import Base, DbSession
 from azafea.vendors import normalize_vendor
@@ -784,12 +794,19 @@ class WindowsLicenseTables(SingularEvent):
 
 # -- Sequence events ----------------------------------------------------------
 
+def default_time_duration(context: DefaultExecutionContext) -> float:
+    # FIXME: sqlalchemy-stubs doesn’t include get_current_parameters
+    parameters = context.get_current_parameters()  # type: ignore
+    return (parameters['stopped_at'] - parameters['started_at']).total_seconds()
+
+
 class ShellAppIsOpen(SequenceEvent):
     __tablename__ = 'shell_app_is_open'
     __event_uuid__ = 'b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0'
     __payload_type__ = 's'
 
     app_id = Column(Unicode, nullable=False)
+    duration = Column(Float, default=default_time_duration, nullable=False)
 
     __table_args__ = (
         Index('ix_shell_app_is_open_app_id_started_at', 'started_at', 'app_id',
