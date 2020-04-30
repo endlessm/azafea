@@ -14,7 +14,7 @@ from gi.repository import GLib
 from sqlalchemy.dialects.postgresql import DOUBLE_PRECISION, JSONB
 from sqlalchemy.event import listens_for
 from sqlalchemy.inspection import inspect
-from sqlalchemy.schema import Column
+from sqlalchemy.schema import Column, Index
 from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, LargeBinary, Numeric, Unicode
 
 from azafea.model import Base, DbSession
@@ -790,6 +790,11 @@ class ShellAppIsOpen(SequenceEvent):
     __payload_type__ = 's'
 
     app_id = Column(Unicode, nullable=False)
+
+    __table_args__ = (
+        Index('ix_shell_app_is_open_app_id_started_at', 'started_at', 'app_id',
+              postgresql_ops={'app_id': 'varchar_pattern_ops'}),
+    )
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
