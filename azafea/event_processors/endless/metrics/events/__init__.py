@@ -551,16 +551,14 @@ class OSVersion(SingularEvent):
     __tablename__ = 'os_version'
     __event_uuid__ = '1fa16a31-9225-467e-8502-e31806e9b4eb'
 
-    # The 3rd field is now obsolete and ignored, so we only parse and store the first 2
+    # The 1st and 3rd fields are now obsolete and ignored, so we only parse and store the 2nd one
     __payload_type__ = '(sss)'
 
-    name = Column(Unicode, nullable=False)
     version = Column(Unicode, nullable=False)
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
-            'name': payload.get_child_value(0).get_string().strip('"'),
             'version': payload.get_child_value(1).get_string().strip('"'),
         }
 

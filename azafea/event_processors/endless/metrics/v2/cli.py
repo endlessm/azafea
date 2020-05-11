@@ -514,12 +514,11 @@ def do_set_open_durations(config: Config, args: argparse.Namespace) -> None:
 
 def do_remove_os_info_quotes(config: Config, args: argparse.Namespace) -> None:
     db = Db(config.postgresql)
-    log.info('Remove leading and trailing quotes from OS version and name fields')
+    log.info('Remove leading and trailing quotes from OS version fields')
 
     with db as dbsession:
         query = dbsession.query(OSVersion).filter(or_(
             OSVersion.version.startswith('"'), OSVersion.version.endswith('"'),
-            OSVersion.name.startswith('"'), OSVersion.name.endswith('"'),
         ))
         num_records = query.count()
 
@@ -528,7 +527,6 @@ def do_remove_os_info_quotes(config: Config, args: argparse.Namespace) -> None:
             return None
 
         query.update({
-            OSVersion.name: func.btrim(OSVersion.name, '"'),
             OSVersion.version: func.btrim(OSVersion.version, '"'),
         }, synchronize_session=False)
         dbsession.commit()

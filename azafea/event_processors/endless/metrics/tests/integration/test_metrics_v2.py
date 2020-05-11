@@ -700,7 +700,6 @@ class TestMetrics(IntegrationTest):
             assert os.request_id == request.id
             assert os.user_id == user_id
             assert os.occured_at == now - timedelta(seconds=2) + timedelta(seconds=16)
-            assert os.name == 'Endless'
             assert os.version == '3.5.3'
 
             crash = dbsession.query(ProgramDumpedCore).one()
