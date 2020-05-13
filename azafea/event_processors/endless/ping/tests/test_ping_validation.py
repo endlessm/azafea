@@ -13,8 +13,8 @@ import pytest
 def test_valid_country():
     from azafea.event_processors.endless.ping.v1.handler import Ping
 
-    ping = Ping(country='HKG')
-    assert ping.country == 'HKG'
+    ping = Ping(country='HK')
+    assert ping.country == 'HK'
 
 
 @pytest.mark.parametrize('country', ['', None])

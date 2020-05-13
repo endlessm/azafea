@@ -47,7 +47,7 @@ class TestActivation(IntegrationTest):
 
         with self.db as dbsession:
             dbsession.add(Activation(image='eos-eos3.7-amd64-amd64.190419-225606.base',
-                                     product='product', release='release', country='HKG',
+                                     product='product', release='release', country='HK',
                                      created_at=created_at, vendor=bad_vendor))
 
         with self.db as dbsession:
@@ -76,7 +76,7 @@ class TestActivation(IntegrationTest):
 
         with self.db as dbsession:
             dbsession.add(Activation(image='eos-eos3.7-amd64-amd64.190419-225606.base',
-                                     product='product', release='release', country='HKG',
+                                     product='product', release='release', country='HK',
                                      created_at=created_at, vendor=vendor))
 
         with self.db as dbsession:
@@ -103,7 +103,7 @@ class TestActivation(IntegrationTest):
 
         with self.db as dbsession:
             dbsession.add(Activation(image=image_id, product='product', release='release',
-                                     country='HKG', created_at=created_at, vendor='vendor'))
+                                     country='HK', created_at=created_at, vendor='vendor'))
 
         with self.db as dbsession:
             activation = dbsession.query(Activation).one()
@@ -146,7 +146,7 @@ class TestActivation(IntegrationTest):
                                      image_timestamp=datetime(2019, 4, 19, 22, 56, 6,
                                                               tzinfo=timezone.utc),
                                      image_personality='base', product='product', release='release',
-                                     country='HKG', created_at=created_at, vendor='vendor'))
+                                     country='HK', created_at=created_at, vendor='vendor'))
 
         with self.db as dbsession:
             activation = dbsession.query(Activation).one()
@@ -189,7 +189,7 @@ class TestActivation(IntegrationTest):
 
         with self.db as dbsession:
             dbsession.add(Activation(image=image_id, product='product', release='release',
-                                     country='HKG', created_at=created_at, vendor='vendor'))
+                                     country='HK', created_at=created_at, vendor='vendor'))
 
         with self.db as dbsession:
             activation = dbsession.query(Activation).one()
