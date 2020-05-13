@@ -92,7 +92,7 @@ class Ping(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, index=True)
 
     __table_args__ = (
-        CheckConstraint('char_length(country) = 3', name='country_code_3_chars'),
+        CheckConstraint('char_length(country) in (2, 3)', name='country_code_2_3_chars'),
         CheckConstraint('count >= 0', name='count_positive'),
     )
 

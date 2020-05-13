@@ -55,7 +55,7 @@ class Activation(Base):
     image_personality = Column(Unicode, index=True)
 
     __table_args__ = (
-        CheckConstraint('char_length(country) = 3', name='country_code_3_chars'),
+        CheckConstraint('char_length(country) in (2, 3)', name='country_code_2_3_chars'),
     )
 
     @validates('country')
