@@ -11,12 +11,14 @@ import logging
 
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.orm.query import Query
+from sqlalchemy.sql.expression import func
 
 from azafea.config import Config
 from azafea.model import Db
 from azafea.utils import progress
 from azafea.vendors import normalize_vendor
 
+from ...country import transform_alpha_3_into_2
 from ...image import parse_endless_os_image
 from .handler import Ping, PingConfiguration
 
@@ -38,6 +40,14 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     parse_images.add_argument('--chunk-size', type=int, default=5000,
                               help='The size of the chunks to operate on')
     parse_images.set_defaults(subcommand=do_parse_images)
+
+    transform_countries_alpha_3_to_2 = subs.add_parser(
+        'transform-countries-alpha-3-to-2',
+        help='Transform 3-letter country codes to 2-letter country codes',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    transform_countries_alpha_3_to_2.add_argument('--chunk-size', type=int, default=5000,
+                                                  help='The size of the chunks to operate on')
+    transform_countries_alpha_3_to_2.set_defaults(subcommand=do_transform_countries_alpha_3_to_2)
 
 
 def _normalize_chunk(chunk: Query) -> None:
@@ -120,5 +130,28 @@ def do_parse_images(config: Config, args: argparse.Namespace) -> None:
             progress(chunk_number * args.chunk_size, num_records)
 
     progress(num_records, num_records, end='\n')
+
+    log.info('All done!')
+
+
+def do_transform_countries_alpha_3_to_2(config: Config, args: argparse.Namespace) -> None:
+    db = Db(config.postgresql)
+    log.info('Tranform alpha-3 country codes into alpha-2 for pings')
+
+    with db as dbsession:
+        query = dbsession.query(Ping).filter(func.length(Ping.country) == 3)
+        num_records = query.count()
+
+        if num_records == 0:
+            log.info('-> No ping with alpha-3 country code found')
+            return None
+
+        requests = transform_alpha_3_into_2(Ping.__tablename__)
+        for i, request in enumerate(requests, start=1):
+            dbsession.execute(request)
+            dbsession.commit()
+            progress(i, len(requests))
+
+    progress(len(requests), len(requests), end='\n')
 
     log.info('All done!')
