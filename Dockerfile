@@ -1,4 +1,4 @@
-FROM python:3.8-alpine3.11
+FROM registry.hub.docker.com/library/python:3.8-alpine3.11
 
 RUN apk add --update --no-cache ca-certificates && \
     wget https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem -O /usr/local/share/ca-certificates/rds.crt && \
