@@ -560,8 +560,8 @@ class OSVersion(SingularEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
-            'name': payload.get_child_value(0).get_string(),
-            'version': payload.get_child_value(1).get_string(),
+            'name': payload.get_child_value(0).get_string().strip('"'),
+            'version': payload.get_child_value(1).get_string().strip('"'),
         }
 
 

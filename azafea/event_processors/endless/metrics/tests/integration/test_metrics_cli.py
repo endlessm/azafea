@@ -1004,3 +1004,57 @@ class TestMetrics(IntegrationTest):
 
         capture = capfd.readouterr()
         assert '-> No open app with unset duration' in capture.out
+
+    def test_remove_os_info_quotes(self):
+        from azafea.event_processors.endless.metrics.events import OSVersion
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(OSVersion)
+
+        payload = GLib.Variant('mv', GLib.Variant('(sss)', ['"Endless"', '"1.2.3"', 'useless']))
+        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        with self.db as dbsession:
+            version = OSVersion(
+                name='"Endless"', version='"1.2.3"', user_id=1, payload=payload,
+                occured_at=occured_at)
+            # Bypass quotes removed by _get_fields_from_payload
+            version.name = '"Endless"'
+            version.version = '"1.2.3"'
+            dbsession.add(version)
+
+        with self.db as dbsession:
+            version = dbsession.query(OSVersion).one()
+            assert version.name == '"Endless"'
+            assert version.version == '"1.2.3"'
+
+        self.run_subcommand('test_remove_os_info_quotes', 'remove-os-info-quotes')
+
+        with self.db as dbsession:
+            version = dbsession.query(OSVersion).one()
+            assert version.name == 'Endless'
+            assert version.version == '1.2.3'
+
+    def test_remove_os_info_no_quotes(self, capfd):
+        from azafea.event_processors.endless.metrics.events import OSVersion
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(OSVersion)
+
+        payload = GLib.Variant('mv', GLib.Variant('(sss)', ['Endless', '1.2.3', 'useless']))
+        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        with self.db as dbsession:
+            dbsession.add(OSVersion(
+                name='Endless', version='1.2.3', user_id=1, occured_at=occured_at,
+                payload=payload))
+
+        self.run_subcommand('test_remove_os_info_no_quotes', 'remove-os-info-quotes')
+
+        with self.db as dbsession:
+            version = dbsession.query(OSVersion).one()
+            assert version.name == 'Endless'
+            assert version.version == '1.2.3'
+
+        capture = capfd.readouterr()
+        assert 'No OS info with extra quotes in database' in capture.out

@@ -341,6 +341,11 @@ def test_new_unknown_event():
         {'name': 'Endless', 'version': '3.5.3'}
     ),
     (
+        'OSVersion',
+        GLib.Variant('(sss)', ('"Endless"', '"3.5.3"', 'obsolete and ignored')),
+        {'name': 'Endless', 'version': '3.5.3'}
+    ),
+    (
         'ParentalControlsBlockedFlatpakInstall',
         GLib.Variant('s', 'com.realm667.WolfenDoom_Blade_of_Agony'),
         {'app': 'com.realm667.WolfenDoom_Blade_of_Agony'}
