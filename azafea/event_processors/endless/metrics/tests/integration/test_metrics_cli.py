@@ -946,3 +946,61 @@ class TestMetrics(IntegrationTest):
 
         capture = capfd.readouterr()
         assert 'No machine record with unparsed image ids' in capture.out
+
+    def test_set_open_durations(self):
+        from azafea.event_processors.endless.metrics.events import ShellAppIsOpen
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(ShellAppIsOpen)
+
+        start = datetime(2019, 4, 19, 22, 56, 6, 100000, tzinfo=timezone.utc)
+        stop = datetime(2019, 4, 19, 22, 56, 7, 555555, tzinfo=timezone.utc)
+        duration = (stop - start).total_seconds()
+
+        # Insert an open shell app record with no duration
+        with self.db as dbsession:
+            payload = GLib.Variant('mv', GLib.Variant('s', 'org.gnome.Calendar'))
+            dbsession.add(ShellAppIsOpen(
+                started_at=start, stopped_at=stop, duration=0, user_id=1001,
+                payload=payload))
+
+        # Set duration on records
+        self.run_subcommand('test_set_open_durations', 'set-open-durations')
+
+        with self.db as dbsession:
+            app = dbsession.query(ShellAppIsOpen).one()
+            assert app.started_at == start
+            assert app.stopped_at == stop
+            assert app.app_id == 'org.gnome.Calendar'
+            assert app.duration == duration
+
+    def test_set_open_durations_already_set(self, capfd):
+        from azafea.event_processors.endless.metrics.events import ShellAppIsOpen
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(ShellAppIsOpen)
+
+        start = datetime(2019, 4, 19, 22, 56, 6, 100000, tzinfo=timezone.utc)
+        stop = datetime(2019, 4, 19, 22, 56, 7, 555555, tzinfo=timezone.utc)
+        duration = (stop - start).total_seconds()
+
+        # Insert an open shell app record with no duration
+        with self.db as dbsession:
+            payload = GLib.Variant('mv', GLib.Variant('s', 'org.gnome.Calendar'))
+            dbsession.add(ShellAppIsOpen(
+                started_at=start, stopped_at=stop, user_id=1001, payload=payload))
+
+        # Set duration on records
+        self.run_subcommand('test_set_open_durations_already_set', 'set-open-durations')
+
+        with self.db as dbsession:
+            app = dbsession.query(ShellAppIsOpen).one()
+            assert app.started_at == start
+            assert app.stopped_at == stop
+            assert app.app_id == 'org.gnome.Calendar'
+            assert app.duration == duration
+
+        capture = capfd.readouterr()
+        assert '-> No open app with unset duration' in capture.out

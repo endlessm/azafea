@@ -25,6 +25,7 @@ from ..events import (
     InvalidAggregateEvent,
     InvalidSequence,
     InvalidSingularEvent,
+    ShellAppIsOpen,
     UnknownAggregateEvent,
     UnknownSequence,
     UnknownSingularEvent,
@@ -117,6 +118,12 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     replay_unknown.add_argument('--chunk-size', type=int, default=5000,
                                 help='The size of the chunks to operate on')
     replay_unknown.set_defaults(subcommand=do_replay_unknown)
+
+    set_open_durations = subs.add_parser('set-open-durations', help='Set open shell apps durations',
+                                         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    set_open_durations.add_argument('--chunk-size', type=int, default=5000,
+                                    help='The size of the chunks to operate on')
+    set_open_durations.set_defaults(subcommand=do_set_open_durations)
 
 
 def do_dedupe_dualboots(config: Config, args: argparse.Namespace) -> None:
@@ -472,6 +479,29 @@ def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
 
         for chunk_number, chunk in enumerate(query, start=1):
             replay_unknown_sequences(chunk)
+            dbsession.commit()
+            progress(chunk_number * args.chunk_size, total)
+
+    progress(total, total, end='\n')
+
+
+def do_set_open_durations(config: Config, args: argparse.Namespace) -> None:
+    db = Db(config.postgresql)
+    log.info('Setting open shell apps durations')
+
+    with db as dbsession:
+        query = dbsession.chunked_query(ShellAppIsOpen, chunk_size=args.chunk_size)
+        query = query.filter(ShellAppIsOpen.duration == 0)
+        query = query.reverse_chunks()
+        total = query.count()
+
+        if total == 0:
+            log.info('-> No open app with unset duration')
+            return None
+
+        for chunk_number, chunk in enumerate(query, start=1):
+            for app in chunk:
+                app.duration = (app.stopped_at - app.started_at).total_seconds()
             dbsession.commit()
             progress(chunk_number * args.chunk_size, total)
 
