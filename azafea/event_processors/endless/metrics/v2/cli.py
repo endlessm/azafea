@@ -9,6 +9,7 @@
 import argparse
 import logging
 
+from sqlalchemy import or_
 from sqlalchemy.orm.query import Query
 from sqlalchemy.sql.functions import func
 
@@ -26,6 +27,7 @@ from ..events import (
     InvalidSequence,
     InvalidSingularEvent,
     ShellAppIsOpen,
+    OSVersion,
     UnknownAggregateEvent,
     UnknownSequence,
     UnknownSingularEvent,
@@ -124,6 +126,14 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     set_open_durations.add_argument('--chunk-size', type=int, default=5000,
                                     help='The size of the chunks to operate on')
     set_open_durations.set_defaults(subcommand=do_set_open_durations)
+
+    remove_os_info_quotes = subs.add_parser(
+        'remove-os-info-quotes',
+        help='Remove leading and trailing quotes from OS information',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    remove_os_info_quotes.add_argument('--chunk-size', type=int, default=5000,
+                                       help='The size of the chunks to operate on')
+    remove_os_info_quotes.set_defaults(subcommand=do_remove_os_info_quotes)
 
 
 def do_dedupe_dualboots(config: Config, args: argparse.Namespace) -> None:
@@ -506,3 +516,31 @@ def do_set_open_durations(config: Config, args: argparse.Namespace) -> None:
             progress(chunk_number * args.chunk_size, total)
 
     progress(total, total, end='\n')
+
+
+def do_remove_os_info_quotes(config: Config, args: argparse.Namespace) -> None:
+    db = Db(config.postgresql)
+    log.info('Remove leading and trailing quotes from OS version and name fields')
+
+    with db as dbsession:
+        query = dbsession.chunked_query(OSVersion, chunk_size=args.chunk_size)
+        query = query.filter(or_(
+            OSVersion.version.startswith('"'), OSVersion.version.endswith('"'),
+            OSVersion.name.startswith('"'), OSVersion.name.endswith('"'),
+        ))
+        num_records = query.count()
+
+        if num_records == 0:
+            log.info('-> No OS info with extra quotes in database')
+            return None
+
+        for chunk_number, chunk in enumerate(query, start=1):
+            for version in chunk:
+                version.name = version.name.strip('"')
+                version.version = version.version.strip('"')
+            dbsession.commit()
+            progress(chunk_number * args.chunk_size, num_records)
+
+    progress(num_records, num_records, end='\n')
+
+    log.info('All done!')
