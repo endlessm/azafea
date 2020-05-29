@@ -123,16 +123,12 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
 
     set_open_durations = subs.add_parser('set-open-durations', help='Set open shell apps durations',
                                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    set_open_durations.add_argument('--chunk-size', type=int, default=5000,
-                                    help='The size of the chunks to operate on')
     set_open_durations.set_defaults(subcommand=do_set_open_durations)
 
     remove_os_info_quotes = subs.add_parser(
         'remove-os-info-quotes',
         help='Remove leading and trailing quotes from OS information',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    remove_os_info_quotes.add_argument('--chunk-size', type=int, default=5000,
-                                       help='The size of the chunks to operate on')
     remove_os_info_quotes.set_defaults(subcommand=do_remove_os_info_quotes)
 
 
@@ -500,22 +496,20 @@ def do_set_open_durations(config: Config, args: argparse.Namespace) -> None:
     log.info('Setting open shell apps durations')
 
     with db as dbsession:
-        query = dbsession.chunked_query(ShellAppIsOpen, chunk_size=args.chunk_size)
-        query = query.filter(ShellAppIsOpen.duration == 0)
-        query = query.reverse_chunks()
+        query = dbsession.query(ShellAppIsOpen).filter(ShellAppIsOpen.duration == 0)
         total = query.count()
 
         if total == 0:
             log.info('-> No open app with unset duration')
             return None
 
-        for chunk_number, chunk in enumerate(query, start=1):
-            for app in chunk:
-                app.duration = (app.stopped_at - app.started_at).total_seconds()
-            dbsession.commit()
-            progress(chunk_number * args.chunk_size, total)
+        query.update({
+            ShellAppIsOpen.duration: func.extract(
+                'epoch', ShellAppIsOpen.stopped_at - ShellAppIsOpen.started_at),
+        }, synchronize_session=False)
+        dbsession.commit()
 
-    progress(total, total, end='\n')
+    log.info('All done!')
 
 
 def do_remove_os_info_quotes(config: Config, args: argparse.Namespace) -> None:
@@ -523,8 +517,7 @@ def do_remove_os_info_quotes(config: Config, args: argparse.Namespace) -> None:
     log.info('Remove leading and trailing quotes from OS version and name fields')
 
     with db as dbsession:
-        query = dbsession.chunked_query(OSVersion, chunk_size=args.chunk_size)
-        query = query.filter(or_(
+        query = dbsession.query(OSVersion).filter(or_(
             OSVersion.version.startswith('"'), OSVersion.version.endswith('"'),
             OSVersion.name.startswith('"'), OSVersion.name.endswith('"'),
         ))
@@ -534,13 +527,10 @@ def do_remove_os_info_quotes(config: Config, args: argparse.Namespace) -> None:
             log.info('-> No OS info with extra quotes in database')
             return None
 
-        for chunk_number, chunk in enumerate(query, start=1):
-            for version in chunk:
-                version.name = version.name.strip('"')
-                version.version = version.version.strip('"')
-            dbsession.commit()
-            progress(chunk_number * args.chunk_size, num_records)
-
-    progress(num_records, num_records, end='\n')
+        query.update({
+            OSVersion.name: func.btrim(OSVersion.name, '"'),
+            OSVersion.version: func.btrim(OSVersion.version, '"'),
+        }, synchronize_session=False)
+        dbsession.commit()
 
     log.info('All done!')
