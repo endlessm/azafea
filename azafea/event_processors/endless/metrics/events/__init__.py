@@ -37,6 +37,7 @@ from ..machine import (
 )
 from ..utils import get_asv_dict, get_bytes, get_child_values, get_strings
 from ._base import (  # noqa: F401
+    EmptyPayloadError,
     SequenceEvent,
     SingularEvent,
     # Reexport some symbols
@@ -458,7 +459,12 @@ class LocationLabel(SingularEvent):
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {'info': get_asv_dict(payload)}
+        # Empty values are removed as they are useless, even if they are sent
+        # by old versions of eos-metrics-instrumentation
+        info = {key: value for (key, value) in get_asv_dict(payload).items() if value}
+        if not info:
+            raise EmptyPayloadError('Location label event received with no data.')
+        return {'info': info}
 
 
 class MissingCodec(SingularEvent):
