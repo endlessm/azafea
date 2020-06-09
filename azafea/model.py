@@ -10,19 +10,21 @@
 import copy
 from operator import attrgetter
 from types import TracebackType
-from typing import Any, Iterator, Optional, Type
+from typing import Any, Dict, Iterator, Optional, Tuple, Type, cast
 
 from sqlalchemy.dialects.postgresql.base import PGDDLCompiler
 from sqlalchemy.engine import create_engine
 from sqlalchemy.engine.url import URL
+from sqlalchemy.event import listen
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm.query import Query
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.orm.session import Session as SaSession, sessionmaker
-from sqlalchemy.schema import Column, CreateColumn, MetaData
+from sqlalchemy.schema import Column, CreateColumn, DDL, MetaData, Table
 from sqlalchemy.types import Enum, TypeDecorator
 
 from .config import PostgreSQL as PgConfig
@@ -247,6 +249,36 @@ class PostgresqlConnectionError(Exception):
 
 metadata = MetaData(naming_convention=NAMING_CONVENTION)
 Base = declarative_base(cls=BaseModel, constructor=BaseModel.__init__, metadata=metadata)
+
+
+class ViewMeta(DeclarativeMeta):
+    def __new__(mcl, name: str, bases: Tuple[type, ...], attrs: Dict[str, Any]) -> 'ViewMeta':
+        # FIXME: Do we have to cast? https://github.com/python/typeshed/issues/3386
+        cls = cast(ViewMeta, super().__new__(mcl, name, bases, attrs))
+
+        tablename, query = attrs.get('__tablename__'), attrs.get('__query__')
+        if not tablename or not query:
+            # Mainly useful for the View abstract class
+            return cls
+
+        cls.__table__ = table = Table(tablename, MetaData())
+        for column in query.column_descriptions:
+            # FIXME: Always set all columns as primary keys, may need to be changed for other tables
+            table.append_column(Column(column['name'], column['type'], primary_key=True))
+        for from_table in query.selectable.locate_all_froms():
+            table.add_is_dependent_on(from_table)
+        listen(Base.metadata, 'after_create', DDL(
+            f'CREATE MATERIALIZED VIEW IF NOT EXISTS "{tablename}" AS {query}'))
+        listen(Base.metadata, 'before_drop', DDL(f'DROP MATERIALIZED VIEW IF EXISTS "{tablename}"'))
+
+        return cls
+
+
+class View(Base, metaclass=ViewMeta):
+    """Declarative class for PostgreSQL materialized views."""
+    __abstract__ = True
+
+    __query__: Query
 
 
 # https://docs.sqlalchemy.org/en/13/dialects/postgresql.html#postgresql-10-identity-columns

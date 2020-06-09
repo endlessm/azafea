@@ -12,9 +12,9 @@ from hashlib import sha512
 from typing import Generator
 
 from sqlalchemy.schema import Column
-from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary, Unicode
+from sqlalchemy.types import BigInteger, Date, DateTime, Integer, LargeBinary, Unicode
 
-from azafea.model import Base
+from azafea.model import Base, DbSession, View
 
 from gi.repository import GLib
 
@@ -32,6 +32,13 @@ class Request(Base):
     relative_timestamp = Column(BigInteger, nullable=False)
     machine_id = Column(Unicode(32), nullable=False)
     send_number = Column(Integer, nullable=False)
+
+
+class MachineIdsByDay(View):
+    __tablename__ = 'machine_ids_by_day'
+    __query__ = DbSession().query(
+        Request.received_at.cast(Date).label('day'),
+        Request.machine_id.label('machine_id')).distinct()
 
 
 class RequestBuilder:
