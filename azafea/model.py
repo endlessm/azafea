@@ -249,6 +249,7 @@ class PostgresqlConnectionError(Exception):
 
 metadata = MetaData(naming_convention=NAMING_CONVENTION)
 Base = declarative_base(cls=BaseModel, constructor=BaseModel.__init__, metadata=metadata)
+views = {}
 
 
 class ViewMeta(DeclarativeMeta):
@@ -261,7 +262,7 @@ class ViewMeta(DeclarativeMeta):
             # Mainly useful for the View abstract class
             return cls
 
-        cls.__table__ = table = Table(tablename, MetaData())
+        table = cls.__table__ = views[tablename] = Table(tablename, MetaData())
         for column in query.column_descriptions:
             # FIXME: Always set all columns as primary keys, may need to be changed for other tables
             table.append_column(Column(column['name'], column['type'], primary_key=True))

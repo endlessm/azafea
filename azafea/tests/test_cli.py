@@ -474,6 +474,23 @@ def test_replay_errors_fail_to_push(capfd, monkeypatch, make_config_file):
     assert 'Failed to push b\'event3\' back in "some-queue":' in capture.err
 
 
+def test_refresh_views(capfd, make_config_file):
+    config_file = make_config_file({
+        'postgresql': {'database': 'azafea-tests'},
+        'queues': {'metrics-2': {'handler': 'azafea.event_processors.endless.metrics.v2'}},
+    })
+
+    azafea.cli.run_command('-c', str(config_file), 'initdb')
+    azafea.cli.run_command('-c', str(config_file), 'refresh-views')
+    azafea.cli.run_command('-c', str(config_file), 'dropdb')
+
+
+def test_refresh_views_no_view(capfd, make_config_file):
+    config_file = make_config_file({'postgresql': {'database': 'azafea-tests'}})
+
+    azafea.cli.run_command('-c', str(config_file), 'refresh-views')
+
+
 def test_run(capfd, monkeypatch, make_config_file):
     class MockController:
         def __init__(self, config):
