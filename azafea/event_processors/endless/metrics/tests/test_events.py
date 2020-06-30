@@ -270,6 +270,11 @@ def test_new_unknown_event():
         {'info': {'city': 'City', 'state': 'State', 'facility': 'Facility'}}
     ),
     (
+        'LocationLabel',
+        GLib.Variant('a{ss}', {'city': '', 'state': '', 'facility': 'Facility'}),
+        {'info': {'facility': 'Facility'}}
+    ),
+    (
         'MissingCodec',
         GLib.Variant('(ssssa{sv})', (
             '1.16.0',
@@ -589,6 +594,19 @@ def test_invalid_parental_controls_changed_oars_event():
                                   "{'AppFilter': <(true, @as [])>, 'OarsFilter': <('not right', "
                                   "@a{ss} {})>, 'AllowUserInstallation': <false>, "
                                   "'AllowSystemInstallation': <false>}")
+
+
+def test_empty_location_label():
+    from azafea.event_processors.endless.metrics.events import LocationLabel
+    from azafea.event_processors.endless.metrics.events._base import EmptyPayloadError
+
+    # Make an invalid payload with missing keys
+    payload = GLib.Variant('mv', GLib.Variant('a{ss}', {'empty': ''}))
+
+    with pytest.raises(EmptyPayloadError) as excinfo:
+        LocationLabel(payload)
+
+    assert str(excinfo.value) == 'Location label event received with no data.'
 
 
 @pytest.mark.parametrize('event_model_name, payload, expected_attrs', [
