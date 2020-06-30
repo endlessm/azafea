@@ -454,6 +454,7 @@ class LocationLabel(SingularEvent):
     __tablename__ = 'location_event'
     __event_uuid__ = 'eb0302d8-62e7-274b-365f-cd4e59103983'
     __payload_type__ = 'a{ss}'
+    __ignore_empty_payload__ = True
 
     info = Column(JSONB, nullable=False)
 
@@ -754,6 +755,7 @@ class Uptime(SingularEvent):
     __tablename__ = 'uptime'
     __event_uuid__ = '9af2cc74-d6dd-423f-ac44-600a6eee2d96'
     __payload_type__ = '(xx)'
+    __ignore_empty_payload__ = True
 
     accumulated_uptime = Column(BigInteger, nullable=False)
     number_of_boots = Column(BigInteger, nullable=False)
@@ -828,6 +830,7 @@ class UserIsLoggedIn(SequenceEvent):
     __tablename__ = 'user_id_logged_in'
     __event_uuid__ = 'add052be-7b2a-4959-81a5-a7f45062ee98'
     __payload_type__ = 'u'
+    __ignore_empty_payload__ = True
 
     logged_in_user_id = Column(BigInteger, nullable=False)
 
