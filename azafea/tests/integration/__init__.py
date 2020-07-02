@@ -42,7 +42,8 @@ class IntegrationTest:
                 with self.db as dbsession:
                     dbsession.query(model).all()
 
-            assert f'relation "{model.__tablename__}" does not exist' in str(exc_info.value)
+            assert model.__tablename__ in str(exc_info.value)
+            assert 'UndefinedTable' in str(exc_info.value)
 
     def clear_queues(self):
         queues = self.redis.keys()
