@@ -165,7 +165,7 @@ class UnknownEvent(MetricEvent):
         #        https://gitlab.gnome.org/GNOME/glib/issues/1865
         as_bytes = maybe_payload.get_data_as_bytes()
 
-        if as_bytes is None:
+        if as_bytes is None:  # pragma: no cover
             payload_data = b''
 
         else:
