@@ -28,7 +28,7 @@ class Activation(Base):
     __tablename__ = 'activation_v1'
 
     id = Column(Integer, primary_key=True)
-    image = Column(Unicode, nullable=False)
+    image = Column(Unicode, nullable=False, index=True)
     vendor = Column(Unicode, nullable=False)
     product = Column(Unicode, nullable=False)
     release = Column(Unicode, nullable=False)
