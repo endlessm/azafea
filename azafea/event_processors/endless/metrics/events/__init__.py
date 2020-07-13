@@ -813,7 +813,7 @@ class ShellAppIsOpen(SequenceEvent):
     duration = Column(Float, default=default_time_duration, nullable=False)
 
     __table_args__ = (
-        Index('ix_shell_app_is_open_app_id_started_at', 'started_at', 'app_id',
+        Index('ix_shell_app_is_open_app_id_started_at', 'app_id', 'started_at',
               postgresql_ops={'app_id': 'varchar_pattern_ops'}),
     )
 
