@@ -142,3 +142,7 @@ def get_event_datetime(request_absolute_timestamp: int, request_relative_timesta
     event_absolute_timestamp_sec = event_absolute_timestamp / 1000000000
 
     return datetime.fromtimestamp(event_absolute_timestamp_sec, tz=timezone.utc)
+
+
+def clamp_to_int64(u64: int) -> int:
+    return min(u64, GLib.MAXINT64)

@@ -35,7 +35,7 @@ from ..machine import (
     upsert_machine_image,
     upsert_machine_live,
 )
-from ..utils import get_asv_dict, get_bytes, get_child_values, get_strings
+from ..utils import clamp_to_int64, get_asv_dict, get_bytes, get_child_values, get_strings
 from ._base import (  # noqa: F401
     EmptyPayloadError,
     SequenceEvent,
@@ -789,6 +789,51 @@ class WindowsLicenseTables(SingularEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {'tables': payload.get_uint32()}
+
+
+class CacheHasInvalidElements(SingularEvent):
+    __tablename__ = 'cache_has_invalid_elements'
+    __event_uuid__ = 'cbfbcbdb-6af2-f1db-9e11-6cc25846e296'
+    __payload_type__ = '(tt)'
+
+    # These come in as uint64, but the values won’t reach the limit of a BIGINT (int64, 2**63):
+    # - 2**63 elements ≈ 10 billions billions elements
+    # - 2**63 bytes ≈ 8,000,000 TB
+    number_of_valid_elements = Column(BigInteger, nullable=False)
+    number_of_bytes_read = Column(BigInteger, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'number_of_valid_elements': clamp_to_int64(payload.get_child_value(0).get_uint64()),
+            'number_of_bytes_read': clamp_to_int64(payload.get_child_value(1).get_uint64()),
+        }
+
+
+class StartupFinished(SingularEvent):
+    __tablename__ = 'startup_finished'
+    __event_uuid__ = 'bf7e8aed-2932-455c-a28e-d407cfd5aaba'
+    __payload_type__ = '(tttttt)'
+
+    # These come in as uint64, but the values won’t reach the limit of a BIGINT (int64, 2**63):
+    # 2**63 microseconds ≈ 300,000 years
+    firmware = Column(BigInteger, nullable=False)
+    loader = Column(BigInteger, nullable=False)
+    kernel = Column(BigInteger, nullable=False)
+    initrd = Column(BigInteger, nullable=False)
+    userspace = Column(BigInteger, nullable=False)
+    total = Column(BigInteger, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'firmware': clamp_to_int64(payload.get_child_value(0).get_uint64()),
+            'loader': clamp_to_int64(payload.get_child_value(1).get_uint64()),
+            'kernel': clamp_to_int64(payload.get_child_value(2).get_uint64()),
+            'initrd': clamp_to_int64(payload.get_child_value(3).get_uint64()),
+            'userspace': clamp_to_int64(payload.get_child_value(4).get_uint64()),
+            'total': clamp_to_int64(payload.get_child_value(5).get_uint64()),
+        }
 
 
 # -- Aggregate events ---------------------------------------------------------
