@@ -7,7 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 from gi.repository import GLib
 
@@ -1052,3 +1052,40 @@ class TestMetrics(IntegrationTest):
 
         capture = capfd.readouterr()
         assert 'No OS info with extra quotes in database' in capture.out
+
+    def test_refresh_views(self):
+        from azafea.event_processors.endless.metrics.request import Request, MachineIdsByDay
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request)
+
+        occured_at_1 = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at_2 = occured_at_1 + timedelta(days=1)
+
+        with self.db as dbsession:
+            dbsession.add(Request(serialized=b'whatever', sha512='sha512-1',
+                                  received_at=occured_at_1, absolute_timestamp=1,
+                                  relative_timestamp=2, machine_id='machine1', send_number=0))
+            dbsession.add(Request(serialized=b'whatever', sha512='sha512-2',
+                                  received_at=occured_at_1, absolute_timestamp=3,
+                                  relative_timestamp=4, machine_id='machine2', send_number=0))
+            dbsession.add(Request(serialized=b'whatever', sha512='sha512-3',
+                                  received_at=occured_at_1, absolute_timestamp=5,
+                                  relative_timestamp=6, machine_id='machine2', send_number=0))
+            dbsession.add(Request(serialized=b'whatever', sha512='sha512-4',
+                                  received_at=occured_at_2, absolute_timestamp=7,
+                                  relative_timestamp=8, machine_id='machine2', send_number=0))
+
+        with self.db as dbsession:
+            assert dbsession.query(MachineIdsByDay).count() == 0
+
+        self.run_subcommand('refresh-views')
+
+        with self.db as dbsession:
+            query = dbsession.query(MachineIdsByDay)
+            query = query.order_by(MachineIdsByDay.machine_id, MachineIdsByDay.day)
+            req1, req2, req3 = query.all()
+            assert (req1.machine_id, req1.day) == ('machine1', occured_at_1.date())
+            assert (req2.machine_id, req2.day) == ('machine2', occured_at_1.date())
+            assert (req3.machine_id, req3.day) == ('machine2', occured_at_2.date())

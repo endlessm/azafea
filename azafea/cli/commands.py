@@ -14,11 +14,13 @@ from alembic.command import revision as make_db_revision, upgrade as upgrade_db
 
 from redis import Redis
 from redis.exceptions import ConnectionError as RedisConnectionError
+from sqlalchemy.exc import ProgrammingError
 
 from ..config import Config
 from ..controller import Controller
 from ..migrations.utils import get_alembic_config, get_migration_heads, get_queue_migrations_path
-from ..model import Db, PostgresqlConnectionError
+from ..model import Db, PostgresqlConnectionError, views
+from ..utils import progress
 from .errors import ConnectionErrorExit, NoEventQueueExit, UnknownErrorExit
 
 
@@ -51,6 +53,10 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
                                   'incoming one')
     replay.add_argument('queue', help='The name of the queue to replay, e.g "ping-1"')
     replay.set_defaults(subcommand=do_replay)
+
+    refresh = subs.add_parser('refresh-views',
+                              help='Refresh the content of the materialized views')
+    refresh.set_defaults(subcommand=do_refresh_views)
 
     run = subs.add_parser('run', help='Run azafea')
     run.set_defaults(subcommand=do_run)
@@ -181,6 +187,25 @@ def do_replay(config: Config, args: argparse.Namespace) -> None:
             raise UnknownErrorExit()
 
     log.info(f'Successfully moved failed events back to "{args.queue}"')
+
+
+def do_refresh_views(config: Config, args: argparse.Namespace) -> None:
+    db = Db(config.postgresql)
+    total_nb_views = nb_views = len(views)
+    log.info(f'Refreshing {nb_views} materialized views')
+
+    with db as dbsession:
+        for i, view in enumerate(views):
+            progress(i, nb_views)
+            try:
+                dbsession.connection().execute(f'REFRESH MATERIALIZED VIEW "{view}"')
+            except ProgrammingError as e:
+                assert 'UndefinedTable' in str(e)
+                log.debug(f'View {view} has not been created')
+                total_nb_views -= 1
+
+    progress(total_nb_views, total_nb_views, end='\n')
+    log.info(f'Successfully refreshed {total_nb_views} materialized views')
 
 
 def do_run(config: Config, args: argparse.Namespace) -> None:

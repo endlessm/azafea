@@ -103,9 +103,10 @@ class IntegrationTest:
         self.db.drop_all()
         self.ensure_no_tables()
 
-        # Deregister the models and tables from SQLAlchemy
+        # Deregister the models, tables and events from SQLAlchemy
         Base._decl_class_registry.clear()
         Base.metadata.clear()
+        Base.metadata.dispatch._clear()
 
         # Deregister the handler modules so the next tests reimport them completely; not doing so
         # confuses SQLAlchemy, leading to the tables only being created for the first test. :(
