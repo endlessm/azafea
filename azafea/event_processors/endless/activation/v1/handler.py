@@ -55,7 +55,7 @@ class Activation(Base):
     image_personality = Column(Unicode, index=True)
 
     __table_args__ = (
-        CheckConstraint('char_length(country) = 3', name='country_code_3_chars'),
+        CheckConstraint('char_length(country) in (2, 3)', name='country_code_2_3_chars'),
     )
 
     @validates('country')
@@ -64,7 +64,7 @@ class Activation(Base):
         if not country:
             return None
 
-        if len(country) != 3:
+        if len(country) not in (2, 3):
             raise ValueError(f'country has wrong length: {country}')
 
         return country

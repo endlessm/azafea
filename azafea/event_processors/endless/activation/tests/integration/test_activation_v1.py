@@ -30,7 +30,7 @@ class TestActivation(IntegrationTest):
             'vendor': 'the vendor',
             'product': 'product',
             'release': 'release',
-            'country': 'FRA',
+            'country': 'FR',
             'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
@@ -44,7 +44,7 @@ class TestActivation(IntegrationTest):
             assert activation.vendor == 'the vendor'
             assert activation.product == 'product'
             assert activation.release == 'release'
-            assert activation.country == 'FRA'
+            assert activation.country == 'FR'
             assert activation.created_at == created_at
             assert activation.image_product == 'eos'
             assert activation.image_branch == 'eos3.7'
@@ -68,7 +68,7 @@ class TestActivation(IntegrationTest):
             'vendor': 'the vendor',
             'product': 'product',
             'release': 'release',
-            'country': 'FRA',
+            'country': 'FR',
             'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 
@@ -82,7 +82,7 @@ class TestActivation(IntegrationTest):
             assert activation.vendor == 'the vendor'
             assert activation.product == 'product'
             assert activation.release == 'release'
-            assert activation.country == 'FRA'
+            assert activation.country == 'FR'
             assert activation.created_at == created_at
             assert activation.image_product is None
             assert activation.image_branch is None
@@ -105,7 +105,7 @@ class TestActivation(IntegrationTest):
             'vendor': 'the vendor',
             'product': 'product',
             'release': 'release',
-            'country': 'FRA',
+            'country': 'FR',
             'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
         }))
 

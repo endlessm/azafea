@@ -47,7 +47,7 @@ class TestActivation(IntegrationTest):
 
         with self.db as dbsession:
             dbsession.add(Activation(image='eos-eos3.7-amd64-amd64.190419-225606.base',
-                                     product='product', release='release', country='HKG',
+                                     product='product', release='release', country='HK',
                                      created_at=created_at, vendor=bad_vendor))
 
         with self.db as dbsession:
@@ -76,7 +76,7 @@ class TestActivation(IntegrationTest):
 
         with self.db as dbsession:
             dbsession.add(Activation(image='eos-eos3.7-amd64-amd64.190419-225606.base',
-                                     product='product', release='release', country='HKG',
+                                     product='product', release='release', country='HK',
                                      created_at=created_at, vendor=vendor))
 
         with self.db as dbsession:
@@ -103,7 +103,7 @@ class TestActivation(IntegrationTest):
 
         with self.db as dbsession:
             dbsession.add(Activation(image=image_id, product='product', release='release',
-                                     country='HKG', created_at=created_at, vendor='vendor'))
+                                     country='HK', created_at=created_at, vendor='vendor'))
 
         with self.db as dbsession:
             activation = dbsession.query(Activation).one()
@@ -146,7 +146,7 @@ class TestActivation(IntegrationTest):
                                      image_timestamp=datetime(2019, 4, 19, 22, 56, 6,
                                                               tzinfo=timezone.utc),
                                      image_personality='base', product='product', release='release',
-                                     country='HKG', created_at=created_at, vendor='vendor'))
+                                     country='HK', created_at=created_at, vendor='vendor'))
 
         with self.db as dbsession:
             activation = dbsession.query(Activation).one()
@@ -189,7 +189,7 @@ class TestActivation(IntegrationTest):
 
         with self.db as dbsession:
             dbsession.add(Activation(image=image_id, product='product', release='release',
-                                     country='HKG', created_at=created_at, vendor='vendor'))
+                                     country='HK', created_at=created_at, vendor='vendor'))
 
         with self.db as dbsession:
             activation = dbsession.query(Activation).one()
@@ -216,3 +216,61 @@ class TestActivation(IntegrationTest):
 
         capture = capfd.readouterr()
         assert 'No activation record with unparsed image ids' in capture.out
+
+    def test_transform_countries_alpha_3_to_2(self, capfd):
+        from azafea.event_processors.endless.activation.v1.handler import Activation
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Activation)
+
+        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+
+        with self.db as dbsession:
+            activation = Activation(
+                image='unknown', product='product', release='release', country='FR',
+                created_at=created_at, vendor='vendor')
+            dbsession.add(activation)
+
+        with self.db as dbsession:
+            # Bypass ORM country validation
+            dbsession.execute("UPDATE activation_v1 SET country='FRA'")
+
+        with self.db as dbsession:
+            activation = dbsession.query(Activation).one()
+            assert activation.country == 'FRA'
+
+        # Parse the image for old activation records
+        self.run_subcommand(
+            'test_transform_countries_alpha_3_to_2',
+            'transform-countries-alpha-3-to-2')
+
+        with self.db as dbsession:
+            activation = dbsession.query(Activation).one()
+            assert activation.country == 'FR'
+
+    def test_transform_countries_alpha_3_to_2_only_2(self, capfd):
+        from azafea.event_processors.endless.activation.v1.handler import Activation
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Activation)
+
+        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+
+        with self.db as dbsession:
+            activation = Activation(
+                image='unknown', product='product', release='release', country='FR',
+                created_at=created_at, vendor='vendor')
+            dbsession.add(activation)
+
+        self.run_subcommand(
+            'test_transform_countries_alpha_3_to_2_only_2',
+            'transform-countries-alpha-3-to-2')
+
+        with self.db as dbsession:
+            activation = dbsession.query(Activation).one()
+            assert activation.country == 'FR'
+
+        capture = capfd.readouterr()
+        assert 'No activation with alpha-3 country code found' in capture.out

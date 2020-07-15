@@ -13,8 +13,8 @@ import pytest
 def test_valid_country():
     from azafea.event_processors.endless.activation.v1.handler import Activation
 
-    activation = Activation(country='HKG')
-    assert activation.country == 'HKG'
+    activation = Activation(country='HK')
+    assert activation.country == 'HK'
 
 
 @pytest.mark.parametrize('country', ['', None])
@@ -25,7 +25,7 @@ def test_empty_country(country):
     assert activation.country is None
 
 
-@pytest.mark.parametrize('country', ['HK', 'Hong Kong'])
+@pytest.mark.parametrize('country', ['HOKG', 'Hong Kong'])
 def test_invalid_country(country):
     from azafea.event_processors.endless.activation.v1.handler import Activation
 
