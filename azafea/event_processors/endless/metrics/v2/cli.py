@@ -444,6 +444,7 @@ def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
         query = query.reverse_chunks()
         total = query.count()
 
+        progress(0, total)
         for chunk_number, chunk in enumerate(query, start=1):
             replay_unknown_singular_events(chunk)
             dbsession.commit()
@@ -463,6 +464,7 @@ def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
         query = query.reverse_chunks()
         total = query.count()
 
+        progress(0, total)
         # FIXME: Stop ignoring from coverage report once we actually have aggregate events
         for chunk_number, chunk in enumerate(query, start=1):  # pragma: no cover
             replay_unknown_aggregate_events(chunk)
@@ -483,6 +485,7 @@ def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
         query = query.reverse_chunks()
         total = query.count()
 
+        progress(0, total)
         for chunk_number, chunk in enumerate(query, start=1):
             replay_unknown_sequences(chunk)
             dbsession.commit()
