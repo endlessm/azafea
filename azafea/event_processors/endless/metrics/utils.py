@@ -7,12 +7,15 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+import logging
 from datetime import datetime, timezone
 from threading import RLock
 from typing import Any, Dict, Generator, List
 
 from gi.repository import GLib
 
+
+log = logging.getLogger(__name__)
 
 # This was copy-pasted from the cpython master source code, and can thus be used under the same
 # license as Python itself.
@@ -145,4 +148,8 @@ def get_event_datetime(request_absolute_timestamp: int, request_relative_timesta
 
 
 def clamp_to_int64(u64: int) -> int:
-    return min(u64, GLib.MAXINT64)
+    if u64 > GLib.MAXINT64:
+        log.error(f'Clamped integer larger than MAXINT64: {u64}')
+        return GLib.MAXINT64
+    else:
+        return u64
