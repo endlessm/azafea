@@ -1053,6 +1053,81 @@ class TestMetrics(IntegrationTest):
         capture = capfd.readouterr()
         assert 'No OS info with extra quotes in database' in capture.out
 
+    def test_remove_empty_location_info_none(self, capfd):
+        from azafea.event_processors.endless.metrics.events import LocationLabel
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(LocationLabel)
+
+        info = {
+            'id': '',
+            'city': 'CAJEME',
+            'state': 'SONORA',
+            'street': 'KILOMETRO 11',
+            'country': 'MEXICO',
+            'facility': '22KPJ9043L',
+        }
+        payload = GLib.Variant('mv', GLib.Variant('a{ss}', info))
+        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        with self.db as dbsession:
+            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+                              absolute_timestamp=1, relative_timestamp=2, machine_id='whatever',
+                              send_number=0)
+            dbsession.add(request)
+            dbsession.add(LocationLabel(
+                user_id=1, occured_at=occured_at, request_id=request.id, payload=payload))
+
+        self.run_subcommand('test_remove_empty_location_info_none', 'remove-empty-location-info')
+
+        info.pop('id')
+        with self.db as dbsession:
+            location_label = dbsession.query(LocationLabel).one()
+            assert location_label.info == info
+
+        capture = capfd.readouterr()
+        assert 'No locations events with empty info in database' in capture.out
+
+    def test_remove_empty_location_info(self):
+        from azafea.event_processors.endless.metrics.events import LocationLabel
+        from azafea.event_processors.endless.metrics.request import Request
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(LocationLabel)
+
+        info = {
+            'id': '',
+            'city': 'CAJEME',
+            'state': 'SONORA',
+            'street': 'KILOMETRO 11',
+            'country': 'MEXICO',
+            'facility': '22KPJ9043L',
+        }
+        empty_info = {
+            'id': '', 'city': '', 'state': '', 'street': '', 'country': '', 'facility': ''}
+        payload = GLib.Variant('mv', GLib.Variant('a{ss}', info))
+        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        with self.db as dbsession:
+            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+                              absolute_timestamp=1, relative_timestamp=2, machine_id='whatever',
+                              send_number=0)
+            dbsession.add(request)
+            dbsession.add(LocationLabel(
+                user_id=1, occured_at=occured_at, request_id=request.id, payload=payload))
+            empty_location = LocationLabel(
+                user_id=1, occured_at=occured_at, request_id=request.id, payload=payload)
+            empty_location.info = empty_info
+            dbsession.add(empty_location)
+
+        self.run_subcommand('test_remove_empty_location_info', 'remove-empty-location-info')
+
+        info.pop('id')
+        with self.db as dbsession:
+            location_label = dbsession.query(LocationLabel).one()
+            assert location_label.info == info
+
     def test_refresh_views(self):
         from azafea.event_processors.endless.metrics.request import Request, MachineIdsByDay
 
