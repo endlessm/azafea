@@ -498,6 +498,14 @@ def test_new_unknown_event():
             'on_hold': False,
         }
     ),
+    (
+        'UpdaterFailure',
+        GLib.Variant('(ss)', ('eos-updater', 'Oh no!')),
+        {
+            'component': 'eos-updater',
+            'error_message': 'Oh no!',
+        }
+    ),
     ('Uptime', GLib.Variant('(xx)', (2, 1)), {'accumulated_uptime': 2, 'number_of_boots': 1}),
     ('WindowsAppOpened', GLib.Variant('as', ['photoshop.exe']), {'argv': ['photoshop.exe']}),
     ('WindowsLicenseTables', GLib.Variant('u', 0), {'tables': 0}),
