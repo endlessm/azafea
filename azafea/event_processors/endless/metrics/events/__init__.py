@@ -748,6 +748,22 @@ class UpdaterBranchSelected(SingularEvent):
         }
 
 
+class UpdaterFailure(SingularEvent):
+    __tablename__ = 'updater_failure'
+    __event_uuid__ = '927d0f61-4890-4912-a513-b2cb0205908f'
+    __payload_type__ = '(ss)'
+
+    component = Column(Unicode, nullable=False)
+    error_message = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'component': payload.get_child_value(0).get_string(),
+            'error_message': payload.get_child_value(1).get_string(),
+        }
+
+
 class Uptime(SingularEvent):
     __tablename__ = 'uptime'
     __event_uuid__ = '9af2cc74-d6dd-423f-ac44-600a6eee2d96'
