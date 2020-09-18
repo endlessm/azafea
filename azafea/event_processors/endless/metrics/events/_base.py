@@ -61,11 +61,7 @@ IGNORED_EVENTS: Set[str] = {
     'e6541049-9462-4db5-96df-1977f3051578',
     'fb59199e-5384-472e-af1e-00b7a419d5c2',
 }
-IGNORED_EMPTY_PAYLOAD_ERRORS: Set[str] = {
-    '9af2cc74-d6dd-423f-ac44-600a6eee2d96',
-    'add052be-7b2a-4959-81a5-a7f45062ee98',
-    'eb0302d8-62e7-274b-365f-cd4e59103983',
-}
+IGNORED_EMPTY_PAYLOAD_ERRORS: Set[str] = set()
 
 
 class EmptyPayloadError(Exception):
@@ -86,15 +82,17 @@ class MetricMeta(DeclarativeMeta):
             # Register the event model
             if SingularEvent in bases:
                 SINGULAR_EVENT_MODELS[event_uuid] = cast(Type[SingularEvent], cls)
-
             elif AggregateEvent in bases:
                 AGGREGATE_EVENT_MODELS[event_uuid] = cast(Type[AggregateEvent], cls)
-
             elif SequenceEvent in bases:
                 SEQUENCE_EVENT_MODELS[event_uuid] = cast(Type[SequenceEvent], cls)
-
             else:  # pragma: no cover
                 raise NotImplementedError(f"Can't handle class {name} with bases {bases}")
+
+            # Ignore empty payloads
+            # FIXME: mypy can’t know that MetricMeta is only used as MetricEvent metaclass
+            if cls.__ignore_empty_payload__:  # type: ignore
+                IGNORED_EMPTY_PAYLOAD_ERRORS.add(event_uuid)
 
         # FIXME: Do we have to cast? https://github.com/python/typeshed/issues/3386
         return cast(MetricMeta, cls)
@@ -105,6 +103,7 @@ class MetricEvent(Base, metaclass=MetricMeta):
 
     __event_uuid__: str
     __payload_type__: Optional[str]
+    __ignore_empty_payload__ = False
 
     id = Column(Integer, primary_key=True)
 
