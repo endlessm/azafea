@@ -729,6 +729,12 @@ class ShellAppRemovedFromDesktop(SingularEvent):
         return {'app_id': payload.get_string()}
 
 
+class UnderscanEnabled(SingularEvent):
+    __tablename__ = 'underscan_enabled'
+    __event_uuid__ = '304662c0-fdce-46b8-aa39-d1beb097efcd'
+    __payload_type__ = None
+
+
 class UpdaterBranchSelected(SingularEvent):
     __tablename__ = 'updater_branch_selected'
     __event_uuid__ = '99f48aac-b5a0-426d-95f4-18af7d081c4e'

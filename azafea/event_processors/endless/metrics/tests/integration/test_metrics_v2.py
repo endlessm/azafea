@@ -168,8 +168,8 @@ class TestMetrics(IntegrationTest):
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
             Location, LocationLabel, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
             OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
-            ShellAppRemovedFromDesktop, UpdaterBranchSelected, Uptime, WindowsAppOpened,
-            WindowsLicenseTables,
+            ShellAppRemovedFromDesktop, UnderscanEnabled, UpdaterBranchSelected, Uptime,
+            WindowsAppOpened, WindowsLicenseTables,
         )
         from azafea.event_processors.endless.metrics.events._base import (
             InvalidSingularEvent, UnknownSingularEvent,
@@ -188,8 +188,8 @@ class TestMetrics(IntegrationTest):
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
             Location, LocationLabel, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
             OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
-            ShellAppRemovedFromDesktop, UpdaterBranchSelected, Uptime, WindowsAppOpened,
-            WindowsLicenseTables,
+            ShellAppRemovedFromDesktop, UnderscanEnabled, UpdaterBranchSelected, Uptime,
+            WindowsAppOpened, WindowsLicenseTables,
         )
 
         # Build a request as it would have been sent to us
@@ -431,6 +431,12 @@ class TestMetrics(IntegrationTest):
                         UUID('683b40a7-cac0-4f9a-994c-4b274693a0a0').bytes,
                         24000000000,                   # event relative timestamp (24 secs)
                         GLib.Variant('s', 'org.gnome.Evolution')
+                    ),
+                    (
+                        user_id,
+                        UUID('304662c0-fdce-46b8-aa39-d1beb097efcd').bytes,
+                        36000000000,                   # event relative timestamp (36 secs)
+                        None
                     ),
                     (
                         user_id,
@@ -725,6 +731,11 @@ class TestMetrics(IntegrationTest):
             assert app_removed.user_id == user_id
             assert app_removed.occured_at == now - timedelta(seconds=2) + timedelta(seconds=24)
             assert app_removed.app_id == 'org.gnome.Evolution'
+
+            underscan = dbsession.query(UnderscanEnabled).one()
+            assert underscan.request_id == request.id
+            assert underscan.user_id == user_id
+            assert underscan.occured_at == now - timedelta(seconds=2) + timedelta(seconds=36)
 
             branch = dbsession.query(UpdaterBranchSelected).one()
             assert branch.request_id == request.id

@@ -483,6 +483,7 @@ def test_new_unknown_event():
         GLib.Variant('s', 'org.gnome.Evolution'),
         {'app_id': 'org.gnome.Evolution'}
     ),
+    ('UnderscanEnabled', None, {}),
     (
         'UpdaterBranchSelected',
         GLib.Variant('(sssb)', (
