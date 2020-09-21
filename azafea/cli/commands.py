@@ -10,6 +10,7 @@
 import argparse
 import logging
 
+import requests
 from alembic.command import revision as make_db_revision, upgrade as upgrade_db
 
 from redis import Redis
@@ -57,6 +58,13 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     refresh = subs.add_parser('refresh-views',
                               help='Refresh the content of the materialized views')
     refresh.set_defaults(subcommand=do_refresh_views)
+
+    deploy_documentation = subs.add_parser('deploy-documentation',
+                                           help='Deploy documentation on ReadTheDocs')
+    deploy_documentation.add_argument('-v', '--version', default='latest',
+                                      help='Documentation version to deploy')
+    deploy_documentation.add_argument('-t', '--token', help='ReadTheDocs token')
+    deploy_documentation.set_defaults(subcommand=do_deploy_documentation)
 
     run = subs.add_parser('run', help='Run azafea')
     run.set_defaults(subcommand=do_run)
@@ -206,6 +214,17 @@ def do_refresh_views(config: Config, args: argparse.Namespace) -> None:
 
     progress(total_nb_views, total_nb_views, end='\n')
     log.info(f'Successfully refreshed {total_nb_views} materialized views')
+
+
+def do_deploy_documentation(config: Config, args: argparse.Namespace) -> None:
+    log.info('Deploying documentation on ReadTheDocs')
+    url = f'https://readthedocs.org/api/v3/projects/azafea/versions/{args.version}/builds/'
+    response = requests.post(url, headers={'Authorization': f'token {args.token}'})
+    if response.ok:  # pragma: no cover
+        log.info('Documentation deployment successfully triggered on ReadTheDocs')
+    else:
+        log.error('Could not deploy documentation on ReadTheDocs: %s',
+                  response.json().get('detail', '(No reason)'))
 
 
 def do_run(config: Config, args: argparse.Namespace) -> None:

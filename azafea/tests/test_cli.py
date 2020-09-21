@@ -491,6 +491,12 @@ def test_refresh_views_no_view(capfd, make_config_file):
     azafea.cli.run_command('-c', str(config_file), 'refresh-views')
 
 
+def test_deploy_documentation(capfd):
+    azafea.cli.run_command('deploy-documentation', '-t', '<token>', '-v', 'latest')
+    capture = capfd.readouterr()
+    assert 'Invalid token' in capture.err
+
+
 def test_run(capfd, monkeypatch, make_config_file):
     class MockController:
         def __init__(self, config):
