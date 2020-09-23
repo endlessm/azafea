@@ -910,13 +910,18 @@ def receive_after_attach(dbsession: DbSession, instance: Base) -> None:
 def receive_before_commit(dbsession: DbSession) -> None:
     for instance in dbsession.new:
         if isinstance(instance, ImageVersion):
+            # Resolve instance.request even if dbsession is not flushed yet
+            dbsession.enable_relationship_loading(instance)
             upsert_machine_image(dbsession, instance.request.machine_id, image_id=instance.image_id)
 
         elif isinstance(instance, DualBootBooted):
+            dbsession.enable_relationship_loading(instance)
             upsert_machine_dualboot(dbsession, instance.request.machine_id)
 
         elif isinstance(instance, EnteredDemoMode):
+            dbsession.enable_relationship_loading(instance)
             upsert_machine_demo(dbsession, instance.request.machine_id)
 
         elif isinstance(instance, LiveUsbBooted):
+            dbsession.enable_relationship_loading(instance)
             upsert_machine_live(dbsession, instance.request.machine_id)
