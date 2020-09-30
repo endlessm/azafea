@@ -69,3 +69,8 @@ html_static_path = ['_static']
 # alphabetical (value 'alphabetical'), by member type (value 'groupwise') or by
 # source order (value 'bysource'). The default is alphabetical.
 autodoc_member_order = 'bysource'
+
+# This value contains a list of modules to be mocked up. This is useful when
+# some external dependencies are not met at build time and break the building
+# process.
+autodoc_mock_imports = ['gi']
