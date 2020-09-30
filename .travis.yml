@@ -25,3 +25,6 @@ matrix:
   - name: "Lint and Type Checking"
     script:
     - docker run --rm --network=host --entrypoint="" azafea-tests pipenv run lint
+  - name: Update ReadTheDocs
+    script:
+    - docker run --rm azafea-tests deploy-documentation --token "$RTD_TOKEN"
