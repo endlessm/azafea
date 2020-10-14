@@ -23,6 +23,7 @@ from ..events import (
     DualBootBooted,
     ImageVersion,
     LiveUsbBooted,
+    LocationLabel,
     InvalidAggregateEvent,
     InvalidSequence,
     InvalidSingularEvent,
@@ -130,6 +131,14 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
         help='Remove leading and trailing quotes from OS information',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     remove_os_info_quotes.set_defaults(subcommand=do_remove_os_info_quotes)
+
+    remove_empty_location_info = subs.add_parser(
+        'remove-empty-location-info',
+        help='Remove location events with empty info',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    remove_empty_location_info.add_argument('--chunk-size', type=int, default=5000,
+                                            help='The size of the chunks to operate on')
+    remove_empty_location_info.set_defaults(subcommand=do_remove_empty_location_info)
 
 
 def do_dedupe_dualboots(config: Config, args: argparse.Namespace) -> None:
@@ -529,6 +538,32 @@ def do_remove_os_info_quotes(config: Config, args: argparse.Namespace) -> None:
         query.update({
             OSVersion.version: func.btrim(OSVersion.version, '"'),
         }, synchronize_session=False)
+        dbsession.commit()
+
+    log.info('All done!')
+
+
+def do_remove_empty_location_info(config: Config, args: argparse.Namespace) -> None:
+    db = Db(config.postgresql)
+    log.info('Remove location events with empty info')
+
+    with db as dbsession:
+        query = dbsession.query(LocationLabel).filter(
+            LocationLabel.info == {
+                'id': '',
+                'city': '',
+                'state': '',
+                'street': '',
+                'country': '',
+                'facility': '',
+            })
+        num_records = query.count()
+
+        if num_records == 0:
+            log.info('-> No locations events with empty info in database')
+            return None
+
+        query.delete()
         dbsession.commit()
 
     log.info('All done!')
