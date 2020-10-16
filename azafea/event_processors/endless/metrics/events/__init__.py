@@ -792,6 +792,23 @@ class WindowsLicenseTables(SingularEvent):
 
 
 class CacheHasInvalidElements(SingularEvent):
+    """Some invalid cache elements were found.
+
+    We've observed that in some situations the metrics recorder daemon's cached
+    data contains only a few valid items and then corrupt data, and that some
+    other times the whole thing becomes corrupt and completely unusable,
+    bringing down the whole metrics recorder daemon and effectively killing
+    metrics reporting forever for that machine.
+
+    As it's still unclear why that happens, we now detect those situations and
+    correct them when they happen, so that the metrics system can still be used
+    afterwards.
+
+    :UUID name: ``CACHE_HAS_INVALID_ELEMENTS_EVENT_ID`` in eos-event-recorder-daemon
+
+    .. versionadded:: 3.0.9
+
+    """
     __tablename__ = 'cache_has_invalid_elements'
     __event_uuid__ = 'cbfbcbdb-6af2-f1db-9e11-6cc25846e296'
     __payload_type__ = '(tt)'
@@ -799,7 +816,9 @@ class CacheHasInvalidElements(SingularEvent):
     # These come in as uint64, but the values won’t reach the limit of a BIGINT (int64, 2**63):
     # - 2**63 elements ≈ 10 billions billions elements
     # - 2**63 bytes ≈ 8,000,000 TB
+    #: number of valid elements found in the cache
     number_of_valid_elements = Column(BigInteger, nullable=False)
+    #: total number of bytes read from the cache
     number_of_bytes_read = Column(BigInteger, nullable=False)
 
     @staticmethod
@@ -811,17 +830,37 @@ class CacheHasInvalidElements(SingularEvent):
 
 
 class StartupFinished(SingularEvent):
+    """Computer startup finishes.
+
+    We send this event when startup finishes with a breakdown of how long was
+    spent in each of several different phases of startup.
+
+    The value comes directly from `systemd’s StartupFinished signal
+    <https://www.freedesktop.org/wiki/Software/systemd/dbus/\
+    #Manager-StartupFinished>`_.
+
+    :UUID name: ``STARTUP_FINISHED`` in eos-metrics-instrumentation
+
+    .. versionadded:: 2.1.2
+
+    """
     __tablename__ = 'startup_finished'
     __event_uuid__ = 'bf7e8aed-2932-455c-a28e-d407cfd5aaba'
     __payload_type__ = '(tttttt)'
 
     # These come in as uint64, but the values won’t reach the limit of a BIGINT (int64, 2**63):
     # 2**63 microseconds ≈ 300,000 years
+    #: time spent in the firmware (if known) in µsec
     firmware = Column(BigInteger, nullable=False)
+    #: time spent in the boot loader (if known) in µsec
     loader = Column(BigInteger, nullable=False)
+    #: time spent in the kernel initialization phase in µsec
     kernel = Column(BigInteger, nullable=False)
+    #: time spent in the initrd (if known) in µsec
     initrd = Column(BigInteger, nullable=False)
+    #: time spent in userspace in µsec
     userspace = Column(BigInteger, nullable=False)
+    #: total time spent to boot in µsec
     total = Column(BigInteger, nullable=False)
 
     @staticmethod
