@@ -510,6 +510,40 @@ def test_new_unknown_event():
     ('Uptime', GLib.Variant('(xx)', (2, 1)), {'accumulated_uptime': 2, 'number_of_boots': 1}),
     ('WindowsAppOpened', GLib.Variant('as', ['photoshop.exe']), {'argv': ['photoshop.exe']}),
     ('WindowsLicenseTables', GLib.Variant('u', 0), {'tables': 0}),
+    (
+        'CacheHasInvalidElements',
+        GLib.Variant('(tt)', (10, 1500)),
+        {'number_of_valid_elements': 10, 'number_of_bytes_read': 1500},
+    ),
+    (
+        'CacheHasInvalidElements',
+        GLib.Variant('(tt)', (10, 10**19)),
+        {'number_of_valid_elements': 10, 'number_of_bytes_read': GLib.MAXINT64},
+    ),
+    (
+        'StartupFinished',
+        GLib.Variant('(tttttt)', (10, 15, 20, 25, 50, 120)),
+        {
+            'firmware': 10,
+            'loader': 15,
+            'kernel': 20,
+            'initrd': 25,
+            'userspace': 50,
+            'total': 120,
+        },
+    ),
+    (
+        'StartupFinished',
+        GLib.Variant('(tttttt)', (0, 0, 0, 10, 10**19, 10 + 10**19)),
+        {
+            'firmware': 0,
+            'loader': 0,
+            'kernel': 0,
+            'initrd': 10,
+            'userspace': GLib.MAXINT64,
+            'total': GLib.MAXINT64,
+        },
+    ),
 ])
 def test_singular_event(event_model_name, payload, expected_attrs):
     from azafea.event_processors.endless.metrics import events
