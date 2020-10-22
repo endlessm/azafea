@@ -76,6 +76,26 @@ class CacheMetadataIsCorrupt(SingularEvent):
     __payload_type__ = None
 
 
+class ControlCenterAutomaticUpdates(SingularEvent):
+    __tablename__ = 'control_center_automatic_updates'
+    __event_uuid__ = '510f9741-823e-41a9-af2d-048895f990c0'
+    __payload_type__ = '(bbbv)'
+
+    allow_downloads_when_metered = Column(Boolean, nullable=False)
+    automatic_updates_enabled = Column(Boolean, nullable=False)
+    tariff_enabled = Column(Boolean, nullable=False)
+    tariff_variant = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'allow_downloads_when_metered': payload.get_child_value(0).get_boolean(),
+            'automatic_updates_enabled': payload.get_child_value(1).get_boolean(),
+            'tariff_enabled': payload.get_child_value(2).get_boolean(),
+            'tariff_variant': payload.get_child_value(3).unpack(),
+        }
+
+
 class ControlCenterPanelOpened(SingularEvent):
     __tablename__ = 'control_center_panel_opened'
     __event_uuid__ = '3c5d59d2-6c3f-474b-95f4-ac6fcc192655'
