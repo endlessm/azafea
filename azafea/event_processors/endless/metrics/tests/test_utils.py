@@ -83,13 +83,6 @@ def test_get_child_values():
     ]
 
 
-def test_get_strings():
-    from azafea.event_processors.endless.metrics.utils import get_strings
-
-    variant = GLib.Variant('as', ['foo', 'bar'])
-    assert get_strings(variant) == ['foo', 'bar']
-
-
 @pytest.mark.parametrize('variant', [
     GLib.Variant('v', GLib.Variant('i', 41)),
     GLib.Variant('v', GLib.Variant('v', GLib.Variant('i', 41))),

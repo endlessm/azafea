@@ -35,7 +35,7 @@ from ..machine import (
     upsert_machine_image,
     upsert_machine_live,
 )
-from ..utils import clamp_to_int64, get_asv_dict, get_bytes, get_child_values, get_strings
+from ..utils import clamp_to_int64, get_asv_dict, get_bytes, get_child_values
 from ._base import (  # noqa: F401
     EmptyPayloadError,
     SequenceEvent,
@@ -337,7 +337,7 @@ class HackClubhouseProgress(SingularEvent):
                 result['quest'] = value.get_string()
 
             elif name == 'pathways':
-                result['pathways'] = get_strings(value)
+                result['pathways'] = value.unpack()
 
             elif name == 'progress':
                 result['progress'] = value.get_double()
@@ -376,7 +376,7 @@ class LaunchedEquivalentExistingFlatpak(SingularEvent):
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
             'replacement_app_id': payload.get_child_value(0).get_string(),
-            'argv': get_strings(payload.get_child_value(1)),
+            'argv': payload.get_child_value(1).unpack(),
         }
 
 
@@ -392,7 +392,7 @@ class LaunchedEquivalentInstallerForFlatpak(SingularEvent):
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
             'replacement_app_id': payload.get_child_value(0).get_string(),
-            'argv': get_strings(payload.get_child_value(1)),
+            'argv': payload.get_child_value(1).unpack(),
         }
 
 
@@ -408,7 +408,7 @@ class LaunchedExistingFlatpak(SingularEvent):
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
             'replacement_app_id': payload.get_child_value(0).get_string(),
-            'argv': get_strings(payload.get_child_value(1)),
+            'argv': payload.get_child_value(1).unpack(),
         }
 
 
@@ -424,7 +424,7 @@ class LaunchedInstallerForFlatpak(SingularEvent):
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
             'replacement_app_id': payload.get_child_value(0).get_string(),
-            'argv': get_strings(payload.get_child_value(1)),
+            'argv': payload.get_child_value(1).unpack(),
         }
 
 
@@ -438,7 +438,7 @@ class LinuxPackageOpened(SingularEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
-            'argv': get_strings(payload),
+            'argv': payload.unpack(),
         }
 
 
@@ -652,7 +652,7 @@ class ParentalControlsChanged(SingularEvent):
             if name == 'AppFilter':
                 result['app_filter_is_whitelist'] = \
                     value.get_child_value(0).get_boolean()
-                result['app_filter'] = get_strings(value.get_child_value(1))
+                result['app_filter'] = value.get_child_value(1).unpack()
 
             elif name == 'OarsFilter':
                 if value.get_child_value(0).get_string() not in ['oars-1.0', 'oars-1.1']:
@@ -818,7 +818,7 @@ class WindowsAppOpened(SingularEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
-            'argv': get_strings(payload),
+            'argv': payload.unpack(),
         }
 
 

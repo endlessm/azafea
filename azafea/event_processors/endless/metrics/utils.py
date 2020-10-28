@@ -10,7 +10,7 @@
 import logging
 from datetime import datetime, timezone
 from threading import RLock
-from typing import Any, Dict, Generator, List
+from typing import Any, Dict, Generator
 
 from gi.repository import GLib
 
@@ -84,11 +84,6 @@ def get_bytes(value: GLib.Variant) -> bytes:
 # This assumes value is an array/tuple variant, verify before calling this
 def get_child_values(value: GLib.Variant) -> Generator[GLib.Variant, None, None]:
     return (value.get_child_value(i) for i in range(value.n_children()))
-
-
-# This assumes value is an `as` or `av<s>` variant, verify before calling this
-def get_strings(value: GLib.Variant) -> List[str]:
-    return [get_variant(v).get_string() for v in get_child_values(value)]
 
 
 def get_variant(value: GLib.Variant) -> GLib.Variant:
