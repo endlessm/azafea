@@ -10,7 +10,7 @@
 import logging
 from datetime import datetime, timezone
 from threading import RLock
-from typing import Any, Dict, Generator
+from typing import Generator
 
 from gi.repository import GLib
 
@@ -105,29 +105,8 @@ _VARIANT_GETTERS = {
     't': lambda v: v.get_uint64(),
     'u': lambda v: v.get_uint32(),
     'x': lambda v: v.get_int64(),
-    'as': get_strings,
+    'as': lambda v: v.unpack(),
 }
-
-
-# This assumes value is an `a{sv}` variant, verify before calling this
-def get_asv_dict(value: GLib.Variant) -> Dict[str, Any]:
-    result = {}
-
-    for i in range(value.n_children()):
-        item = value.get_child_value(i)
-        k = item.get_child_value(0).get_string()
-        v = get_variant(item.get_child_value(1))
-        type_string = v.get_type_string()
-
-        try:
-            getter = _VARIANT_GETTERS[type_string]
-
-        except KeyError:
-            raise NotImplementedError(f"Can't unpack {type_string!r} variant in {value}")
-
-        result[k] = getter(v)
-
-    return result
 
 
 # See the timestamp-algorithm.rst file in this directory for details

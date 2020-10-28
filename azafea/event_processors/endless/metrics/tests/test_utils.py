@@ -13,58 +13,6 @@ from gi.repository import GLib
 import pytest
 
 
-def test_get_asv_dict():
-    from azafea.event_processors.endless.metrics.utils import get_asv_dict
-
-    variant = GLib.Variant('a{sv}', {
-        'b': GLib.Variant('b', True),
-        'd': GLib.Variant('d', 10.01),
-        'i': GLib.Variant('i', -10),
-        'n': GLib.Variant('n', -1),
-        'x': GLib.Variant('x', -1985),
-        'u': GLib.Variant('u', 10),
-        'q': GLib.Variant('q', 1),
-        't': GLib.Variant('t', 1985),
-        's': GLib.Variant('s', '🎂️'),
-        'as': GLib.Variant('as', ['🌬️', '🎂️']),
-    })
-    assert get_asv_dict(variant) == {
-        'b': True,
-        'd': 10.01,
-        'i': -10,
-        'n': -1,
-        'x': -1985,
-        'u': 10,
-        'q': 1,
-        't': 1985,
-        's': '🎂️',
-        'as': ['🌬️', '🎂️'],
-    }
-
-
-@pytest.mark.parametrize('type_string, value', [
-    ('y', b'n'),
-    ('h', 512),
-    ('o', '/path/to/nope'),
-    ('g', 'no'),
-    ('mi', None),
-    ('mv', GLib.Variant('i', 10)),
-    ('(ii)', (10, 1)),
-    ('a{sv}', {'nope': GLib.Variant('s', 'nope')}),
-])
-def test_get_asv_dict_not_implemented(type_string, value):
-    from azafea.event_processors.endless.metrics.utils import get_asv_dict
-
-    variant = GLib.Variant('a{sv}', {
-        'foo': GLib.Variant(type_string, value),
-    })
-
-    with pytest.raises(NotImplementedError) as excinfo:
-        get_asv_dict(variant)
-
-    assert f"Can't unpack {type_string!r} variant in {variant}" in str(excinfo.value)
-
-
 def test_get_bytes():
     from azafea.event_processors.endless.metrics.utils import get_bytes
 

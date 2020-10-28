@@ -35,7 +35,7 @@ from ..machine import (
     upsert_machine_image,
     upsert_machine_live,
 )
-from ..utils import clamp_to_int64, get_asv_dict, get_bytes, get_child_values
+from ..utils import clamp_to_int64, get_bytes, get_child_values
 from ._base import (  # noqa: F401
     EmptyPayloadError,
     SequenceEvent,
@@ -139,7 +139,7 @@ class DiscoveryFeedClicked(SingularEvent):
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {'info': get_asv_dict(payload)}
+        return {'info': payload.unpack()}
 
 
 class DiscoveryFeedClosed(SingularEvent):
@@ -151,7 +151,7 @@ class DiscoveryFeedClosed(SingularEvent):
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {'info': get_asv_dict(payload)}
+        return {'info': payload.unpack()}
 
 
 class DiscoveryFeedOpened(SingularEvent):
@@ -163,7 +163,7 @@ class DiscoveryFeedOpened(SingularEvent):
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {'info': get_asv_dict(payload)}
+        return {'info': payload.unpack()}
 
 
 class DiskSpaceExtra(SingularEvent):
@@ -482,7 +482,7 @@ class LocationLabel(SingularEvent):
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         # Empty values are removed as they are useless, even if they are sent
         # by old versions of eos-metrics-instrumentation
-        info = {key: value for (key, value) in get_asv_dict(payload).items() if value}
+        info = {key: value for (key, value) in payload.unpack().items() if value}
         if not info:
             raise EmptyPayloadError('Location label event received with no data.')
         return {'info': info}
@@ -506,7 +506,7 @@ class MissingCodec(SingularEvent):
             'app_name': payload.get_child_value(1).get_string(),
             'type': payload.get_child_value(2).get_string(),
             'name': payload.get_child_value(3).get_string(),
-            'extra_info': get_asv_dict(payload.get_child_value(4)),
+            'extra_info': payload.get_child_value(4).unpack(),
         }
 
 
@@ -661,7 +661,7 @@ class ParentalControlsChanged(SingularEvent):
                                      'needs an "OarsFilter" key in oars-1.0 '
                                      'or oars-1.1 format, but actually got '
                                      f'{payload}')
-                result['oars_filter'] = get_asv_dict(value.get_child_value(1))
+                result['oars_filter'] = value.get_child_value(1).unpack()
 
             elif name == 'AllowUserInstallation':
                 result['allow_user_installation'] = value.get_boolean()
@@ -710,7 +710,7 @@ class ProgramDumpedCore(SingularEvent):
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {'info': get_asv_dict(payload)}
+        return {'info': payload.unpack()}
 
 
 class RAMSize(SingularEvent):
