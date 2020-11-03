@@ -155,6 +155,60 @@ def test_new_unknown_event():
 @pytest.mark.parametrize('event_model_name, payload, expected_attrs', [
     ('CacheIsCorrupt', None, {}),
     ('CacheMetadataIsCorrupt', None, {}),
+    (
+        'ControlCenterAutomaticUpdates',
+        GLib.Variant('(bbbv)', (True, False, False,
+                                GLib.Variant.parse(None,
+                                                   "('Mogwai tariff', uint16 2, <('System Tariff', [(uint64 0, uint64 253402300799, 'UTC', 'UTC', uint16 0, uint32 0, uint64 0), (79200, 108000, 'Europe/London', 'Europe/London', 2, 1, 18446744073709551615)])>)",  # noqa: E501
+                                                   None, None))),
+        {
+            'allow_downloads_when_metered': True,
+            'automatic_updates_enabled': False,
+            'tariff_enabled': False,
+            'tariff_variant': (
+                'Mogwai tariff', 2, ('System Tariff', [
+                    (0, 253402300799, 'UTC', 'UTC', 0, 0, 0),
+                    (79200, 108000, 'Europe/London', 'Europe/London', 2, 1, 18446744073709551615),
+                ])
+            ),
+        }
+    ),
+    (
+        'ControlCenterAutomaticUpdates',
+        GLib.Variant('(bbbv)', (True, True, False,
+                                GLib.Variant.parse(None,
+                                                   "('Mogwai tariff', uint16 2, <('System Tariff', [(uint64 0, uint64 253402300799, 'UTC', 'UTC', uint16 0, uint32 0, uint64 0), (79200, 108000, 'Europe/London', 'Europe/London', 2, 1, 18446744073709551615)])>)",  # noqa: E501
+                                                   None, None))),
+        {
+            'allow_downloads_when_metered': True,
+            'automatic_updates_enabled': True,
+            'tariff_enabled': False,
+            'tariff_variant': (
+                'Mogwai tariff', 2, ('System Tariff', [
+                    (0, 253402300799, 'UTC', 'UTC', 0, 0, 0),
+                    (79200, 108000, 'Europe/London', 'Europe/London', 2, 1, 18446744073709551615),
+                ])
+            ),
+        }
+    ),
+    (
+        'ControlCenterAutomaticUpdates',
+        GLib.Variant('(bbbv)', (True, True, True,
+                                GLib.Variant.parse(None,
+                                                   "('Mogwai tariff', uint16 2, <('System Tariff', [(uint64 0, uint64 253402300799, 'UTC', 'UTC', uint16 0, uint32 0, uint64 0), (79200, 115200, 'Europe/London', 'Europe/London', 2, 1, 18446744073709551615)])>)",  # noqa: E501
+                                                   None, None))),
+        {
+            'allow_downloads_when_metered': True,
+            'automatic_updates_enabled': True,
+            'tariff_enabled': True,
+            'tariff_variant': (
+                'Mogwai tariff', 2, ('System Tariff', [
+                    (0, 253402300799, 'UTC', 'UTC', 0, 0, 0),
+                    (79200, 115200, 'Europe/London', 'Europe/London', 2, 1, 18446744073709551615),
+                ])
+            ),
+        }
+    ),
     ('ControlCenterPanelOpened', GLib.Variant('s', 'privacy'), {'name': 'privacy'}),
     (
         'CPUInfo',

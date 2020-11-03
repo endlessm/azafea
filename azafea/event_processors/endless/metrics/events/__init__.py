@@ -35,7 +35,7 @@ from ..machine import (
     upsert_machine_image,
     upsert_machine_live,
 )
-from ..utils import clamp_to_int64, get_asv_dict, get_bytes, get_child_values, get_strings
+from ..utils import clamp_to_int64, get_bytes, get_child_values
 from ._base import (  # noqa: F401
     EmptyPayloadError,
     SequenceEvent,
@@ -74,6 +74,26 @@ class CacheMetadataIsCorrupt(SingularEvent):
     __tablename__ = 'cache_metadata_is_corrupt'
     __event_uuid__ = 'f0e8a206-3bc2-405e-90d0-ef6fe6dd7edc'
     __payload_type__ = None
+
+
+class ControlCenterAutomaticUpdates(SingularEvent):
+    __tablename__ = 'control_center_automatic_updates'
+    __event_uuid__ = '510f9741-823e-41a9-af2d-048895f990c0'
+    __payload_type__ = '(bbbv)'
+
+    allow_downloads_when_metered = Column(Boolean, nullable=False)
+    automatic_updates_enabled = Column(Boolean, nullable=False)
+    tariff_enabled = Column(Boolean, nullable=False)
+    tariff_variant = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'allow_downloads_when_metered': payload.get_child_value(0).get_boolean(),
+            'automatic_updates_enabled': payload.get_child_value(1).get_boolean(),
+            'tariff_enabled': payload.get_child_value(2).get_boolean(),
+            'tariff_variant': payload.get_child_value(3).unpack(),
+        }
 
 
 class ControlCenterPanelOpened(SingularEvent):
@@ -119,7 +139,7 @@ class DiscoveryFeedClicked(SingularEvent):
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {'info': get_asv_dict(payload)}
+        return {'info': payload.unpack()}
 
 
 class DiscoveryFeedClosed(SingularEvent):
@@ -131,7 +151,7 @@ class DiscoveryFeedClosed(SingularEvent):
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {'info': get_asv_dict(payload)}
+        return {'info': payload.unpack()}
 
 
 class DiscoveryFeedOpened(SingularEvent):
@@ -143,7 +163,7 @@ class DiscoveryFeedOpened(SingularEvent):
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {'info': get_asv_dict(payload)}
+        return {'info': payload.unpack()}
 
 
 class DiskSpaceExtra(SingularEvent):
@@ -317,7 +337,7 @@ class HackClubhouseProgress(SingularEvent):
                 result['quest'] = value.get_string()
 
             elif name == 'pathways':
-                result['pathways'] = get_strings(value)
+                result['pathways'] = value.unpack()
 
             elif name == 'progress':
                 result['progress'] = value.get_double()
@@ -356,7 +376,7 @@ class LaunchedEquivalentExistingFlatpak(SingularEvent):
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
             'replacement_app_id': payload.get_child_value(0).get_string(),
-            'argv': get_strings(payload.get_child_value(1)),
+            'argv': payload.get_child_value(1).unpack(),
         }
 
 
@@ -372,7 +392,7 @@ class LaunchedEquivalentInstallerForFlatpak(SingularEvent):
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
             'replacement_app_id': payload.get_child_value(0).get_string(),
-            'argv': get_strings(payload.get_child_value(1)),
+            'argv': payload.get_child_value(1).unpack(),
         }
 
 
@@ -388,7 +408,7 @@ class LaunchedExistingFlatpak(SingularEvent):
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
             'replacement_app_id': payload.get_child_value(0).get_string(),
-            'argv': get_strings(payload.get_child_value(1)),
+            'argv': payload.get_child_value(1).unpack(),
         }
 
 
@@ -404,7 +424,7 @@ class LaunchedInstallerForFlatpak(SingularEvent):
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
             'replacement_app_id': payload.get_child_value(0).get_string(),
-            'argv': get_strings(payload.get_child_value(1)),
+            'argv': payload.get_child_value(1).unpack(),
         }
 
 
@@ -418,7 +438,7 @@ class LinuxPackageOpened(SingularEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
-            'argv': get_strings(payload),
+            'argv': payload.unpack(),
         }
 
 
@@ -462,7 +482,7 @@ class LocationLabel(SingularEvent):
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         # Empty values are removed as they are useless, even if they are sent
         # by old versions of eos-metrics-instrumentation
-        info = {key: value for (key, value) in get_asv_dict(payload).items() if value}
+        info = {key: value for (key, value) in payload.unpack().items() if value}
         if not info:
             raise EmptyPayloadError('Location label event received with no data.')
         return {'info': info}
@@ -486,7 +506,7 @@ class MissingCodec(SingularEvent):
             'app_name': payload.get_child_value(1).get_string(),
             'type': payload.get_child_value(2).get_string(),
             'name': payload.get_child_value(3).get_string(),
-            'extra_info': get_asv_dict(payload.get_child_value(4)),
+            'extra_info': payload.get_child_value(4).unpack(),
         }
 
 
@@ -632,7 +652,7 @@ class ParentalControlsChanged(SingularEvent):
             if name == 'AppFilter':
                 result['app_filter_is_whitelist'] = \
                     value.get_child_value(0).get_boolean()
-                result['app_filter'] = get_strings(value.get_child_value(1))
+                result['app_filter'] = value.get_child_value(1).unpack()
 
             elif name == 'OarsFilter':
                 if value.get_child_value(0).get_string() not in ['oars-1.0', 'oars-1.1']:
@@ -641,7 +661,7 @@ class ParentalControlsChanged(SingularEvent):
                                      'needs an "OarsFilter" key in oars-1.0 '
                                      'or oars-1.1 format, but actually got '
                                      f'{payload}')
-                result['oars_filter'] = get_asv_dict(value.get_child_value(1))
+                result['oars_filter'] = value.get_child_value(1).unpack()
 
             elif name == 'AllowUserInstallation':
                 result['allow_user_installation'] = value.get_boolean()
@@ -690,7 +710,7 @@ class ProgramDumpedCore(SingularEvent):
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {'info': get_asv_dict(payload)}
+        return {'info': payload.unpack()}
 
 
 class RAMSize(SingularEvent):
@@ -798,7 +818,7 @@ class WindowsAppOpened(SingularEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {
-            'argv': get_strings(payload),
+            'argv': payload.unpack(),
         }
 
 
