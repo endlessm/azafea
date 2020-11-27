@@ -182,7 +182,7 @@ class InvalidEvent(UnknownEvent):
 class SingularEvent(MetricEvent):
     __abstract__ = True
 
-    occured_at = Column(DateTime(timezone=True), nullable=False)
+    occured_at = Column(DateTime(timezone=True), nullable=False, index=True)
 
 
 class InvalidSingularEvent(SingularEvent, InvalidEvent):
@@ -196,7 +196,7 @@ class UnknownSingularEvent(SingularEvent, UnknownEvent):
 class AggregateEvent(MetricEvent):
     __abstract__ = True
 
-    occured_at = Column(DateTime(timezone=True), nullable=False)
+    occured_at = Column(DateTime(timezone=True), nullable=False, index=True)
     count = Column(BigInteger, nullable=False)
 
 
@@ -211,7 +211,7 @@ class UnknownAggregateEvent(AggregateEvent, UnknownEvent):
 class SequenceEvent(MetricEvent):
     __abstract__ = True
 
-    started_at = Column(DateTime(timezone=True), nullable=False)
+    started_at = Column(DateTime(timezone=True), nullable=False, index=True)
     stopped_at = Column(DateTime(timezone=True), nullable=False)
 
 
