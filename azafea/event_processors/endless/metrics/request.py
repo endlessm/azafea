@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from hashlib import sha512
 from typing import Generator
 
-from sqlalchemy.schema import Column
+from sqlalchemy.schema import Column, Index
 from sqlalchemy.types import BigInteger, Date, DateTime, Integer, LargeBinary, Unicode
 
 from azafea.model import Base, DbSession, View
@@ -39,6 +39,10 @@ class MachineIdsByDay(View):
     __query__ = DbSession().query(
         Request.received_at.cast(Date).label('day'),
         Request.machine_id.label('machine_id')).distinct()
+
+    __table_args__ = (
+        Index('ix_machine_ids_by_day_day', 'day'),
+    )
 
 
 class RequestBuilder:
