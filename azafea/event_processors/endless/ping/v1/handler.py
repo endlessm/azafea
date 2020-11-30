@@ -92,7 +92,7 @@ class Ping(Base):
     created_at = Column(DateTime(timezone=True), nullable=False, index=True)
 
     __table_args__ = (
-        CheckConstraint('char_length(country) in (2, 3)', name='country_code_2_3_chars'),
+        CheckConstraint('char_length(country) = 2', name='country_code_2_chars'),
         CheckConstraint('count >= 0', name='count_positive'),
     )
 
@@ -105,7 +105,7 @@ class Ping(Base):
         if not country:
             return None
 
-        if len(country) not in (2, 3):
+        if len(country) != 2:
             raise ValueError(f'country has wrong length: {country}')
 
         return country
