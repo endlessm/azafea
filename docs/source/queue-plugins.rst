@@ -256,3 +256,34 @@ so you might need to manually adapt some migration scripts eventually.
 
 Note that your queue plugin will need a ``migrations/`` directory inside the
 handler module.
+
+Alembic allows multiple branches to be deployed at the same time. It can for
+example happen when two pull requests are open and then merged, each one
+including a migration script. If the two migrations script are independent,
+they are both deployed without any problems: this is a powerful and harmless
+feature of Alembic. If these two migration scripts are conflicting, the second
+deployment will fail, but the database transaction used by Alembic will prevent
+anything wrong to happen.
+
+When multiple branches are deployed, their commit numbers will all be included
+in the ``alembic_version`` table. It is then impossible to create a new
+deployment, as Alembic can't know which head should be the parent. The solution
+is then to merge the branches, using a merge deployment script:
+
+```
+revision = '<random_hash>'
+down_revision = ('<head_1_hash>', '<head_2_hash>', …)
+branch_labels = None
+depends_on = None
+
+def upgrade():
+    pass
+
+def downgrade():
+    pass
+```
+
+This deployment does not modify the database schema, but it replaces the old
+head hashes with the new one in the ``alembic_version`` table. Alembic is then
+back to normal, a new deployment can be added and will have the commit script
+as parent.
