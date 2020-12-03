@@ -95,20 +95,6 @@ def get_variant(value: GLib.Variant) -> GLib.Variant:
     return value
 
 
-_VARIANT_GETTERS = {
-    'b': lambda v: v.get_boolean(),
-    'd': lambda v: v.get_double(),
-    'i': lambda v: v.get_int32(),
-    'n': lambda v: v.get_int16(),
-    'q': lambda v: v.get_uint16(),
-    's': lambda v: v.get_string(),
-    't': lambda v: v.get_uint64(),
-    'u': lambda v: v.get_uint32(),
-    'x': lambda v: v.get_int64(),
-    'as': lambda v: v.unpack(),
-}
-
-
 # See the timestamp-algorithm.rst file in this directory for details
 def get_event_datetime(request_absolute_timestamp: int, request_relative_timestamp: int,
                        event_relative_timestamp: int) -> datetime:
