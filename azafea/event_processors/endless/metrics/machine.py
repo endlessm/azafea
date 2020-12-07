@@ -7,7 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.schema import Column
@@ -34,6 +34,12 @@ class Machine(Base):
     demo = Column(Boolean, server_default=expression.false())
     dualboot = Column(Boolean, server_default=expression.false())
     live = Column(Boolean, server_default=expression.false())
+    location_id = Column(Unicode, index=True)
+    location_city = Column(Unicode, index=True)
+    location_state = Column(Unicode, index=True)
+    location_street = Column(Unicode, index=True)
+    location_country = Column(Unicode, index=True)
+    location_facility = Column(Unicode, index=True)
 
 
 def upsert_machine_demo(dbsession: DbSession, machine_id: str) -> None:
@@ -65,5 +71,18 @@ def upsert_machine_live(dbsession: DbSession, machine_id: str) -> None:
     stmt = insert(Machine.__table__).values(machine_id=machine_id, live=True)
     stmt = stmt.on_conflict_do_update(constraint='uq_metrics_machine_machine_id',
                                       set_={'live': True})
+
+    dbsession.connection().execute(stmt)
+
+
+def upsert_machine_location(dbsession: DbSession, machine_id: str,
+                            info: Union[Dict[str, Any], List[Any]]) -> None:
+    if not isinstance(info, dict):
+        # Ignore dummy values in info column
+        return
+
+    info = {f'location_{key}': value for key, value in info.items()}  # type: ignore
+    stmt = insert(Machine.__table__).values(machine_id=machine_id, **info)
+    stmt = stmt.on_conflict_do_update(constraint='uq_metrics_machine_machine_id', set_=info)
 
     dbsession.connection().execute(stmt)
