@@ -1077,7 +1077,7 @@ class TestMetrics(IntegrationTest):
                               send_number=0)
             dbsession.add(request)
             dbsession.add(LocationLabel(
-                user_id=1, occured_at=occured_at, request_id=request.id, payload=payload))
+                user_id=1, occured_at=occured_at, request=request, payload=payload))
 
         self.run_subcommand('test_remove_empty_location_info_none', 'remove-empty-location-info')
 
@@ -1115,9 +1115,9 @@ class TestMetrics(IntegrationTest):
                               send_number=0)
             dbsession.add(request)
             dbsession.add(LocationLabel(
-                user_id=1, occured_at=occured_at, request_id=request.id, payload=payload))
+                user_id=1, occured_at=occured_at, request=request, payload=payload))
             empty_location = LocationLabel(
-                user_id=1, occured_at=occured_at, request_id=request.id, payload=payload)
+                user_id=1, occured_at=occured_at, request=request, payload=payload)
             empty_location.info = empty_info
             dbsession.add(empty_location)
 

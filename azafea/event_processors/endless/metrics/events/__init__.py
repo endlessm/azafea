@@ -34,6 +34,7 @@ from ..machine import (
     upsert_machine_dualboot,
     upsert_machine_image,
     upsert_machine_live,
+    upsert_machine_location,
 )
 from ..utils import clamp_to_int64, get_bytes, get_child_values
 from ._base import (  # noqa: F401
@@ -1728,3 +1729,7 @@ def receive_before_commit(dbsession: DbSession) -> None:
         elif isinstance(instance, LiveUsbBooted):
             dbsession.enable_relationship_loading(instance)
             upsert_machine_live(dbsession, instance.request.machine_id)
+
+        elif isinstance(instance, LocationLabel):
+            dbsession.enable_relationship_loading(instance)
+            upsert_machine_location(dbsession, instance.request.machine_id, info=instance.info)
