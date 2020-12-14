@@ -77,12 +77,9 @@ def upsert_machine_live(dbsession: DbSession, machine_id: str) -> None:
 
 def upsert_machine_location(dbsession: DbSession, machine_id: str,
                             info: Union[Dict[str, Any], List[Any]]) -> None:
-    if not isinstance(info, dict):
-        # Ignore dummy values in info column
-        return
+    if isinstance(info, dict):
+        info = {f'location_{key}': value for key, value in info.items()}
+        stmt = insert(Machine.__table__).values(machine_id=machine_id, **info)
+        stmt = stmt.on_conflict_do_update(constraint='uq_metrics_machine_machine_id', set_=info)
 
-    info = {f'location_{key}': value for key, value in info.items()}  # type: ignore
-    stmt = insert(Machine.__table__).values(machine_id=machine_id, **info)
-    stmt = stmt.on_conflict_do_update(constraint='uq_metrics_machine_machine_id', set_=info)
-
-    dbsession.connection().execute(stmt)
+        dbsession.connection().execute(stmt)
