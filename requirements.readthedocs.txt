@@ -1,0 +1,7 @@
+alembic
+psycopg2
+pydantic
+redis
+requests
+sqlalchemy
+toml
