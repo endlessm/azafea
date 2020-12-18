@@ -98,7 +98,7 @@ class TestQuery(IntegrationTest):
 
             for chunk in query:
                 for event in chunk:
-                    assert event.name == f'name-0'
+                    assert event.name == 'name-0'
                     counted += 1
 
         assert counted == 20

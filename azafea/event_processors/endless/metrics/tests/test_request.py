@@ -69,4 +69,4 @@ def test_request_builder_invalid():
         RequestBuilder.parse_bytes(record)
 
     assert ('Metric request is not in the expected format: '
-            f'(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))') in str(excinfo.value)
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))') in str(excinfo.value)

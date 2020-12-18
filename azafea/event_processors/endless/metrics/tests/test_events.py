@@ -101,7 +101,7 @@ def test_new_event_no_payload_but_payload_given(capfd):
     TestEventNoPayloadButPayloadGiven(payload=payload)
 
     capture = capfd.readouterr()
-    assert (f'Metric event 00000000-0000-0000-0000-000000000000 takes no payload, '
+    assert ('Metric event 00000000-0000-0000-0000-000000000000 takes no payload, '
             'but got <1>') in capture.err
 
 
@@ -119,7 +119,7 @@ def test_new_event_no_payload_given():
     with pytest.raises(EmptyPayloadError) as excinfo:
         TestEventNoPayloadGiven(payload=payload)
 
-    assert (f'Metric event 00000000-0000-0000-0000-000000000000 needs a i payload, '
+    assert ('Metric event 00000000-0000-0000-0000-000000000000 needs a i payload, '
             'but got none') in str(excinfo.value)
 
 
@@ -137,7 +137,7 @@ def test_new_event_wrong_payload_given():
     with pytest.raises(WrongPayloadError) as excinfo:
         TestEventWrongPayloadGiven(payload=payload)
 
-    assert (f'Metric event 00000000-0000-0000-0000-000000000000 needs a i payload, '
+    assert ('Metric event 00000000-0000-0000-0000-000000000000 needs a i payload, '
             "but got 'foo' (s)") in str(excinfo.value)
 
 

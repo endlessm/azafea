@@ -58,7 +58,7 @@ def test_get_nonexistent_option():
     with pytest.raises(azafea.config.NoSuchConfigurationError) as exc_info:
         config.main.gauche
 
-    assert f"No such configuration option: 'gauche'" in str(exc_info.value)
+    assert "No such configuration option: 'gauche'" in str(exc_info.value)
 
 
 def test_override(monkeypatch, make_config):
@@ -181,7 +181,7 @@ def test_override_redis_host_empty(make_config):
         make_config({'redis': {'host': ''}})
 
     assert ('Invalid configuration:\n'
-            f"* redis.host: '' is empty") in str(exc_info.value)
+            "* redis.host: '' is empty") in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -227,7 +227,7 @@ def test_override_postgresql_host_empty(make_config):
         make_config({'postgresql': {'host': ''}})
 
     assert ('Invalid configuration:\n'
-            f"* postgresql.host: '' is empty") in str(exc_info.value)
+            "* postgresql.host: '' is empty") in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -274,7 +274,7 @@ def test_override_postgresql_user_empty(make_config):
         make_config({'postgresql': {'user': ''}})
 
     assert ('Invalid configuration:\n'
-            f"* postgresql.user: '' is empty") in str(exc_info.value)
+            "* postgresql.user: '' is empty") in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -295,7 +295,7 @@ def test_override_postgresql_password_empty(make_config):
         make_config({'postgresql': {'password': ''}})
 
     assert ('Invalid configuration:\n'
-            f"* postgresql.password: '' is empty") in str(exc_info.value)
+            "* postgresql.password: '' is empty") in str(exc_info.value)
 
 
 @pytest.mark.parametrize('value', [
@@ -316,7 +316,7 @@ def test_override_postgresql_database_empty(make_config):
         make_config({'postgresql': {'database': ''}})
 
     assert ('Invalid configuration:\n'
-            f"* postgresql.database: '' is empty") in str(exc_info.value)
+            "* postgresql.database: '' is empty") in str(exc_info.value)
 
 
 def test_add_queue_with_nonexistent_handler_module(make_config):
@@ -324,7 +324,7 @@ def test_add_queue_with_nonexistent_handler_module(make_config):
         make_config({'queues': {'some-queue': {'handler': 'no.such.module'}}})
 
     assert ('Invalid configuration:\n'
-            f"* queues.some-queue.handler: Could not import module 'no.such.module'"
+            "* queues.some-queue.handler: Could not import module 'no.such.module'"
             ) in str(exc_info.value)
 
 
@@ -333,7 +333,7 @@ def test_add_queue_with_invalid_handler_module(make_config):
         make_config({'queues': {'some-queue': {'handler': 'azafea'}}})
 
     assert ('Invalid configuration:\n'
-            f"* queues.some-queue.handler: Module 'azafea' is missing a 'process' function"
+            "* queues.some-queue.handler: Module 'azafea' is missing a 'process' function"
             ) in str(exc_info.value)
 
 

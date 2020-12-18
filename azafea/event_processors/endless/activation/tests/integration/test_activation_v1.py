@@ -117,4 +117,4 @@ class TestActivation(IntegrationTest):
             assert dbsession.query(Activation).count() == 0
 
         capture = capfd.readouterr()
-        f"Invalid image id 'image': Did not match the expected format" in capture.err
+        "Invalid image id 'image': Did not match the expected format" in capture.err
