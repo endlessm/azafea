@@ -110,9 +110,9 @@ def test_start_then_sigint(capfd, monkeypatch, make_config, mock_sessionmaker):
         proc = azafea.processor.Processor('test-worker', config)
         proc.start()
 
-    # Give the process a bit of time to start before sending the signal; 0.1s should be way enough
+    # Give the process a bit of time to start before sending the signal; 1s should be way enough
     # to pass at least once in the main loop
-    time.sleep(0.1)
+    time.sleep(1)
     os.kill(proc.pid, SIGINT)
 
     proc.join()
@@ -145,9 +145,9 @@ def test_start_then_sigterm(capfd, monkeypatch, make_config, mock_sessionmaker):
         proc = azafea.processor.Processor('test-worker', config)
         proc.start()
 
-    # Give the process a bit of time to start before sending the signal; 0.1s should be way enough
+    # Give the process a bit of time to start before sending the signal; 1s should be way enough
     # to pass at least once in the main loop
-    time.sleep(0.1)
+    time.sleep(1)
     os.kill(proc.pid, SIGTERM)
 
     proc.join()
@@ -180,9 +180,9 @@ def test_process_with_error(capfd, monkeypatch, make_config, mock_sessionmaker):
         proc = azafea.processor.Processor('test-worker', config)
         proc.start()
 
-    # Give the process a bit of time to start before sending the signal; 0.1s should be way enough
+    # Give the process a bit of time to start before sending the signal; 1s should be way enough
     # to pass at least once in the main loop
-    time.sleep(0.1)
+    time.sleep(1)
     os.kill(proc.pid, SIGTERM)
 
     proc.join()
