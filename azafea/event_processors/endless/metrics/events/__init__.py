@@ -1314,6 +1314,11 @@ class ShellAppAddedToDesktop(SingularEvent):
 
     :UUID name: ``SHELL_APP_ADDED_EVENT`` in gnome-shell
 
+    .. note::
+
+        Since 3.9.0 this metric is no longer recorded.
+        See `T30661 <https://phabricator.endlessm.com/T30661>`_.
+
     .. versionadded:: 2.1.0
 
     """
@@ -1333,6 +1338,11 @@ class ShellAppRemovedFromDesktop(SingularEvent):
     """Shell application is removed from desktop.
 
     :UUID name: ``SHELL_APP_REMOVED_EVENT`` in gnome-shell
+
+    .. note::
+
+        Since 3.9.0 this metric is no longer recorded.
+        See `T30661 <https://phabricator.endlessm.com/T30661>`_.
 
     .. versionadded:: 2.1.0
 
