@@ -32,6 +32,7 @@ author = 'Mathieu Bridon'
 extensions = [
     'sphinx.ext.autodoc',
     'tables',
+    'metabase',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
