@@ -1,0 +1,23 @@
+name: Azafea Metabase Documentation
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  metabase:
+    name: Update Documentation on Metabase
+    runs-on: ubuntu-latest
+    env:
+      METABASE_USERNAME: ${{ secrets.METABASE_USERNAME }}
+      METABASE_PASSWORD: ${{ secrets.METABASE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install GObject-Introspection
+        run: sudo apt install libgirepository1.0-dev
+      - name: Install Pipenv
+        run: sudo pip3 install pipenv
+      - name: Install Dev Dependencies
+        run: pipenv install --dev
+      - name: Upload Documentation
+        run: pipenv run sphinx-build docs/source/ docs/build/html/ -b metabase -E

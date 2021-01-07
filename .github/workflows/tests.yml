@@ -1,0 +1,56 @@
+name: Azafea Tests
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker Image
+        run: docker build --tag azafea-tests .
+      - name: Save Docker Image
+        run: docker save azafea-tests > docker-image.tar
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: image
+          path: docker-image.tar
+  tests:
+    name: Integration Tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get Docker Image
+        uses: actions/download-artifact@v2
+        with:
+          name: image
+      - name: Load Docker Image
+        run: docker load < docker-image.tar
+      - name: Install Docker Images
+        run: |
+          docker run -d --name=redis --network=host redis:5-alpine --requirepass 'CHANGE ME!!'
+          docker run -d --name=postgres --network=host -e 'POSTGRES_PASSWORD=CHANGE ME!!' -e 'POSTGRES_USER=azafea' -e 'POSTGRES_DB=azafea-tests' postgres:11-alpine
+      - name: Run Tests
+        run: docker run --rm --network=host --entrypoint="" azafea-tests pipenv run test-all
+      - name: Remove Docker Images
+        run: docker rm -f redis postgres
+  lint:
+    name: Lint and Type Checking
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get Docker Image
+        uses: actions/download-artifact@v2
+        with:
+          name: image
+      - name: Load Docker Image
+        run: docker load < docker-image.tar
+      - name: Lint and Type Checking
+        run: docker run --rm --network=host --entrypoint="" azafea-tests pipenv run lint
