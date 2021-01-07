@@ -8,6 +8,7 @@
 
 
 import logging
+import time
 from multiprocessing import Process
 from signal import SIGINT, SIGTERM, Signals, signal as intercept_signal
 from typing import Any
@@ -60,7 +61,10 @@ class Processor(Process):
         log.debug('{%s} Pulling from event queues: %s', self.name, queues)
 
         while self._continue:
-            result = self._redis.brpop(queues, timeout=5)
+            for queue in queues:
+                result = self._redis.rpop(queue)
+                if result:
+                    break
 
             if result is None:
                 if self.config.main.exit_on_empty_queues:
@@ -68,23 +72,21 @@ class Processor(Process):
                     break
 
                 log.debug('{%s} Pulled nothing from the queues and timed out', self.name)
+                time.sleep(5)
                 continue
 
-            queue, value = result
-            queue_name = queue.decode('utf-8')
+            log.debug('{%s} Pulled %s from the %s queue', self.name, result, queue)
 
-            log.debug('{%s} Pulled %s from the %s queue', self.name, value, queue_name)
-
-            queue_processor = self.config.queues[queue_name].processor
+            queue_processor = self.config.queues[queue].processor
             log.debug('{%s} Processing event from the %s queue with %s',
-                      self.name, queue_name, get_fqdn(queue_processor))
+                      self.name, queue, get_fqdn(queue_processor))
 
             try:
                 with self._db as dbsession:
-                    queue_processor(dbsession, value)
+                    queue_processor(dbsession, result)
 
             except Exception:
                 log.exception('{%s} An error occured while processing an event from the %s queue '
                               'with %s\nDetails:',
-                              self.name, queue_name, get_fqdn(queue_processor))
-                self._redis.lpush(f'errors-{queue_name}', value)
+                              self.name, queue, get_fqdn(queue_processor))
+                self._redis.lpush(f'errors-{queue}', result)

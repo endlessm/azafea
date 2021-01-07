@@ -8,9 +8,10 @@
 
 
 import os
-from signal import SIGINT, SIGTERM
 import time
-from typing import Optional, Sequence, Tuple
+from itertools import cycle
+from signal import SIGINT, SIGTERM
+from typing import Optional
 
 from redis.exceptions import ConnectionError as RedisConnectionError
 
@@ -26,31 +27,13 @@ class MockRedis:
     def __init__(self, host: str, port: int, password: str):
         print('Created Redis client')
 
-        # FIXME: This is a hack just to have code coverage of the cases BRPOP returns None (the
-        # timeout was reached) as well as when it returns a value. Figure out a way to test this
-        # properly.
-        self._next_key = 0
-        self._next_value = 0
-
         self.connection_pool = MockRedisConnectionPool()
+        self._values = cycle((b'value', None))
 
-    def brpop(self, keys: Sequence[str], timeout: int = 0) -> Optional[Tuple[bytes, bytes]]:
-        str_keys = ' '.join(keys)
-        print(f'Ran Redis command: BRPOP {str_keys}')
+    def rpop(self, key: str, timeout: int = 0) -> Optional[bytes]:
+        print(f'Ran Redis command: RPOP {key}')
 
-        value = (None, b'value')[self._next_value]
-        self._next_value = (self._next_value + 1) % 2
-
-        if value is None:
-            return None
-
-        # Note: this only works if the number of queues doesn't change after having created the
-        # Redis client. In this application the configuration is only loaded at startup so this is
-        # a fair assumption.
-        key = keys[self._next_key]
-        self._next_key = (self._next_key + 1) % len(keys)
-
-        return key.encode('utf-8'), value
+        return next(self._values)
 
     def lpush(self, name, *values):
         str_values = b' '.join(values).decode('utf-8')
