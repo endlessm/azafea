@@ -100,7 +100,7 @@ class TestActivation(IntegrationTest):
 
         # Send an event to the Redis queue
         created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-        self.redis.lpush('test_activation_v1', json.dumps({
+        self.redis.lpush('test_activation_v1_invalid_image', json.dumps({
             'image': 'image',
             'vendor': 'the vendor',
             'product': 'product',
@@ -117,4 +117,4 @@ class TestActivation(IntegrationTest):
             assert dbsession.query(Activation).count() == 0
 
         capture = capfd.readouterr()
-        "Invalid image id 'image': Did not match the expected format" in capture.err
+        assert "Invalid image id 'image': Did not match the expected format" in capture.err
