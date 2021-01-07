@@ -168,4 +168,4 @@ class TestPing(IntegrationTest):
             assert dbsession.query(Ping).count() == 0
 
         capture = capfd.readouterr()
-        "Invalid image id 'image': Did not match the expected format" in capture.err
+        assert "Invalid image id 'image': Did not match the expected format" in capture.err
