@@ -59,8 +59,10 @@ class Processor(Process):
         queues = tuple(self.config.queues.keys())
         log.debug('{%s} Pulling from event queues: %s', self.name, queues)
 
+        timeout = 0.1
+
         while self._continue:
-            result = self._redis.brpop(queues, timeout=5)
+            result = self._redis.brpop(queues, timeout=timeout)
 
             if result is None:
                 if self.config.main.exit_on_empty_queues:
@@ -68,6 +70,7 @@ class Processor(Process):
                     break
 
                 log.debug('{%s} Pulled nothing from the queues and timed out', self.name)
+                timeout = 5
                 continue
 
             queue, value = result
