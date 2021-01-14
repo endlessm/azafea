@@ -59,8 +59,11 @@ class Processor(Process):
         queues = tuple(self.config.queues.keys())
         log.debug('{%s} Pulling from event queues: %s', self.name, queues)
 
+        # Use a short timeout when we want to exit early on empty queues
+        timeout = 0.1 if self.config.main.exit_on_empty_queues else 5
+
         while self._continue:
-            result = self._redis.brpop(queues, timeout=5)
+            result = self._redis.brpop(queues, timeout=timeout)
 
             if result is None:
                 if self.config.main.exit_on_empty_queues:
