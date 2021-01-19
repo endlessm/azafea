@@ -16,8 +16,6 @@ import pytest
 
 from redis import Redis
 
-from sqlalchemy.exc import ProgrammingError
-
 import toml
 
 from azafea import cli
@@ -33,17 +31,11 @@ class IntegrationTest:
                 dbsession.query(model).count()
 
     def ensure_no_tables(self):
-        for model in Base._decl_class_registry.values():
-            if not isinstance(model, type) or not issubclass(model, Base):
-                # Internal SQLAlchemy stuff
-                continue
-
-            with pytest.raises(ProgrammingError) as exc_info:
-                with self.db as dbsession:
-                    dbsession.query(model).all()
-
-            assert model.__tablename__ in str(exc_info.value)
-            assert 'UndefinedTable' in str(exc_info.value)
+        with self.db._engine.connect() as connection:
+            for table_name in Base.metadata.tables:
+                if table_name == 'alembic_version':
+                    continue
+                assert not self.db._engine.dialect.has_table(connection, table_name)
 
     def clear_queues(self):
         queues = self.redis.keys()
