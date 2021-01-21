@@ -7,6 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+from itertools import cycle
 import os
 from signal import SIGINT, SIGTERM
 import time
@@ -30,17 +31,20 @@ class MockRedis:
         # timeout was reached) as well as when it returns a value. Figure out a way to test this
         # properly.
         self._next_key = 0
-        self._next_value = 0
+        self._values = cycle((b'value', None))
 
         self.connection_pool = MockRedisConnectionPool()
 
-    def brpop(self, keys: Sequence[str], timeout: int = 0) -> Optional[Tuple[bytes, bytes]]:
+    def rpop(self, key: str, timeout: float = 0) -> Optional[bytes]:
+        print(f'Ran Redis command: RPOP {key}')
+
+        return next(self._values)
+
+    def brpop(self, keys: Sequence[str], timeout: float = 0) -> Optional[Tuple[bytes, bytes]]:
         str_keys = ' '.join(keys)
         print(f'Ran Redis command: BRPOP {str_keys}')
 
-        value = (None, b'value')[self._next_value]
-        self._next_value = (self._next_value + 1) % 2
-
+        value = next(self._values)
         if value is None:
             return None
 
