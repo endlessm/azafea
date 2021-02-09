@@ -42,6 +42,7 @@ class MachineIdsByDay(View):
 
     __table_args__ = (
         Index('ix_machine_ids_by_day_day', 'day'),
+        Index('ix_machine_ids_by_day_machine_id', 'machine_id'),
     )
 
 
