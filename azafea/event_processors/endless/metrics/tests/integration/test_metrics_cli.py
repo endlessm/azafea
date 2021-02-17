@@ -47,13 +47,13 @@ class TestMetrics(IntegrationTest):
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 
         with self.db as dbsession:
-            dbsession.add(Request(serialized=b'whatever', sha512='sha512-1', received_at=occured_at,
+            dbsession.add(Request(sha512='sha512-1', received_at=occured_at,
                                   absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
                                   send_number=0))
-            dbsession.add(Request(serialized=b'whatever', sha512='sha512-2', received_at=occured_at,
+            dbsession.add(Request(sha512='sha512-2', received_at=occured_at,
                                   absolute_timestamp=3, relative_timestamp=4, machine_id='machine2',
                                   send_number=0))
-            dbsession.add(Request(serialized=b'whatever', sha512='sha512-3', received_at=occured_at,
+            dbsession.add(Request(sha512='sha512-3', received_at=occured_at,
                                   absolute_timestamp=5, relative_timestamp=6, machine_id='machine3',
                                   send_number=0))
 
@@ -114,13 +114,13 @@ class TestMetrics(IntegrationTest):
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
 
         with self.db as dbsession:
-            dbsession.add(Request(serialized=b'whatever', sha512='sha512-1', received_at=occured_at,
+            dbsession.add(Request(sha512='sha512-1', received_at=occured_at,
                                   absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
                                   send_number=0))
-            dbsession.add(Request(serialized=b'whatever', sha512='sha512-2', received_at=occured_at,
+            dbsession.add(Request(sha512='sha512-2', received_at=occured_at,
                                   absolute_timestamp=3, relative_timestamp=4, machine_id='machine2',
                                   send_number=0))
-            dbsession.add(Request(serialized=b'whatever', sha512='sha512-3', received_at=occured_at,
+            dbsession.add(Request(sha512='sha512-3', received_at=occured_at,
                                   absolute_timestamp=5, relative_timestamp=6, machine_id='machine3',
                                   send_number=0))
 
@@ -180,13 +180,13 @@ class TestMetrics(IntegrationTest):
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 
         with self.db as dbsession:
-            dbsession.add(Request(serialized=b'whatever', sha512='sha512-1', received_at=occured_at,
+            dbsession.add(Request(sha512='sha512-1', received_at=occured_at,
                                   absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
                                   send_number=0))
-            dbsession.add(Request(serialized=b'whatever', sha512='sha512-2', received_at=occured_at,
+            dbsession.add(Request(sha512='sha512-2', received_at=occured_at,
                                   absolute_timestamp=3, relative_timestamp=4, machine_id='machine2',
                                   send_number=0))
-            dbsession.add(Request(serialized=b'whatever', sha512='sha512-3', received_at=occured_at,
+            dbsession.add(Request(sha512='sha512-3', received_at=occured_at,
                                   absolute_timestamp=5, relative_timestamp=6, machine_id='machine3',
                                   send_number=0))
 
@@ -254,7 +254,7 @@ class TestMetrics(IntegrationTest):
         )))
 
         with self.db as dbsession:
-            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+            request = Request(sha512='whatever', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='whatever',
                               send_number=0)
             dbsession.add(request)
@@ -299,7 +299,7 @@ class TestMetrics(IntegrationTest):
         )))
 
         with self.db as dbsession:
-            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+            request = Request(sha512='whatever', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='whatever',
                               send_number=0)
             dbsession.add(request)
@@ -328,19 +328,19 @@ class TestMetrics(IntegrationTest):
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 
         with self.db as dbsession:
-            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+            request = Request(sha512='whatever', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
                               send_number=0)
             dbsession.add(request)
 
-            request = Request(serialized=b'whatever2', sha512='whatever2', received_at=occured_at,
+            request = Request(sha512='whatever2', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine2',
                               send_number=0)
             dbsession.add(request)
             dbsession.add(DualBootBooted(request=request, user_id=1001, occured_at=occured_at,
                                          payload=GLib.Variant('mv', None)))
 
-            request = Request(serialized=b'whatever3', sha512='whatever3', received_at=occured_at,
+            request = Request(sha512='whatever3', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine3',
                               send_number=0)
             dbsession.add(request)
@@ -360,7 +360,7 @@ class TestMetrics(IntegrationTest):
         # The machine2 has sent a new event after creating the Machine model, but before running
         # the replay command
         with self.db as dbsession:
-            request = Request(serialized=b'whatever4', sha512='whatever4', received_at=occured_at,
+            request = Request(sha512='whatever4', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine2',
                               send_number=0)
             dbsession.add(request)
@@ -403,7 +403,7 @@ class TestMetrics(IntegrationTest):
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 
         with self.db as dbsession:
-            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+            request = Request(sha512='whatever', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
                               send_number=0)
             dbsession.add(request)
@@ -412,7 +412,7 @@ class TestMetrics(IntegrationTest):
             dbsession.add(ImageVersion(request=request, user_id=1001, occured_at=occured_at,
                                        payload=GLib.Variant('mv', GLib.Variant('s', image_id_1))))
 
-            request = Request(serialized=b'whatever2', sha512='whatever2', received_at=occured_at,
+            request = Request(sha512='whatever2', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine2',
                               send_number=0)
             dbsession.add(request)
@@ -434,7 +434,7 @@ class TestMetrics(IntegrationTest):
         # The machine1 has sent a new event after creating the Machine model, but before running
         # the replay command
         with self.db as dbsession:
-            request = Request(serialized=b'whatever3', sha512='whatever3', received_at=occured_at,
+            request = Request(sha512='whatever3', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
                               send_number=0)
             dbsession.add(request)
@@ -477,19 +477,19 @@ class TestMetrics(IntegrationTest):
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 
         with self.db as dbsession:
-            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+            request = Request(sha512='whatever', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
                               send_number=0)
             dbsession.add(request)
 
-            request = Request(serialized=b'whatever2', sha512='whatever2', received_at=occured_at,
+            request = Request(sha512='whatever2', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine2',
                               send_number=0)
             dbsession.add(request)
             dbsession.add(LiveUsbBooted(request=request, user_id=1001, occured_at=occured_at,
                                         payload=GLib.Variant('mv', None)))
 
-            request = Request(serialized=b'whatever3', sha512='whatever3', received_at=occured_at,
+            request = Request(sha512='whatever3', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine3',
                               send_number=0)
             dbsession.add(request)
@@ -509,7 +509,7 @@ class TestMetrics(IntegrationTest):
         # The machine2 has sent a new event after creating the Machine model, but before running
         # the replay command
         with self.db as dbsession:
-            request = Request(serialized=b'whatever4', sha512='whatever4', received_at=occured_at,
+            request = Request(sha512='whatever4', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine2',
                               send_number=0)
             dbsession.add(request)
@@ -555,7 +555,7 @@ class TestMetrics(IntegrationTest):
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 
         with self.db as dbsession:
-            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+            request = Request(sha512='whatever', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='whatever',
                               send_number=0)
             dbsession.add(request)
@@ -727,7 +727,7 @@ class TestMetrics(IntegrationTest):
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 
         with self.db as dbsession:
-            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+            request = Request(sha512='whatever', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='whatever',
                               send_number=0)
             dbsession.add(request)
@@ -1072,7 +1072,7 @@ class TestMetrics(IntegrationTest):
         payload = GLib.Variant('mv', GLib.Variant('a{ss}', info))
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         with self.db as dbsession:
-            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+            request = Request(sha512='whatever', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='whatever',
                               send_number=0)
             dbsession.add(request)
@@ -1110,7 +1110,7 @@ class TestMetrics(IntegrationTest):
         payload = GLib.Variant('mv', GLib.Variant('a{ss}', info))
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
         with self.db as dbsession:
-            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+            request = Request(sha512='whatever', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='whatever',
                               send_number=0)
             dbsession.add(request)
@@ -1139,17 +1139,13 @@ class TestMetrics(IntegrationTest):
         occured_at_2 = occured_at_1 + timedelta(days=1)
 
         with self.db as dbsession:
-            dbsession.add(Request(serialized=b'whatever', sha512='sha512-1',
-                                  received_at=occured_at_1, absolute_timestamp=1,
+            dbsession.add(Request(sha512='sha512-1', received_at=occured_at_1, absolute_timestamp=1,
                                   relative_timestamp=2, machine_id='machine1', send_number=0))
-            dbsession.add(Request(serialized=b'whatever', sha512='sha512-2',
-                                  received_at=occured_at_1, absolute_timestamp=3,
+            dbsession.add(Request(sha512='sha512-2', received_at=occured_at_1, absolute_timestamp=3,
                                   relative_timestamp=4, machine_id='machine2', send_number=0))
-            dbsession.add(Request(serialized=b'whatever', sha512='sha512-3',
-                                  received_at=occured_at_1, absolute_timestamp=5,
+            dbsession.add(Request(sha512='sha512-3', received_at=occured_at_1, absolute_timestamp=5,
                                   relative_timestamp=6, machine_id='machine2', send_number=0))
-            dbsession.add(Request(serialized=b'whatever', sha512='sha512-4',
-                                  received_at=occured_at_2, absolute_timestamp=7,
+            dbsession.add(Request(sha512='sha512-4', received_at=occured_at_2, absolute_timestamp=7,
                                   relative_timestamp=8, machine_id='machine2', send_number=0))
 
         with self.db as dbsession:

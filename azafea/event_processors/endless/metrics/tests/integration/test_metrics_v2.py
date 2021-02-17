@@ -1990,7 +1990,7 @@ class TestMetrics(IntegrationTest):
 
         with self.db as dbsession:
             # Add a first request with 1 dualboot, 2 image version and 3 live usb events
-            request = Request(serialized=b'whatever', sha512='whatever', received_at=occured_at,
+            request = Request(sha512='whatever', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
                               send_number=0)
             dbsession.add(request)
@@ -2010,7 +2010,7 @@ class TestMetrics(IntegrationTest):
                                         payload=GLib.Variant('mv', None)))
 
             # Add a second request with 1 dualboot, 2 image version and 3 live usb events
-            request = Request(serialized=b'whatever2', sha512='whatever2', received_at=occured_at,
+            request = Request(sha512='whatever2', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='machine2',
                               send_number=0)
             dbsession.add(request)
