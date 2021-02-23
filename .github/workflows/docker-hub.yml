@@ -1,5 +1,5 @@
 ---
-name: &name Upload the Docker image to Docker Hub
+name: Upload the Docker image to Docker Hub
 on:
   workflow_run:
     workflows:
@@ -11,7 +11,7 @@ on:
 
 jobs:
   push:
-    name: *name
+    name: Upload the Docker image to Docker Hub
     runs-on: ubuntu-latest
     steps:
       - name: Login to Docker Hub
