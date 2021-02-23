@@ -1,0 +1,35 @@
+---
+name: &name Upload the Docker image to Docker Hub
+on:
+  workflow_run:
+    workflows:
+      - Azafea Tests
+    branches:
+      - master
+    types:
+      - completed
+
+jobs:
+  push:
+    name: *name
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: '${{ secrets.DOCKERHUB_USERNAME }}'
+          password: '${{ secrets.DOCKERHUB_TOKEN }}'
+
+      - name: Get Docker Image
+        uses: actions/download-artifact@v2
+        with:
+          name: image
+
+      - name: Load Docker Image
+        run: docker load < docker-image.tar
+
+      - name: Tag image
+        run: docker tag azafea-tests endlessm/azafea
+
+      - name: Upload the image
+        run: docker push endlessm/azafea
