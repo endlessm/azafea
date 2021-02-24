@@ -20,6 +20,7 @@ jobs:
         with:
           name: image
           path: docker-image.tar
+
   tests:
     name: Integration Tests
     needs: build
@@ -40,6 +41,7 @@ jobs:
         run: docker run --rm --network=host --entrypoint="" azafea-tests pipenv run test-all
       - name: Remove Docker Images
         run: docker rm -f redis postgres
+
   lint:
     name: Lint and Type Checking
     needs: build
@@ -54,3 +56,30 @@ jobs:
         run: docker load < docker-image.tar
       - name: Lint and Type Checking
         run: docker run --rm --network=host --entrypoint="" azafea-tests pipenv run lint
+
+  push:
+    name: Upload the Docker image to Docker Hub
+    runs-on: ubuntu-latest
+    # We only want to publish a new image when the master branch changes, not
+    # for PRs and only if tests finish successfully.
+    needs: tests
+    if: github.event_name == 'push'
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: '${{ secrets.DOCKERHUB_USERNAME }}'
+          password: '${{ secrets.DOCKERHUB_TOKEN }}'
+
+      - name: Get Docker Image
+        uses: actions/download-artifact@v2
+        with:
+          name: image
+
+      - name: Load Docker Image
+        run: docker load < docker-image.tar
+
+      - name: Upload the image
+        run: |
+          docker tag azafea-tests endlessm/azafea
+          docker push endlessm/azafea
