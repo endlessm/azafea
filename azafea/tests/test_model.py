@@ -133,6 +133,6 @@ def test_base_model():
     ])
 
     # Deregister the test models, to avoid side-effects between tests
-    azafea.model.Base._decl_class_registry.clear()
+    azafea.model.Base.registry.dispose()
     azafea.model.Base.metadata.clear()
     azafea.model.Base.metadata.dispatch._clear()

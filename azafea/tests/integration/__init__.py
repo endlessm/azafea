@@ -97,7 +97,7 @@ class IntegrationTest:
         self.ensure_no_tables()
 
         # Deregister the models, tables and events from SQLAlchemy
-        Base._decl_class_registry.clear()
+        Base.registry.dispose()
         Base.metadata.clear()
         Base.metadata.dispatch._clear()
 
