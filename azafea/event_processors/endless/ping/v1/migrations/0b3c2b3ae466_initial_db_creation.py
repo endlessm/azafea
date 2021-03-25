@@ -9,7 +9,6 @@ Create Date: 2019-12-04 09:12:47.342337
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.engine.reflection import Inspector
 
 
 # revision identifiers, used by Alembic.
@@ -23,7 +22,7 @@ def upgrade():
     from azafea.model import NullableBoolean
 
     conn = op.get_bind()
-    inspector = Inspector.from_engine(conn)
+    inspector = sa.inspect(conn)
     tables = inspector.get_table_names()
 
     if 'ping_configuration_v1' not in tables:

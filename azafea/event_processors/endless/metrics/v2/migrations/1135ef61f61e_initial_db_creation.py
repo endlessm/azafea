@@ -10,7 +10,6 @@ Create Date: 2019-12-03 14:24:34.525946
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.engine.reflection import Inspector
 
 # revision identifiers, used by Alembic.
 revision = '1135ef61f61e'
@@ -21,7 +20,7 @@ depends_on = None
 
 def upgrade():
     conn = op.get_bind()
-    inspector = Inspector.from_engine(conn)
+    inspector = sa.inspect(conn)
     tables = inspector.get_table_names()
 
     if 'metrics_request_v2' not in tables:
