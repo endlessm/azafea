@@ -123,8 +123,9 @@ class Db:
         connect_args = copy.deepcopy(pgconfig.connect_args)
         connect_args['password'] = pgconfig.password
 
-        self._url = URL('postgresql+psycopg2', username=pgconfig.user, host=pgconfig.host,
-                        port=pgconfig.port, database=pgconfig.database)
+        self._url = URL.create(
+            'postgresql+psycopg2', username=pgconfig.user, host=pgconfig.host,
+            port=pgconfig.port, database=pgconfig.database)
         self._engine = create_engine(self._url, connect_args=connect_args)
         self._session_factory = sessionmaker(bind=self._engine, class_=DbSession)
 
