@@ -267,7 +267,7 @@ class ViewMeta(DeclarativeMeta):
         for column in query.column_descriptions:
             # FIXME: Always set all columns as primary keys, may need to be changed for other tables
             table.append_column(Column(column['name'], column['type'], primary_key=True))
-        for from_table in query.selectable.locate_all_froms():
+        for from_table in query.selectable.froms:
             table.add_is_dependent_on(from_table)
         listen(Base.metadata, 'after_create', DDL(
             f'CREATE MATERIALIZED VIEW IF NOT EXISTS "{tablename}" AS {query}'))
