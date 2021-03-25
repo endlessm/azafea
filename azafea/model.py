@@ -19,8 +19,8 @@ from sqlalchemy.event import listen
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.inspection import inspect
+from sqlalchemy.orm.decl_api import DeclarativeMeta
 from sqlalchemy.orm.query import Query
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.orm.session import Session as SaSession, sessionmaker
