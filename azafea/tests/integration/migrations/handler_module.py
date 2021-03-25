@@ -7,7 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-from sqlalchemy.schema import Column
+from sqlalchemy.schema import Column, Identity
 from sqlalchemy.types import Integer, Unicode
 
 from azafea.model import Base
@@ -16,7 +16,7 @@ from azafea.model import Base
 class Event(Base):
     __tablename__ = 'migration_event'
 
-    id = Column(Integer, primary_key=True)
+    id = Column(Integer, primary_key=True, server_default=Identity())
     name = Column(Unicode, nullable=False)
 
 
