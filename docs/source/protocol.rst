@@ -30,28 +30,29 @@ Network Send Number
 - Begins at 0 on each client and goes up by 1 each time we attempt a metrics network upload.
 - Does not go up on network retries.
 
-Relative Timestamp
-++++++++++++++++++
+Image
++++++
 
-- 64 bit signed integer
-- GVariant symbol: ``x``
-- See: http://linux.die.net/man/3/clock_gettime
+- String
+- GVariant symbol: ``s``
 
-Absolute Timestamp
-++++++++++++++++++
+Site
+++++
 
-- 64 bit signed integer
-- GVariant symbol: ``x``
-- Nanoseconds since the Unix epoch
-- See: http://linux.die.net/man/3/clock_gettime
+- String
+- GVariant symbol: ``a{ss}``
 
-Machine ID
-++++++++++
+Dualboot
+++++++++
 
-- Array of 16 unsigned bytes
-- GVariant symbol: ``ay``
-- Should uniquely identify a user's machine.
-- See: http://man7.org/linux/man-pages/man5/machine-id.5.html
+- Boolean
+- GVariant symbol: ``b``
+
+Live
+++++
+
+- Boolean
+- GVariant symbol: ``b``
 
 Singular Metrics
 ++++++++++++++++
@@ -67,33 +68,18 @@ Aggregate Metrics
 - See `Aggregate Metric`_
 - GVariant symbol: ``a(uayxxmv)``
 
-Sequence Metrics
-++++++++++++++++
-
-- Array of sequence metrics
-- See `Sequence Metric`_
-- GVariant symbol: ``a(uaya(xmv))``
-
 Total GVariant Format String
 ++++++++++++++++++++++++++++
 
-All together it should look like: ``(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))``.
+All together it should look like: ``(isa{ss}bba(aysxmv)a(aysyxxmv))``.
 
 Singular Metric
 ~~~~~~~~~~~~~~~
 
 Singular metrics indicate simple events that occur and don't need to be
-aggregated (like an aggregate metric) or linked together across time (like a
-sequence metric) to make sense.
+aggregated (like an aggregate metric) to make sense.
 
 In order:
-
-User ID
-+++++++
-
-- Unsigned 32-bit integer
-- GVariant symbol: ``u``
-- See: http://man7.org/linux/man-pages/man2/getuid.2.html
 
 Event ID
 ++++++++
@@ -103,12 +89,17 @@ Event ID
 - Listed in :ref:`events page`
 - See: http://linux.die.net/man/3/uuid
 
-Relative Timestamp
-++++++++++++++++++
+OS Version
+++++++++++
+
+- String
+- GVariant symbol: ``s``
+
+Timestamp
++++++++++
 
 - 64-bit signed integer
 - GVariant symbol: ``x``
-- See: http://linux.die.net/man/3/clock_gettime
 
 Auxiliary Payload
 +++++++++++++++++
@@ -120,19 +111,19 @@ Auxiliary Payload
 - See: https://developer.gnome.org/glib/stable/gvariant-format-strings.html#gvariant-format-strings-maybe-types
 - Details for each event ID listed in :ref:`events page`
 
-Total format
+Total Format
 ++++++++++++
 
-In total should look like ``(uayxmv)``.
+In total should look like ``(aysxmv)``.
 
 Aggregate Metric
 ~~~~~~~~~~~~~~~~
 
 Aggregate metrics indicate counts that summarize a value of interest (e.g., a
 very common event happening n times in a particular time interval or
-fluctuations in heap size over time). Counts can be positive, zero, or
-negative. They are identical to the singular metrics but have an added counter
-field in the wire format.
+fluctuations in heap size over time). Counts are always strictly positive. They
+are identical to the singular metrics but have an added counter field in the
+wire format.
 
 Aggregates can be used to record noisy events such as cache hit ratios, heap
 usage, or any number items that would be impractical to send a `singular
@@ -140,13 +131,6 @@ metric`_ for each instance.
 
 In order:
 
-User ID
-+++++++
-
-- Unsigned 32-bit integer
-- GVariant symbol: ``u``
-- See: http://man7.org/linux/man-pages/man2/getuid.2.html
-
 Event ID
 ++++++++
 
@@ -155,18 +139,32 @@ Event ID
 - Listed in :ref:`events page`
 - See: http://linux.die.net/man/3/uuid
 
+OS Version
+++++++++++
+
+- String
+- GVariant symbol: ``s``
+
+Period
+++++++
+
+- Unsigned byte
+- GVariant symbol: ``y``
+- Aggregation period (``h`` for hour, ``d`` for day, ``w`` for week, ``m`` for
+  month)
+
+Timestamp
++++++++++
+
+- 64-bit signed integer
+- GVariant symbol: ``x``
+- Beginning of the period
+
 Count
 +++++
 
 - 64-bit signed integer
 - GVariant symbol: ``x``
-
-Relative Timestamp
-++++++++++++++++++
-
-- 64-bit signed integer
-- GVariant symbol: ``x``
-- See: http://linux.die.net/man/3/clock_gettime
 
 Auxiliary Payload
 +++++++++++++++++
@@ -178,84 +176,10 @@ Auxiliary Payload
 - See: https://developer.gnome.org/glib/stable/gvariant-format-strings.html#gvariant-format-strings-maybe-types
 - Details for each event ID listed in :ref:`events page`
 
-Total format
+Total Format
 ++++++++++++
 
-In total should look like ``(uayxxmv)``.
-
-Oddities
-++++++++
-
-Aggregates currently have no starting time, only a stopping time. Will be fixed
-by `T8261: Metrics Client: Aggregates record start time <https://phabricator.endlessm.com/T8261>`_
-
-Sequence Metric
-~~~~~~~~~~~~~~~
-
-Sequence metrics are a type of metric that has elements spread across time,
-sequentially (hence the name!) All sequence metrics have a **start** event,
-zero or more **progress** event, and terminate with a **stop** event.
-
-Sequences Metrics' events are chronologically ordered. It should not be
-possible for events in an event sequence to arrive out-of-order
-chronologically.
-
-In order:
-
-User ID
-+++++++
-
-- Unsigned 32-bit integer
-- GVariant symbol ``u``
-- See: http://man7.org/linux/man-pages/man2/getuid.2.html
-
-Event ID
-++++++++
-
-- Array of 16 unsigned bytes
-- GVariant symbol ``ay``
-- Listed in :ref:`events page`
-- See: http://linux.die.net/man/3/uuid
-
-Events
-++++++
-
-- Array of relative timestamps and auxiliary payloads.
-- First element in array is a start event.
-- Last element in array is a stop event.
-- Any elements in between are progress events.
-- GVariant symbol ``a(xmv)``
-
-Relative Timestamp
-++++++++++++++++++
-
-- 64-bit signed integer
-- GVariant symbol ``x``
-- See: http://linux.die.net/man/3/clock_gettime
-
-Auxiliary Payload
-+++++++++++++++++
-
-- Maybe Variant
-- Allows for no contents (NULL) or content of any type.
-- Used to contain data associated with an event that is logged.
-- GVariant symbol ``mv``
-- See: https://developer.gnome.org/glib/stable/gvariant-format-strings.html#gvariant-format-strings-maybe-types
-- Details for each event ID listed in :ref:`events page`
-
-Total format
-++++++++++++
-
-In total, the format should look like ``(uaya(xmv))``.
-
-Oddities
-++++++++
-
-- Event sequences only make sense within the lifetime of a given event
-  recorder. If the event recorder dies and is restarted during the same boot,
-  sequence events in progress will be lost.
-- Event sequences do not persist across boots unless completed. Thus, Sequence
-  Metrics should be started and stopped before shutdown.
+In total should look like ``(aysyxxmv)``.
 
 Version History
 ---------------
@@ -300,7 +224,7 @@ Contents:
 Version 2
 ~~~~~~~~~
 
-- Endless 2.1.5 (current protocol version)
+- Endless 2.1.5
 - URI Format: ``https://production.metrics.endlessm.com/2/<SHA-512-Hash>``
 - No compression
 - Little Endian
@@ -316,3 +240,21 @@ Contents:
 - Singular Events (User ID, Event ID, Relative Timestamp, Auxiliary Payload)
 - Aggregate Events (User ID, Event ID, Count, Relative Timestamp, Auxiliary Payload)
 - Sequence Events (User ID, Event ID, Array of (Relative Timestamp, Auxiliary Payload))
+
+Version 3
+~~~~~~~~~
+
+- Endless X.X.X
+- URI Format: ``https://production.metrics.endlessm.com/3/<SHA-512-Hash>``
+- No compression
+- Little Endian
+- GVariant Payload Format: ``(isa{ss}bba(aysxmv)a(aysyxxmv))``
+
+Contents:
+
+- Network Send Number
+- Relative Timestamp
+- Absolute Timestamp
+- Channel (image, site, dualboot, live)
+- Singular Events (Event ID, OS Version, Timestamp, Auxiliary Payload)
+- Aggregate Events (Event ID, OS Version, Period, Timestamp, Count, Auxiliary Payload)
