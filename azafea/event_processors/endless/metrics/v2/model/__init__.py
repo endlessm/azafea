@@ -775,6 +775,7 @@ class LinuxPackageOpened(SingularEvent):
     :UUID name: ``LINUX_PACKAGE_OPENED`` in eos-gates
 
     .. versionadded:: 2.1.7
+
     """
     __tablename__ = 'linux_package_opened'
     __event_uuid__ = '0bba3340-52e3-41a2-854f-e6ed36621379'
