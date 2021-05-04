@@ -20,4 +20,5 @@ PostgreSQL, where they can be queried and visualized.
    configuration
    queue-plugins
    events
+   protocol
    contribute
