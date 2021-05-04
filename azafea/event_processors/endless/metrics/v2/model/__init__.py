@@ -122,6 +122,13 @@ class CacheMetadataIsCorrupt(SingularEvent):
 
 
 class ControlCenterAutomaticUpdates(SingularEvent):
+    """Automatic updates settings have changed.
+
+    :UUID name: ``CC_METRIC_AUTOMATIC_UPDATES`` in gnome-control-center
+
+    .. versionadded:: 3.9.1
+
+    """
     __tablename__ = 'control_center_automatic_updates'
     __event_uuid__ = '510f9741-823e-41a9-af2d-048895f990c0'
     __payload_type__ = '(bbbv)'
