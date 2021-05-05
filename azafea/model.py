@@ -19,8 +19,8 @@ from sqlalchemy.event import listen
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.compiler import compiles
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.inspection import inspect
+from sqlalchemy.orm.decl_api import DeclarativeMeta
 from sqlalchemy.orm.query import Query
 from sqlalchemy.orm.relationships import RelationshipProperty
 from sqlalchemy.orm.session import Session as SaSession, sessionmaker
@@ -123,8 +123,9 @@ class Db:
         connect_args = copy.deepcopy(pgconfig.connect_args)
         connect_args['password'] = pgconfig.password
 
-        self._url = URL('postgresql+psycopg2', username=pgconfig.user, host=pgconfig.host,
-                        port=pgconfig.port, database=pgconfig.database)
+        self._url = URL.create(
+            'postgresql+psycopg2', username=pgconfig.user, host=pgconfig.host,
+            port=pgconfig.port, database=pgconfig.database)
         self._engine = create_engine(self._url, connect_args=connect_args)
         self._session_factory = sessionmaker(bind=self._engine, class_=DbSession)
 
@@ -266,7 +267,7 @@ class ViewMeta(DeclarativeMeta):
         for column in query.column_descriptions:
             # FIXME: Always set all columns as primary keys, may need to be changed for other tables
             table.append_column(Column(column['name'], column['type'], primary_key=True))
-        for from_table in query.selectable.locate_all_froms():
+        for from_table in query.selectable.froms:
             table.add_is_dependent_on(from_table)
         listen(Base.metadata, 'after_create', DDL(
             f'CREATE MATERIALIZED VIEW IF NOT EXISTS "{tablename}" AS {query}'))

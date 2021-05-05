@@ -14,9 +14,8 @@ from uuid import UUID
 from gi.repository import GLib
 
 from sqlalchemy.dialects import postgresql
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.ext.declarative.api import DeclarativeMeta
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import declared_attr, relationship
+from sqlalchemy.orm.decl_api import DeclarativeMeta
 from sqlalchemy.orm.query import Query
 from sqlalchemy.schema import Column, ForeignKey
 from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary, Unicode

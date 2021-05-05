@@ -9,7 +9,6 @@ Create Date: 2019-12-03 15:38:47.707263
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.engine.reflection import Inspector
 
 
 # revision identifiers, used by Alembic.
@@ -21,7 +20,7 @@ depends_on = None
 
 def upgrade():
     conn = op.get_bind()
-    inspector = Inspector.from_engine(conn)
+    inspector = sa.inspect(conn)
     tables = inspector.get_table_names()
 
     if 'activation_v1' not in tables:

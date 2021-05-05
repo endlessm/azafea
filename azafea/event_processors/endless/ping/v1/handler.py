@@ -63,6 +63,8 @@ class PingConfiguration(Base):
 
         # Postgresql's 'INSERT … ON CONFLICT …' is not available at the ORM layer, so let's
         # drop down to the SQL layer
+        if record['dualboot'] is None:
+            del record['dualboot']
         stmt = insert(PingConfiguration.__table__).values(**record)
         stmt = stmt.returning(PingConfiguration.__table__.c.id)
 
