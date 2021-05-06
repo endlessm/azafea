@@ -973,3 +973,125 @@ events.
 - `Daemon tests <https://github.com/endlessm/eos-event-recorder-daemon/blob/efc6bb0e1283236ee4fe9c3d7fc992c4a53436d8/tests/daemon/test-daemon.c#L51>`_
 
   - ``350ac4ff-3026-4c25-9e7e-e8103b4fd5d8``
+
+
+Implementing New Events
+-----------------------
+
+Preliminary Considerations
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Before adding new events, you have to discuss and justify the metric: what
+question are you trying to answer, is this the most appropriate metric for
+answering that question, and does it preserve users’ privacy? Are we legally
+allowed to collect and store it?
+
+The second step is to define the submission (``GVariant``) and storage (SQL)
+formats for the new metric, generate a UUID with the uuidgen command, and
+document it on this page.
+
+Finally, you can add code in the OS to submit the metrics at relevant points,
+as done in `this example <https://github.com/endlessm/malcontent/pull/17>`_. At
+its core, this will be a call to ``emtr_event_recorder_get_default()`` and then
+a call to ``emtr_event_recorder_record_event()``. You will probably need to
+`add a dependency on eos-metrics-0-dev
+<https://github.com/endlessm/malcontent/pull/18>` to the Debian packaging. The
+code to submit new metrics can be shipped before the server is ready to process
+them, as unknown metrics are stored and re-parsed when Azafea is updated.
+
+Technical Introduction
+~~~~~~~~~~~~~~~~~~~~~~
+
+The metrics event processor implements a few events. When it receives a request
+containing events it doesn't know about, they will get stored in the following
+tables:
+
+* ``unknown_singular_event`` for singular metrics;
+* ``unknown_aggregate_event`` for aggregate metrics.
+
+The records in those table should contain everything needed to replay them once
+the corresponding event model has been implemented.
+
+Adding a New Model
+~~~~~~~~~~~~~~~~~~
+
+New metrics models should be added in
+``azafea/event_processors/endless/metrics/v3/events.py``. Do look at the
+existing ones for examples.
+
+All it takes is defining a new class inheriting from the appropriate base event:
+
+* ``SingularEvent``;
+* ``AggregateEvent``.
+
+The file is organized in 2 sections, one for each event type. Please keep it
+tidy by adding your new model in the correct section. It's also nice to order
+models alphabetically within each section.
+
+The class needs at least a few special attributes:
+
+* ``__tablename__`` is the name of the table in PostgreSQL; this will usually
+  be the same as the class name, but using snake_case;
+* ``__event_uuid__`` is the unique identifier for the event; it is how Azafea
+  will know which model to use for any incoming event;
+* ``__payload_type__`` is the format string of the GVariant payload; if the
+  event has no payload, then use ``None``.
+
+If an event has a payload, then you will want that payload to be deserialized
+and stored into columns of the new table.
+
+This is achieved by adding the right ``sqlalchemy.schema.Column``-s to the
+model, and implementing the ``_get_fields_from_payload`` method. The latter is
+responsible for deserializing the GVariant payload. By the time the method is
+called, the payload has already been validated against the
+``__payload_type__``.
+
+You can also look at `this example of new models addition
+<https://github.com/endlessm/azafea/commit/591e7a27bffe14cf3ef68e255806b5b282db50c2>`_.
+
+Creating the Tables
+~~~~~~~~~~~~~~~~~~~
+
+After adding a new model, stop Azafea and create the database migration::
+
+    [azafea-dev]$ pipenv run azafea -c config.toml make-migration queue-name
+
+The queue-name is the configured name of a :ref:`queue <queue-config>` set up
+with the handler which contains the new model.
+
+Carefully review the generated migration file, and commit it along with your
+new event.
+
+You can test that the migration is functional by running it::
+
+    [azafea-dev]$ pipenv run azafea -c config.toml migratedb
+
+You can also look at `this example of database migration in Azafea
+<https://github.com/endlessm/azafea/commit/bb827ae1363efd903510d896bec3f18ab217b079>`_.
+
+Deploying
+~~~~~~~~~
+
+Deployment steps depend on the infrastructure you use for Azafea.
+
+For Endless OS, Azafea changes are deployed to the ``dev`` server and tested by
+looking at https://metabase.dev.endlessm-sf.com/ while submitting the new
+metrics events from an Endless OS system. The EOS system should be configured
+with ``environment=dev`` in ``/etc/metrics/eos-metrics-permissions.conf``.
+
+If all looks good, deploy the changes to the Azafea ``production`` server.
+
+Replaying Previously Unknown Events
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If some instances of your new event had been received by Azafea before you
+implemented it and Azafea had stored them in the corresponding "unknown" table,
+you can run the migration to create the table, then replay them to "make them
+known"::
+
+    $ pipenv run azafea -c config.toml migratedb
+    $ pipenv run azafea -c config.toml metrics-3 replay-unknown
+
+The above commands need to be run in an environment with access to Azafea
+itself. If you deployed Azafea in production using Docker, then you will want
+to run them in an instance of that production container.
