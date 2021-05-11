@@ -17,7 +17,7 @@ from sqlalchemy.types import Boolean, DateTime, Integer, Unicode
 
 from azafea.model import Base, DbSession
 
-from ..image import parse_endless_os_image
+from ....image import parse_endless_os_image
 
 
 log = logging.getLogger(__name__)

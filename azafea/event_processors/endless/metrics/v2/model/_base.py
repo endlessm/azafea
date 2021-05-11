@@ -23,8 +23,8 @@ from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary, Unicode
 
 from azafea.model import Base, DbSession
 
-from ..request import Request
 from ..utils import get_bytes, get_child_values, get_event_datetime, get_variant
+from ._request import Request
 
 
 log = logging.getLogger(__name__)

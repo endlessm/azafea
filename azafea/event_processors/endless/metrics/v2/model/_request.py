@@ -18,7 +18,7 @@ from azafea.model import Base, DbSession, View
 
 from gi.repository import GLib
 
-from .utils import cached_property, get_bytes, get_child_values
+from ..utils import cached_property, get_bytes, get_child_values
 
 
 class Request(Base):

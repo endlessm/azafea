@@ -19,7 +19,7 @@ from azafea.utils import progress
 from azafea.vendors import normalize_vendor
 
 from ...image import parse_endless_os_image
-from ..events import (
+from .model import (
     DualBootBooted,
     ImageVersion,
     LiveUsbBooted,
@@ -27,24 +27,27 @@ from ..events import (
     InvalidAggregateEvent,
     InvalidSequence,
     InvalidSingularEvent,
+    Machine,
     ShellAppIsOpen,
     OSVersion,
+    Request,
     UnknownAggregateEvent,
     UnknownSequence,
     UnknownSingularEvent,
     UpdaterBranchSelected,
+    aggregate_event_is_known,
     replay_invalid_aggregate_events,
     replay_invalid_sequences,
     replay_invalid_singular_events,
     replay_unknown_aggregate_events,
     replay_unknown_sequences,
     replay_unknown_singular_events,
-    aggregate_event_is_known,
     sequence_is_known,
     singular_event_is_known,
+    upsert_machine_dualboot,
+    upsert_machine_image,
+    upsert_machine_live,
 )
-from ..machine import Machine, upsert_machine_dualboot, upsert_machine_image, upsert_machine_live
-from ..request import Request
 
 
 log = logging.getLogger(__name__)

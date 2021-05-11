@@ -19,7 +19,7 @@ class TestMetrics(IntegrationTest):
     handler_module = 'azafea.event_processors.endless.metrics.v2'
 
     def test_dedupe_no_dualboots(self, capfd):
-        from azafea.event_processors.endless.metrics.events import DualBootBooted
+        from azafea.event_processors.endless.metrics.v2.model import DualBootBooted
 
         # Create the table
         self.run_subcommand('initdb')
@@ -37,8 +37,7 @@ class TestMetrics(IntegrationTest):
         assert 'No metrics requests with deduplicate dual boot events found' in capture.out
 
     def test_dedupe_dualboots(self):
-        from azafea.event_processors.endless.metrics.events import DualBootBooted
-        from azafea.event_processors.endless.metrics.request import Request
+        from azafea.event_processors.endless.metrics.v2.model import DualBootBooted, Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -85,7 +84,7 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(DualBootBooted).filter_by(request_id=req3.id).one().user_id == 2
 
     def test_dedupe_no_image_versions(self, capfd):
-        from azafea.event_processors.endless.metrics.events import ImageVersion
+        from azafea.event_processors.endless.metrics.v2.model import ImageVersion
 
         # Create the table
         self.run_subcommand('initdb')
@@ -103,8 +102,7 @@ class TestMetrics(IntegrationTest):
         assert 'No metrics requests with deduplicate image versions found' in capture.out
 
     def test_dedupe_image_versions(self):
-        from azafea.event_processors.endless.metrics.events import ImageVersion
-        from azafea.event_processors.endless.metrics.request import Request
+        from azafea.event_processors.endless.metrics.v2.model import ImageVersion, Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -152,7 +150,7 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(ImageVersion).filter_by(request_id=req3.id).one().user_id == 2
 
     def test_dedupe_no_live_usbs(self, capfd):
-        from azafea.event_processors.endless.metrics.events import LiveUsbBooted
+        from azafea.event_processors.endless.metrics.v2.model import LiveUsbBooted
 
         # Create the table
         self.run_subcommand('initdb')
@@ -170,8 +168,7 @@ class TestMetrics(IntegrationTest):
         assert 'No metrics requests with deduplicate live usb events found' in capture.out
 
     def test_dedupe_live_usbs(self):
-        from azafea.event_processors.endless.metrics.events import LiveUsbBooted
-        from azafea.event_processors.endless.metrics.request import Request
+        from azafea.event_processors.endless.metrics.v2.model import LiveUsbBooted, Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -218,7 +215,7 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(LiveUsbBooted).filter_by(request_id=req3.id).one().user_id == 2
 
     def test_normalize_no_vendors(self, capfd):
-        from azafea.event_processors.endless.metrics.events import UpdaterBranchSelected
+        from azafea.event_processors.endless.metrics.v2.model import UpdaterBranchSelected
 
         # Create the table
         self.run_subcommand('initdb')
@@ -236,8 +233,8 @@ class TestMetrics(IntegrationTest):
         assert 'No "updater branch selected" record in database' in capture.out
 
     def test_normalize_vendor(self):
-        from azafea.event_processors.endless.metrics.events import UpdaterBranchSelected
-        from azafea.event_processors.endless.metrics.request import Request
+        from azafea.event_processors.endless.metrics.v2.model import (
+            UpdaterBranchSelected, Request)
 
         # Create the table
         self.run_subcommand('initdb')
@@ -280,8 +277,8 @@ class TestMetrics(IntegrationTest):
             assert event.hardware_vendor == good_vendor
 
     def test_normalize_already_normalized_vendor(self):
-        from azafea.event_processors.endless.metrics.events import UpdaterBranchSelected
-        from azafea.event_processors.endless.metrics.request import Request
+        from azafea.event_processors.endless.metrics.v2.model import (
+            UpdaterBranchSelected, Request)
 
         # Create the table
         self.run_subcommand('initdb')
@@ -318,9 +315,8 @@ class TestMetrics(IntegrationTest):
             assert event.hardware_vendor == vendor
 
     def test_replay_machine_dualboots(self):
-        from azafea.event_processors.endless.metrics.events import DualBootBooted
-        from azafea.event_processors.endless.metrics.machine import Machine
-        from azafea.event_processors.endless.metrics.request import Request
+        from azafea.event_processors.endless.metrics.v2.model import (
+            DualBootBooted, Machine, Request)
 
         self.run_subcommand('initdb')
         self.ensure_tables(DualBootBooted, Machine, Request)
@@ -393,9 +389,8 @@ class TestMetrics(IntegrationTest):
             assert machine.dualboot is True
 
     def test_replay_machine_images(self):
-        from azafea.event_processors.endless.metrics.events import ImageVersion
-        from azafea.event_processors.endless.metrics.machine import Machine
-        from azafea.event_processors.endless.metrics.request import Request
+        from azafea.event_processors.endless.metrics.v2.model import (
+            ImageVersion, Machine, Request)
 
         self.run_subcommand('initdb')
         self.ensure_tables(ImageVersion, Machine, Request)
@@ -467,9 +462,8 @@ class TestMetrics(IntegrationTest):
             assert machine.image_id == image_id_2
 
     def test_replay_machine_live_usbs(self):
-        from azafea.event_processors.endless.metrics.events import LiveUsbBooted
-        from azafea.event_processors.endless.metrics.machine import Machine
-        from azafea.event_processors.endless.metrics.request import Request
+        from azafea.event_processors.endless.metrics.v2.model import (
+            LiveUsbBooted, Machine, Request)
 
         self.run_subcommand('initdb')
         self.ensure_tables(LiveUsbBooted, Machine, Request)
@@ -542,10 +536,9 @@ class TestMetrics(IntegrationTest):
             assert machine.live is True
 
     def test_replay_invalid(self):
-        from azafea.event_processors.endless.metrics.events import ShellAppIsOpen, Uptime
-        from azafea.event_processors.endless.metrics.events._base import (
-            InvalidSequence, InvalidSingularEvent, UnknownSequence, UnknownSingularEvent)
-        from azafea.event_processors.endless.metrics.request import Request
+        from azafea.event_processors.endless.metrics.v2.model import (
+            InvalidSequence, InvalidSingularEvent, Request, ShellAppIsOpen, UnknownSequence,
+            UnknownSingularEvent, Uptime)
 
         # Create the table
         self.run_subcommand('initdb')
@@ -713,11 +706,9 @@ class TestMetrics(IntegrationTest):
             assert invalid.payload_data == missing_events.get_data_as_bytes().get_data()
 
     def test_replay_unknown(self):
-        from azafea.event_processors.endless.metrics.events import ShellAppIsOpen, Uptime
-        from azafea.event_processors.endless.metrics.events._base import (
-            InvalidSequence, InvalidSingularEvent,
-            UnknownAggregateEvent, UnknownSequence, UnknownSingularEvent)
-        from azafea.event_processors.endless.metrics.request import Request
+        from azafea.event_processors.endless.metrics.v2.model import (
+            InvalidSequence, InvalidSingularEvent, Request, ShellAppIsOpen, UnknownAggregateEvent,
+            UnknownSequence, UnknownSingularEvent, Uptime)
 
         # Create the table
         self.run_subcommand('initdb')
@@ -869,7 +860,7 @@ class TestMetrics(IntegrationTest):
             assert invalid.payload_data == invalid_sequence.get_data_as_bytes().get_data()
 
     def test_parse_old_images(self):
-        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.v2.model import Machine
 
         # Create the table
         self.run_subcommand('initdb')
@@ -905,7 +896,7 @@ class TestMetrics(IntegrationTest):
             assert machine.image_personality == 'base'
 
     def test_parse_old_images_skips_already_done(self, capfd):
-        from azafea.event_processors.endless.metrics.machine import Machine
+        from azafea.event_processors.endless.metrics.v2.model import Machine
 
         # Create the table
         self.run_subcommand('initdb')
@@ -948,7 +939,7 @@ class TestMetrics(IntegrationTest):
         assert 'No machine record with unparsed image ids' in capture.out
 
     def test_set_open_durations(self):
-        from azafea.event_processors.endless.metrics.events import ShellAppIsOpen
+        from azafea.event_processors.endless.metrics.v2.model import ShellAppIsOpen
 
         # Create the table
         self.run_subcommand('initdb')
@@ -976,7 +967,7 @@ class TestMetrics(IntegrationTest):
             assert app.duration == duration
 
     def test_set_open_durations_already_set(self, capfd):
-        from azafea.event_processors.endless.metrics.events import ShellAppIsOpen
+        from azafea.event_processors.endless.metrics.v2.model import ShellAppIsOpen
 
         # Create the table
         self.run_subcommand('initdb')
@@ -1006,7 +997,7 @@ class TestMetrics(IntegrationTest):
         assert '-> No open app with unset duration' in capture.out
 
     def test_remove_os_info_quotes(self):
-        from azafea.event_processors.endless.metrics.events import OSVersion
+        from azafea.event_processors.endless.metrics.v2.model import OSVersion
 
         # Create the table
         self.run_subcommand('initdb')
@@ -1032,7 +1023,7 @@ class TestMetrics(IntegrationTest):
             assert version.version == '1.2.3'
 
     def test_remove_os_info_no_quotes(self, capfd):
-        from azafea.event_processors.endless.metrics.events import OSVersion
+        from azafea.event_processors.endless.metrics.v2.model import OSVersion
 
         # Create the table
         self.run_subcommand('initdb')
@@ -1054,8 +1045,7 @@ class TestMetrics(IntegrationTest):
         assert 'No OS info with extra quotes in database' in capture.out
 
     def test_remove_empty_location_info_none(self, capfd):
-        from azafea.event_processors.endless.metrics.events import LocationLabel
-        from azafea.event_processors.endless.metrics.request import Request
+        from azafea.event_processors.endless.metrics.v2.model import LocationLabel, Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -1090,8 +1080,7 @@ class TestMetrics(IntegrationTest):
         assert 'No locations events with empty info in database' in capture.out
 
     def test_remove_empty_location_info(self):
-        from azafea.event_processors.endless.metrics.events import LocationLabel
-        from azafea.event_processors.endless.metrics.request import Request
+        from azafea.event_processors.endless.metrics.v2.model import LocationLabel, Request
 
         # Create the table
         self.run_subcommand('initdb')
@@ -1129,7 +1118,7 @@ class TestMetrics(IntegrationTest):
             assert location_label.info == info
 
     def test_refresh_views(self):
-        from azafea.event_processors.endless.metrics.request import Request, MachineIdsByDay
+        from azafea.event_processors.endless.metrics.v2.model import MachineIdsByDay, Request
 
         # Create the table
         self.run_subcommand('initdb')
