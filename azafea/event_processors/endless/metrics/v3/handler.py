@@ -13,7 +13,7 @@ from sqlalchemy.exc import IntegrityError
 
 from azafea.model import DbSession
 
-from .model import RequestBuilder, new_aggregate_event, new_singular_event
+from .model import new_aggregate_event, new_singular_event, parse_record
 
 
 log = logging.getLogger(__name__)
@@ -22,18 +22,16 @@ log = logging.getLogger(__name__)
 def process(dbsession: DbSession, record: bytes) -> None:
     log.debug('Processing metric v3 record: %s', record)
 
-    request_builder = RequestBuilder.parse_bytes(record)
-    request = request_builder.build_request()
-    dbsession.add(request)
+    request_data = parse_record(record)
 
-    for event_variant in request_builder.singulars:
-        singular_event = new_singular_event(request, event_variant, dbsession)
+    for event_variant in request_data.singulars:
+        singular_event = new_singular_event(event_variant, dbsession)
 
         if singular_event is not None:
             log.debug('Inserting singular metric:\n%s', singular_event)
 
-    for event_variant in request_builder.aggregates:
-        aggregate_event = new_aggregate_event(request, event_variant, dbsession)
+    for event_variant in request_data.aggregates:
+        aggregate_event = new_aggregate_event(event_variant, dbsession)
         log.debug('Inserting aggregate metric:\n%s', aggregate_event)
 
     try:
