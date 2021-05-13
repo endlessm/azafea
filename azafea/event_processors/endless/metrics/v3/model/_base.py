@@ -109,7 +109,7 @@ class MetricEvent(Base, metaclass=MetricMeta):
 
     @declared_attr
     def request_id(cls) -> Column:
-        return Column(Integer, ForeignKey('metrics_request_v2.id'), index=True)
+        return Column(Integer, ForeignKey('metrics_request_v3.id'), index=True)
 
     @declared_attr
     def request(cls) -> relationship:

@@ -16,7 +16,7 @@ import pytest
 
 
 def test_request_builder():
-    from azafea.event_processors.endless.metrics.v2.model import RequestBuilder
+    from azafea.event_processors.endless.metrics.v3.model import RequestBuilder
 
     now = datetime.now(tz=timezone.utc)
     request = GLib.Variant(
@@ -52,7 +52,7 @@ def test_request_builder():
 
 
 def test_request_builder_invalid():
-    from azafea.event_processors.endless.metrics.v2.model import RequestBuilder
+    from azafea.event_processors.endless.metrics.v3.model import RequestBuilder
 
     now = datetime.now(tz=timezone.utc)
     request = GLib.Variant('(ix)', (0, 2000000000))

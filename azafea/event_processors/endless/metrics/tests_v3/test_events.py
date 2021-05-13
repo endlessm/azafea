@@ -18,7 +18,7 @@ from sqlalchemy.types import Integer, Unicode
 
 
 def test_singular_registry():
-    from azafea.event_processors.endless.metrics.v2.model import (
+    from azafea.event_processors.endless.metrics.v3.model import (
         SINGULAR_EVENT_MODELS, SingularEvent)
 
     class TestSingularEvent(SingularEvent):
@@ -29,7 +29,7 @@ def test_singular_registry():
 
 
 def test_aggregate_registry():
-    from azafea.event_processors.endless.metrics.v2.model import (
+    from azafea.event_processors.endless.metrics.v3.model import (
         AGGREGATE_EVENT_MODELS, AggregateEvent)
 
     class TestAggregateEvent(AggregateEvent):
@@ -40,7 +40,7 @@ def test_aggregate_registry():
 
 
 def test_sequence_registry():
-    from azafea.event_processors.endless.metrics.v2.model import (
+    from azafea.event_processors.endless.metrics.v3.model import (
         SEQUENCE_EVENT_MODELS, SequenceEvent)
 
     class TestSequenceEvent(SequenceEvent):
@@ -51,7 +51,7 @@ def test_sequence_registry():
 
 
 def test_new_event_no_payload():
-    from azafea.event_processors.endless.metrics.v2.model import SingularEvent
+    from azafea.event_processors.endless.metrics.v3.model import SingularEvent
 
     class TestEventNoPayload(SingularEvent):
         __tablename__ = 'test_singular_no_payload'
@@ -63,7 +63,7 @@ def test_new_event_no_payload():
 
 
 def test_new_event_with_payload():
-    from azafea.event_processors.endless.metrics.v2.model import SingularEvent
+    from azafea.event_processors.endless.metrics.v3.model import SingularEvent
 
     class TestEventWithPayload(SingularEvent):
         __tablename__ = 'test_singular_with_payload'
@@ -88,7 +88,7 @@ def test_new_event_with_payload():
 
 def test_new_event_no_payload_but_payload_given(capfd):
     from azafea.logging import setup_logging
-    from azafea.event_processors.endless.metrics.v2.model import SingularEvent
+    from azafea.event_processors.endless.metrics.v3.model import SingularEvent
 
     setup_logging(verbose=False)
 
@@ -106,7 +106,7 @@ def test_new_event_no_payload_but_payload_given(capfd):
 
 
 def test_new_event_no_payload_given():
-    from azafea.event_processors.endless.metrics.v2.model import EmptyPayloadError, SingularEvent
+    from azafea.event_processors.endless.metrics.v3.model import EmptyPayloadError, SingularEvent
 
     class TestEventNoPayloadGiven(SingularEvent):
         __tablename__ = 'test_singular_no_payload_given'
@@ -123,7 +123,7 @@ def test_new_event_no_payload_given():
 
 
 def test_new_event_wrong_payload_given():
-    from azafea.event_processors.endless.metrics.v2.model import SingularEvent, WrongPayloadError
+    from azafea.event_processors.endless.metrics.v3.model import SingularEvent, WrongPayloadError
 
     class TestEventWrongPayloadGiven(SingularEvent):
         __tablename__ = 'test_singular_wrong_payload_given'
@@ -140,7 +140,7 @@ def test_new_event_wrong_payload_given():
 
 
 def test_new_unknown_event():
-    from azafea.event_processors.endless.metrics.v2.model import UnknownEvent
+    from azafea.event_processors.endless.metrics.v3.model import UnknownEvent
 
     class TestUnknownEvent(UnknownEvent):
         __tablename__ = 'test_unknown'
@@ -598,7 +598,7 @@ def test_new_unknown_event():
     ),
 ])
 def test_singular_event(event_model_name, payload, expected_attrs):
-    from azafea.event_processors.endless.metrics.v2 import model
+    from azafea.event_processors.endless.metrics.v3 import model
 
     event_model = getattr(model, event_model_name)
     maybe_payload = GLib.Variant('mv', payload)
@@ -610,7 +610,7 @@ def test_singular_event(event_model_name, payload, expected_attrs):
 
 
 def test_invalid_hack_clubhouse_progress_event():
-    from azafea.event_processors.endless.metrics.v2.model import HackClubhouseProgress
+    from azafea.event_processors.endless.metrics.v3.model import HackClubhouseProgress
 
     # Make an invalid payload with missing keys
     payload = GLib.Variant('mv', GLib.Variant('a{sv}', {'complete': GLib.Variant('b', True)}))
@@ -627,7 +627,7 @@ def test_hack_clubhouse_progress_event_with_unknown_key():
     # Additional event attributes passed to the constructor are ignored by our base model, but for
     # this specific event the code parsing the payload does its own ignoring as well, so let's test
     # it to be sure.
-    from azafea.event_processors.endless.metrics.v2.model import HackClubhouseProgress
+    from azafea.event_processors.endless.metrics.v3.model import HackClubhouseProgress
 
     # Make an invalid payload with extra keys
     payload = GLib.Variant('mv', GLib.Variant('a{sv}', {
@@ -651,7 +651,7 @@ def test_hack_clubhouse_progress_event_with_unknown_key():
 
 
 def test_invalid_parental_controls_changed_event():
-    from azafea.event_processors.endless.metrics.v2.model import ParentalControlsChanged
+    from azafea.event_processors.endless.metrics.v3.model import ParentalControlsChanged
 
     # Make an invalid payload with missing keys
     payload = GLib.Variant('mv', GLib.Variant('a{sv}', {
@@ -670,7 +670,7 @@ def test_invalid_parental_controls_changed_event():
 
 
 def test_invalid_parental_controls_changed_oars_event():
-    from azafea.event_processors.endless.metrics.v2.model import ParentalControlsChanged
+    from azafea.event_processors.endless.metrics.v3.model import ParentalControlsChanged
 
     # Make an invalid payload with an unknown OARS filter type
     payload = GLib.Variant('mv', GLib.Variant('a{sv}', {
@@ -692,7 +692,7 @@ def test_invalid_parental_controls_changed_oars_event():
 
 
 def test_empty_location_label():
-    from azafea.event_processors.endless.metrics.v2.model import EmptyPayloadError, LocationLabel
+    from azafea.event_processors.endless.metrics.v3.model import EmptyPayloadError, LocationLabel
 
     # Make an invalid payload with missing keys
     payload = GLib.Variant('mv', GLib.Variant('a{ss}', {'empty': ''}))
@@ -708,7 +708,7 @@ def test_empty_location_label():
     ('UserIsLoggedIn', GLib.Variant('u', 1000), {'logged_in_user_id': 1000}),
 ])
 def test_sequence_event(event_model_name, payload, expected_attrs):
-    from azafea.event_processors.endless.metrics.v2 import model
+    from azafea.event_processors.endless.metrics.v3 import model
 
     event_model = getattr(model, event_model_name)
     maybe_payload = GLib.Variant('mv', payload)
