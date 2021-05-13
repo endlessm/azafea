@@ -24,7 +24,7 @@ from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary, Unicode
 from azafea.model import Base, DbSession
 
 from ..utils import get_bytes, get_event_datetime, get_variant
-from ._request import Request
+from ._channel import Channel
 
 
 log = logging.getLogger(__name__)
@@ -104,13 +104,16 @@ class MetricEvent(Base, metaclass=MetricMeta):
 
     id = Column(Integer, primary_key=True)
 
-    @declared_attr
-    def request_id(cls) -> Column:
-        return Column(Integer, ForeignKey('metrics_request_v3.id'), index=True)
+    absolute_timestamp = Column(BigInteger, nullable=False)
+    relative_timestamp = Column(BigInteger, nullable=False)
 
     @declared_attr
-    def request(cls) -> relationship:
-        return relationship(Request)
+    def channel_id(cls) -> Column:
+        return Column(Integer, ForeignKey('channel_v3.id'), index=True)
+
+    @declared_attr
+    def channel(cls) -> relationship:
+        return relationship(Channel)
 
     # This comes in as a uint32, but PostgreSQL only has signed types so we need a BIGINT (int64)
     user_id = Column(BigInteger, nullable=False)
@@ -205,7 +208,11 @@ class UnknownAggregateEvent(AggregateEvent, UnknownEvent):
     __tablename__ = 'unknown_aggregate_event_v3'
 
 
-def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession: DbSession
+def parse_record(record):
+    pass
+
+
+def new_singular_event(channel: Channel, event_variant: GLib.Variant, dbsession: DbSession
                        ) -> Optional[SingularEvent]:
     event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(1))))
 
@@ -225,7 +232,7 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
     except KeyError:
         # Mypy complains here, even though this should be fine:
         # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        event = UnknownSingularEvent(request=request, user_id=user_id,  # type: ignore
+        event = UnknownSingularEvent(channel=channel, user_id=user_id,  # type: ignore
                                      occured_at=event_date, event_id=event_id, payload=payload)
         dbsession.add(event)
         return event
@@ -233,7 +240,7 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
     try:
         # Mypy complains here, even though this should be fine:
         # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        event = event_model(request=request, user_id=user_id,  # type: ignore
+        event = event_model(channel=channel, user_id=user_id,  # type: ignore
                             occured_at=event_date, payload=payload)
 
     except Exception as e:
@@ -244,7 +251,7 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
 
         # Mypy complains here, even though this should be fine:
         # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        event = InvalidSingularEvent(request=request, user_id=user_id,  # type: ignore
+        event = InvalidSingularEvent(channel=channel, user_id=user_id,  # type: ignore
                                      occured_at=event_date, event_id=event_id, payload=payload,
                                      error=str(e))
 
@@ -253,7 +260,7 @@ def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession:
     return event
 
 
-def new_aggregate_event(request: Request, event_variant: GLib.Variant, dbsession: DbSession
+def new_aggregate_event(channel: Channel, event_variant: GLib.Variant, dbsession: DbSession
                         ) -> Optional[AggregateEvent]:
     event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(1))))
 
@@ -272,7 +279,7 @@ def new_aggregate_event(request: Request, event_variant: GLib.Variant, dbsession
 
     # Mypy complains here, even though this should be fine:
     # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-    event = UnknownAggregateEvent(request=request, user_id=user_id,  # type: ignore
+    event = UnknownAggregateEvent(channel=channel, user_id=user_id,  # type: ignore
                                   occured_at=event_date, count=count, event_id=event_id,
                                   payload=payload)
     dbsession.add(event)
@@ -299,7 +306,7 @@ def replay_invalid_singular_events(invalid_events: Query) -> None:
             # This event UUID is now unknown
             # Mypy complains here, even though this should be fine:
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            event = UnknownSingularEvent(request=invalid.request,  # type: ignore
+            event = UnknownSingularEvent(channel=invalid.channel,  # type: ignore
                                          user_id=invalid.user_id, occured_at=invalid.occured_at,
                                          event_id=event_id, payload=payload)
             invalid_events.session.add(event)
@@ -311,7 +318,7 @@ def replay_invalid_singular_events(invalid_events: Query) -> None:
         try:
             # Mypy complains here, even though this should be fine:
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            event = event_model(request_id=invalid.request_id,  # type: ignore
+            event = event_model(channel_id=invalid.channel_id,  # type: ignore
                                 user_id=invalid.user_id, occured_at=invalid.occured_at,
                                 payload=payload)
 
@@ -355,7 +362,7 @@ def replay_unknown_singular_events(unknown_events: Query) -> None:
         try:
             # Mypy complains here, even though this should be fine:
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            event = event_model(request_id=unknown.request_id,  # type: ignore
+            event = event_model(channel_id=unknown.channel_id,  # type: ignore
                                 user_id=unknown.user_id, occured_at=unknown.occured_at,
                                 payload=payload)
 
@@ -369,7 +376,7 @@ def replay_unknown_singular_events(unknown_events: Query) -> None:
 
             # Mypy complains here, even though this should be fine:
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            event = InvalidSingularEvent(request_id=unknown.request_id,  # type: ignore
+            event = InvalidSingularEvent(channel_id=unknown.channel_id,  # type: ignore
                                          user_id=unknown.user_id, occured_at=unknown.occured_at,
                                          event_id=event_id, payload=payload, error=str(e))
 

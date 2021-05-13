@@ -37,15 +37,6 @@ from ._base import (  # noqa: F401
     aggregate_event_is_known,
     singular_event_is_known,
 )
-from ._machine import (  # noqa: F401
-    Machine,
-    upsert_machine_demo,
-    upsert_machine_dualboot,
-    upsert_machine_image,
-    upsert_machine_live,
-    upsert_machine_location,
-)
-from ._request import MachineIdsByDay, Request, RequestBuilder  # noqa: F401
 
 
 # -- Singular events ----------------------------------------------------------
@@ -551,6 +542,19 @@ class StartupFinished(SingularEvent):
         }
 
 
+class ComputerInformation(SingularEvent):
+    __tablename__ = 'computer_information_v3'
+
+
 # -- Aggregate events ---------------------------------------------------------
 
-# TODO: Add aggregate event implementations here
+class TimeSpentInSession(AggregateEvent):
+    __tablename__ = 'time_spent_in_session_v3'
+
+
+class TimeSpentByForegroundApp(AggregateEvent):
+    __tablename__ = 'time_spent_by_foreground_app_v3'
+
+
+class DifferentUsers(AggregateEvent):
+    __tablename__ = 'different_users_v3'
