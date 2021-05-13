@@ -477,7 +477,7 @@ def test_replay_errors_fail_to_push(capfd, monkeypatch, make_config_file):
 def test_refresh_views(capfd, make_config_file):
     config_file = make_config_file({
         'postgresql': {'database': 'azafea-tests'},
-        'queues': {'metrics-2': {'handler': 'azafea.event_processors.endless.metrics.v2'}},
+        'queues': {'metrics-3': {'handler': 'azafea.event_processors.endless.metrics.v3'}},
     })
 
     azafea.cli.run_command('-c', str(config_file), 'initdb')

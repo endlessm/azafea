@@ -71,7 +71,7 @@ password = "** hidden **"
 database = "azafea"
 
 [queues.metrics]
-handler = "azafea.event_processors.endless.metrics.v2"
+handler = "azafea.event_processors.endless.metrics.v3"
 
 [postgresql.connect_args]
 $ sudo docker build --rm --build-arg build_type=dev --tag azafea-dev .

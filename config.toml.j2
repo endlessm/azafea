@@ -19,6 +19,9 @@ handler = "azafea.event_processors.endless.ping.v1"
 [queues.metrics-2]
 handler = "azafea.event_processors.endless.metrics.v2"
 
+[queues.metrics-3]
+handler = "azafea.event_processors.endless.metrics.v3"
+
 [postgresql.connect_args]
 sslmode = "{{ POSTGRES_SSL_MODE }}"
 sslrootcert = "/etc/ssl/certs/ca-certificates.crt"
