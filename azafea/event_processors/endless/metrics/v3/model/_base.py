@@ -31,7 +31,6 @@ log = logging.getLogger(__name__)
 
 SINGULAR_EVENT_MODELS: Dict[str, Type['SingularEvent']] = {}
 AGGREGATE_EVENT_MODELS: Dict[str, Type['AggregateEvent']] = {}
-SEQUENCE_EVENT_MODELS: Dict[str, Type['SequenceEvent']] = {}
 
 IGNORED_EVENTS: Set[str] = {
     '005096c4-9444-48c6-844b-6cb693c15235',
@@ -84,8 +83,6 @@ class MetricMeta(DeclarativeMeta):
                 SINGULAR_EVENT_MODELS[event_uuid] = cast(Type[SingularEvent], cls)
             elif AggregateEvent in bases:
                 AGGREGATE_EVENT_MODELS[event_uuid] = cast(Type[AggregateEvent], cls)
-            elif SequenceEvent in bases:
-                SEQUENCE_EVENT_MODELS[event_uuid] = cast(Type[SequenceEvent], cls)
             else:  # pragma: no cover
                 raise NotImplementedError(f"Can't handle class {name} with bases {bases}")
 
@@ -208,25 +205,6 @@ class UnknownAggregateEvent(AggregateEvent, UnknownEvent):
     __tablename__ = 'unknown_aggregate_event'
 
 
-class SequenceEvent(MetricEvent):
-    __abstract__ = True
-
-    started_at = Column(DateTime(timezone=True), nullable=False, index=True)
-    stopped_at = Column(DateTime(timezone=True), nullable=False)
-
-
-# This is not an event part of an unknown sequence: it is the whole sequence with start, progress
-# and stop events in its payload_data
-class InvalidSequence(InvalidEvent):
-    __tablename__ = 'invalid_sequence'
-
-
-# This is not an event part of an unknown sequence: it is the whole sequence with start, progress
-# and stop events in its payload_data
-class UnknownSequence(UnknownEvent):
-    __tablename__ = 'unknown_sequence'
-
-
 def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession: DbSession
                        ) -> Optional[SingularEvent]:
     event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(1))))
@@ -302,76 +280,6 @@ def new_aggregate_event(request: Request, event_variant: GLib.Variant, dbsession
     return event
 
 
-def new_sequence_event(request: Request, sequence_variant: GLib.Variant, dbsession: DbSession
-                       ) -> Optional[Union[SequenceEvent, InvalidSequence, UnknownSequence]]:
-    event_id = str(UUID(bytes=get_bytes(sequence_variant.get_child_value(1))))
-
-    if event_id in IGNORED_EVENTS:
-        return None
-
-    user_id = sequence_variant.get_child_value(0).get_uint32()
-    events = sequence_variant.get_child_value(2)
-    num_events = events.n_children()
-
-    if num_events < 2:
-        error = f'Sequence must have at least 2 elements, but only had {num_events}'
-
-        # Mypy complains here, even though this should be fine:
-        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        sequence = InvalidSequence(request=request, user_id=user_id,  # type: ignore
-                                   event_id=event_id, payload=events, error=error)
-        dbsession.add(sequence)
-
-        return sequence
-
-    start_variant, *_progress_variants, stop_variant = get_child_values(events)
-
-    # For now, we ignore progress events entirely. We also assume the stop event always has a null
-    # payload. This works for most sequence events we care about in priority.
-    # TODO: Figure this out for the more complex events
-
-    start_relative_timestamp = start_variant.get_child_value(0).get_int64()
-    payload = start_variant.get_child_value(1)
-    started_at = get_event_datetime(request.absolute_timestamp, request.relative_timestamp,
-                                    start_relative_timestamp)
-
-    stop_relative_timestamp = stop_variant.get_child_value(0).get_int64()
-    stopped_at = get_event_datetime(request.absolute_timestamp, request.relative_timestamp,
-                                    stop_relative_timestamp)
-
-    try:
-        event_model = SEQUENCE_EVENT_MODELS[event_id]
-
-    except KeyError:
-        # Mypy complains here, even though this should be fine:
-        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        sequence = UnknownSequence(request=request, user_id=user_id,  # type: ignore
-                                   event_id=event_id, payload=events)
-        dbsession.add(sequence)
-        return sequence
-
-    try:
-        # Mypy complains here, even though this should be fine:
-        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        sequence = event_model(request=request, user_id=user_id,  # type: ignore
-                               started_at=started_at, stopped_at=stopped_at, payload=payload)
-
-    except Exception as e:
-        if isinstance(e, EmptyPayloadError) and event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
-            return None
-
-        log.exception('An error occured while processing the sequence:')
-
-        # Mypy complains here, even though this should be fine:
-        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        sequence = InvalidSequence(request=request, user_id=user_id,  # type: ignore
-                                   event_id=event_id, payload=events, error=str(e))
-
-    dbsession.add(sequence)
-
-    return sequence
-
-
 def replay_invalid_singular_events(invalid_events: Query) -> None:
     for invalid in invalid_events:
         event_id = str(invalid.event_id)
@@ -423,74 +331,6 @@ def replay_invalid_aggregate_events(invalid_events: Query) -> None:  # pragma: n
     # TODO: Implement this when we actually have aggregate events
     raise NotImplementedError("Replaying invalid aggregate events is not yet implemented as we "
                               "don't have any")
-
-
-def replay_invalid_sequences(invalid_events: Query) -> None:
-    for invalid in invalid_events:
-        event_id = str(invalid.event_id)
-
-        if event_id in IGNORED_EVENTS:
-            invalid_events.session.delete(invalid)
-            continue
-
-        # The payload is really the variant containing all the events in the sequence
-        events = GLib.Variant.new_from_bytes(GLib.VariantType('a(xmv)'),
-                                             GLib.Bytes.new(invalid.payload_data),
-                                             False)
-        num_events = events.n_children()
-
-        if num_events < 2:
-            # This is still an invalid sequence
-            continue
-
-        try:
-            event_model = SEQUENCE_EVENT_MODELS[event_id]
-
-        except KeyError:
-            # This event UUID is now unknown
-            # Mypy complains here, even though this should be fine:
-            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            sequence = UnknownSequence(request=invalid.request,  # type: ignore
-                                       user_id=invalid.user_id, event_id=event_id, payload=events)
-            invalid_events.session.add(sequence)
-            invalid_events.session.delete(invalid)
-            continue
-
-        # This event UUID was invalid and is a known event model, let's try and replay it
-
-        start_variant, *_progress_variants, stop_variant = get_child_values(events)
-
-        # For now, we ignore progress events entirely. We also assume the stop event always has a
-        # null payload. This works for most sequence events we care about in priority.
-        # TODO: Figure this out for the more complex events
-
-        start_relative_timestamp = start_variant.get_child_value(0).get_int64()
-        payload = start_variant.get_child_value(1)
-        started_at = get_event_datetime(invalid.request.absolute_timestamp,
-                                        invalid.request.relative_timestamp,
-                                        start_relative_timestamp)
-        stop_relative_timestamp = stop_variant.get_child_value(0).get_int64()
-        stopped_at = get_event_datetime(invalid.request.absolute_timestamp,
-                                        invalid.request.relative_timestamp,
-                                        stop_relative_timestamp)
-
-        try:
-            # Mypy complains here, even though this should be fine:
-            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            sequence = event_model(request_id=invalid.request_id,  # type: ignore
-                                   user_id=invalid.user_id, started_at=started_at,
-                                   stopped_at=stopped_at, payload=payload)
-
-        except Exception as e:
-            if isinstance(e, EmptyPayloadError) and event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
-                invalid_events.session.delete(invalid)
-                continue
-
-            # The event is still invalid
-            continue
-
-        invalid_events.session.add(sequence)
-        invalid_events.session.delete(invalid)
 
 
 def singular_event_is_known(event_id: str) -> bool:
@@ -553,65 +393,3 @@ def replay_unknown_aggregate_events(unknown_events: Query) -> None:
 
         # TODO: Implement this when we actually have aggregate events
         continue  # pragma: no cover
-
-
-def sequence_is_known(event_id: str) -> bool:
-    return (event_id in SEQUENCE_EVENT_MODELS) or (event_id in IGNORED_EVENTS)
-
-
-def replay_unknown_sequences(unknown_events: Query) -> None:
-    for unknown in unknown_events:
-        event_id = str(unknown.event_id)
-
-        if event_id in IGNORED_EVENTS:
-            unknown_events.session.delete(unknown)
-            continue
-
-        event_model = SEQUENCE_EVENT_MODELS[event_id]
-
-        # This event UUID was unknown but is now known, let's process it
-
-        # The payload is really the variant containing all the events in the sequence
-        events = GLib.Variant.new_from_bytes(GLib.VariantType('a(xmv)'),
-                                             GLib.Bytes.new(unknown.payload_data),
-                                             False)
-
-        start_variant, *_progress_variants, stop_variant = get_child_values(events)
-
-        # For now, we ignore progress events entirely. We also assume the stop event always has a
-        # null payload. This works for most sequence events we care about in priority.
-        # TODO: Figure this out for the more complex events
-
-        start_relative_timestamp = start_variant.get_child_value(0).get_int64()
-        payload = start_variant.get_child_value(1)
-        started_at = get_event_datetime(unknown.request.absolute_timestamp,
-                                        unknown.request.relative_timestamp,
-                                        start_relative_timestamp)
-        stop_relative_timestamp = stop_variant.get_child_value(0).get_int64()
-        stopped_at = get_event_datetime(unknown.request.absolute_timestamp,
-                                        unknown.request.relative_timestamp,
-                                        stop_relative_timestamp)
-
-        try:
-            # Mypy complains here, even though this should be fine:
-            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            sequence = event_model(request_id=unknown.request_id,  # type: ignore
-                                   user_id=unknown.user_id, started_at=started_at,
-                                   stopped_at=stopped_at, payload=payload)
-
-        except Exception as e:
-            if isinstance(e, EmptyPayloadError) and event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
-                unknown_events.session.delete(unknown)
-                continue
-
-            # The event is now invalid
-            log.exception('An error occured while processing the event:')
-
-            # Mypy complains here, even though this should be fine:
-            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            sequence = InvalidSequence(request_id=unknown.request_id,  # type: ignore
-                                       user_id=unknown.user_id, event_id=event_id, payload=events,
-                                       error=str(e))
-
-        unknown_events.session.add(sequence)
-        unknown_events.session.delete(unknown)

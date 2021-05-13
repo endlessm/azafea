@@ -537,13 +537,12 @@ class TestMetrics(IntegrationTest):
 
     def test_replay_invalid(self):
         from azafea.event_processors.endless.metrics.v3.model import (
-            InvalidSequence, InvalidSingularEvent, Request, ShellAppIsOpen, UnknownSequence,
-            UnknownSingularEvent, Uptime)
+            InvalidSingularEvent, Request, ShellAppIsOpen, UnknownSingularEvent, Uptime)
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(Request, ShellAppIsOpen, Uptime, InvalidSequence, InvalidSingularEvent,
-                           UnknownSequence, UnknownSingularEvent)
+        self.ensure_tables(
+            Request, ShellAppIsOpen, Uptime, InvalidSingularEvent, UnknownSingularEvent)
 
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 
@@ -589,65 +588,6 @@ class TestMetrics(IntegrationTest):
 
             # TODO: Implement this when we actually have aggregate events to test
 
-            # -- Invalid sequence events --------
-
-            # Add an invalid sequence which will be ignored after the replay
-            dbsession.add(InvalidSequence(
-                request=request, event_id='9c33a734-7ed8-4348-9e39-3c27f4dc2e62', user_id=3001,
-                payload=GLib.Variant('a(xmv)', [
-                    (3, GLib.Variant('s', 'discard')),
-                    (4, None),
-                ]), error='discard'))
-
-            # Add an invalid sequence which will be unknown after the replay
-            unknown_sequence = GLib.Variant('a(xmv)', [
-                (3, GLib.Variant('s', 'unknown')),
-                (4, None),
-            ])
-            dbsession.add(InvalidSequence(
-                request=request, event_id='ffffffff-ffff-ffff-ffff-ffffffffffff', user_id=3002,
-                payload=unknown_sequence, error='unknown'))
-
-            # Add an invalid sequence which will be replayed as a shell app is open event
-            dbsession.add(InvalidSequence(
-                request=request, event_id='b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0', user_id=3003,
-                payload=GLib.Variant('a(xmv)', [
-                    (3, GLib.Variant('s', 'org.gnome.Calendar')),
-                    (4, None),
-                ]), error='ok'))
-
-            # Add an invalid sequence which will be replayed as a user is logged in event, but with
-            # an error we decided to ignore
-            dbsession.add(InvalidSequence(
-                request=request, event_id='add052be-7b2a-4959-81a5-a7f45062ee98', user_id=3004,
-                payload=GLib.Variant('a(xmv)', [
-                    (3, None),
-                    (4, None),
-                ]), error='discard'))
-
-            # Add an invalid sequence which will be replayed as an shell app is open event, but
-            # with an actual error making it invalid
-            invalid_sequence = GLib.Variant('a(xmv)', [
-                (3, GLib.Variant('ay', b'invalid')),
-                (4, None)
-            ])
-            dbsession.add(InvalidSequence(
-                request=request, event_id='b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0', user_id=3005,
-                payload=invalid_sequence, error='invalid'))
-
-            # Add an invalid sequence with only a single event
-            missing_events = GLib.Variant('a(xmv)', [
-                (3, GLib.Variant('ay', b'invalid')),
-            ])
-            dbsession.add(InvalidSequence(
-                request=request, event_id='b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0', user_id=3006,
-                payload=missing_events, error='missing'))
-
-        with self.db as dbsession:
-            assert dbsession.query(Request).count() == 1
-            assert dbsession.query(InvalidSingularEvent).count() == 5
-            assert dbsession.query(InvalidSequence).count() == 6
-
         # Replay the invalid events
         self.run_subcommand('test_replay_invalid', 'replay-invalid')
 
@@ -680,40 +620,16 @@ class TestMetrics(IntegrationTest):
 
             # TODO: Implement this when we actually have aggregate events to test
 
-            # -- Sequence events ----------------
-
-            unknown = dbsession.query(UnknownSequence).one()
-            assert unknown.request == request
-            assert unknown.user_id == 3002
-            assert unknown.payload_data == unknown_sequence.get_data_as_bytes().get_data()
-
-            app = dbsession.query(ShellAppIsOpen).one()
-            assert app.request == request
-            assert app.user_id == 3003
-            assert app.app_id == 'org.gnome.Calendar'
-
-            invalids = dbsession.query(InvalidSequence).order_by(InvalidSequence.id).all()
-            assert len(invalids) == 2
-
-            invalid = invalids[0]
-            assert invalid.request == request
-            assert invalid.user_id == 3005
-            assert invalid.payload_data == invalid_sequence.get_data_as_bytes().get_data()
-
-            invalid = invalids[1]
-            assert invalid.request == request
-            assert invalid.user_id == 3006
-            assert invalid.payload_data == missing_events.get_data_as_bytes().get_data()
-
     def test_replay_unknown(self):
         from azafea.event_processors.endless.metrics.v3.model import (
-            InvalidSequence, InvalidSingularEvent, Request, ShellAppIsOpen, UnknownAggregateEvent,
-            UnknownSequence, UnknownSingularEvent, Uptime)
+            InvalidSingularEvent, Request, ShellAppIsOpen, UnknownAggregateEvent,
+            UnknownSingularEvent, Uptime)
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(Request, ShellAppIsOpen, Uptime, InvalidSequence, InvalidSingularEvent,
-                           UnknownAggregateEvent, UnknownSequence, UnknownSingularEvent)
+        self.ensure_tables(
+            Request, ShellAppIsOpen, Uptime, InvalidSingularEvent, UnknownAggregateEvent,
+            UnknownSingularEvent)
 
         occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
 
@@ -762,54 +678,10 @@ class TestMetrics(IntegrationTest):
                 count=10, occured_at=occured_at,
                 payload=GLib.Variant('mv', GLib.Variant('s', 'discard'))))
 
-            # -- Unknown sequence events --------
-
-            # Add an unknown sequence which will be ignored after the replay
-            dbsession.add(UnknownSequence(
-                request=request, event_id='9c33a734-7ed8-4348-9e39-3c27f4dc2e62', user_id=3001,
-                payload=GLib.Variant('a(xmv)', [(3, GLib.Variant('s', 'discard')), (4, None)])))
-
-            # Add an unknown sequence which will still be unknown after the replay
-            unknown_sequence = GLib.Variant('a(xmv)', [
-                (3, GLib.Variant('s', 'unknown')),
-                (4, None),
-            ])
-            dbsession.add(UnknownSequence(
-                request=request, event_id='ffffffff-ffff-ffff-ffff-ffffffffffff', user_id=3002,
-                payload=unknown_sequence))
-
-            # Add an unknown sequence which will be replayed as a shell app is open event
-            dbsession.add(UnknownSequence(
-                request=request, event_id='b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0', user_id=3003,
-                payload=GLib.Variant('a(xmv)', [
-                    (3, GLib.Variant('s', 'org.gnome.Calendar')),
-                    (4, None),
-                ])))
-
-            # Add an unknown sequence which will be replayed as a user is logged in event, but with
-            # an error we decided to ignore
-            dbsession.add(UnknownSequence(
-                request=request, event_id='add052be-7b2a-4959-81a5-a7f45062ee98', user_id=3004,
-                payload=GLib.Variant('a(xmv)', [
-                    (3, None),
-                    (4, None),
-                ])))
-
-            # Add an unknown sequence which will be replayed as an shell app is open event, but
-            # with an actual error making it invalid
-            invalid_sequence = GLib.Variant('a(xmv)', [
-                (3, GLib.Variant('ay', b'invalid')),
-                (4, None)
-            ])
-            dbsession.add(UnknownSequence(
-                request=request, event_id='b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0', user_id=3005,
-                payload=invalid_sequence))
-
         with self.db as dbsession:
             assert dbsession.query(Request).count() == 1
             assert dbsession.query(UnknownSingularEvent).count() == 5
             assert dbsession.query(UnknownAggregateEvent).count() == 1
-            assert dbsession.query(UnknownSequence).count() == 5
 
         # Replay the unknown events
         self.run_subcommand('test_replay_unknown', 'replay-unknown')
@@ -841,23 +713,6 @@ class TestMetrics(IntegrationTest):
             # -- Aggregate events ---------------
 
             assert dbsession.query(UnknownAggregateEvent).count() == 0
-
-            # -- Sequence events ----------------
-
-            unknown = dbsession.query(UnknownSequence).one()
-            assert unknown.request == request
-            assert unknown.user_id == 3002
-            assert unknown.payload_data == unknown_sequence.get_data_as_bytes().get_data()
-
-            app = dbsession.query(ShellAppIsOpen).one()
-            assert app.request == request
-            assert app.user_id == 3003
-            assert app.app_id == 'org.gnome.Calendar'
-
-            invalid = dbsession.query(InvalidSequence).one()
-            assert invalid.request == request
-            assert invalid.user_id == 3005
-            assert invalid.payload_data == invalid_sequence.get_data_as_bytes().get_data()
 
     def test_parse_old_images(self):
         from azafea.event_processors.endless.metrics.v3.model import Machine
