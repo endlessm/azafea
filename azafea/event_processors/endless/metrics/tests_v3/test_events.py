@@ -39,17 +39,6 @@ def test_aggregate_registry():
     assert AGGREGATE_EVENT_MODELS['00000000-0000-0000-0000-000000000000'] == TestAggregateEvent
 
 
-def test_sequence_registry():
-    from azafea.event_processors.endless.metrics.v3.model import (
-        SEQUENCE_EVENT_MODELS, SequenceEvent)
-
-    class TestSequenceEvent(SequenceEvent):
-        __tablename__ = 'test_sequence'
-        __event_uuid__ = '00000000-0000-0000-0000-000000000000'
-
-    assert SEQUENCE_EVENT_MODELS['00000000-0000-0000-0000-000000000000'] == TestSequenceEvent
-
-
 def test_new_event_no_payload():
     from azafea.event_processors.endless.metrics.v3.model import SingularEvent
 
