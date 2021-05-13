@@ -22,7 +22,7 @@ from ..utils import cached_property, get_bytes, get_child_values
 
 
 class Request(Base):
-    __tablename__ = 'metrics_request_v2'
+    __tablename__ = 'metrics_request_v3'
 
     id = Column(Integer, primary_key=True)
     sha512 = Column(Unicode, nullable=False, unique=True)

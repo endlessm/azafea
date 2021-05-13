@@ -14,14 +14,14 @@ import pytest
 
 
 def test_get_bytes():
-    from azafea.event_processors.endless.metrics.v2.utils import get_bytes
+    from azafea.event_processors.endless.metrics.v3.utils import get_bytes
 
     variant = GLib.Variant('ay', b'some bytes')
     assert get_bytes(variant) == b'some bytes'
 
 
 def test_get_child_values():
-    from azafea.event_processors.endless.metrics.v2.utils import get_child_values
+    from azafea.event_processors.endless.metrics.v3.utils import get_child_values
 
     variant = GLib.Variant('ay', b'123')
     assert list(get_child_values(variant)) == [
@@ -37,13 +37,13 @@ def test_get_child_values():
     GLib.Variant('v', GLib.Variant('v', GLib.Variant('v', GLib.Variant('i', 41)))),
 ])
 def test_get_variant(variant):
-    from azafea.event_processors.endless.metrics.v2.utils import get_variant
+    from azafea.event_processors.endless.metrics.v3.utils import get_variant
 
     assert get_variant(variant) == GLib.Variant('i', 41)
 
 
 def test_get_event_datetime():
-    from azafea.event_processors.endless.metrics.v2.utils import get_event_datetime
+    from azafea.event_processors.endless.metrics.v3.utils import get_event_datetime
 
     assert get_event_datetime(1536122990000000000, 20000000000, 30000000000) \
         == datetime(2018, 9, 5, 4, 50, tzinfo=timezone.utc)
