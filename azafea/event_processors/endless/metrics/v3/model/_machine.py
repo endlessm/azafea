@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 
 
 class Machine(Base):
-    __tablename__ = 'metrics_machine'
+    __tablename__ = 'metrics_machine_v3'
 
     id = Column(Integer, primary_key=True)
     machine_id = Column(Unicode(32), nullable=False, unique=True)

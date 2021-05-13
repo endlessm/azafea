@@ -12,12 +12,9 @@ from typing import Any, Dict
 from gi.repository import GLib
 
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.event import listens_for
-from sqlalchemy.inspection import inspect
 from sqlalchemy.schema import Column
 from sqlalchemy.types import ARRAY, BigInteger, Boolean, Unicode
 
-from azafea.model import Base, DbSession
 from ..utils import clamp_to_int64, get_child_values
 from ._base import (  # noqa: F401
     AGGREGATE_EVENT_MODELS,
@@ -67,7 +64,7 @@ class LaunchedEquivalentExistingFlatpak(SingularEvent):
     .. versionadded:: 3.2.4
 
     """
-    __tablename__ = 'launched_equivalent_existing_flatpak'
+    __tablename__ = 'launched_equivalent_existing_flatpak_v3'
     __event_uuid__ = '00d7bc1e-ec93-4c53-ae78-a6b40450be4a'
     __payload_type__ = '(sas)'
 
@@ -97,7 +94,7 @@ class LaunchedEquivalentInstallerForFlatpak(SingularEvent):
     .. versionadded:: 3.2.4
 
     """
-    __tablename__ = 'launched_equivalent_installer_for_flatpak'
+    __tablename__ = 'launched_equivalent_installer_for_flatpak_v3'
     __event_uuid__ = '7de69d43-5f6b-4bef-b5f3-a21295b79185'
     __payload_type__ = '(sas)'
 
@@ -128,7 +125,7 @@ class LaunchedExistingFlatpak(SingularEvent):
     .. versionadded:: 3.2.4
 
     """
-    __tablename__ = 'launched_existing_flatpak'
+    __tablename__ = 'launched_existing_flatpak_v3'
     __event_uuid__ = '192f39dd-79b3-4497-99fa-9d8aea28760c'
     __payload_type__ = '(sas)'
 
@@ -158,7 +155,7 @@ class LaunchedInstallerForFlatpak(SingularEvent):
     .. versionadded:: 3.2.4
 
     """
-    __tablename__ = 'launched_installer_for_flatpak'
+    __tablename__ = 'launched_installer_for_flatpak_v3'
     __event_uuid__ = 'e98bf6d9-8511-44f9-a1bd-a1d0518934b9'
     __payload_type__ = '(sas)'
 
@@ -182,7 +179,7 @@ class LinuxPackageOpened(SingularEvent):
 
     .. versionadded:: 2.1.7
     """
-    __tablename__ = 'linux_package_opened'
+    __tablename__ = 'linux_package_opened_v3'
     __event_uuid__ = '0bba3340-52e3-41a2-854f-e6ed36621379'
     __payload_type__ = 'as'
 
@@ -209,7 +206,7 @@ class ParentalControlsBlockedFlatpakInstall(SingularEvent):
     .. versionadded:: 3.8.0
 
     """
-    __tablename__ = 'parental_controls_blocked_flatpak_install'
+    __tablename__ = 'parental_controls_blocked_flatpak_install_v3'
     __event_uuid__ = '9d03daad-f1ed-41a8-bc5a-6b532c075832'
     __payload_type__ = 's'
 
@@ -237,7 +234,7 @@ class ParentalControlsBlockedFlatpakRun(SingularEvent):
     .. versionadded:: 3.8.0
 
     """
-    __tablename__ = 'parental_controls_blocked_flatpak_run'
+    __tablename__ = 'parental_controls_blocked_flatpak_run_v3'
     __event_uuid__ = 'afca2515-e9ce-43aa-b355-7663c770b4b6'
     __payload_type__ = 's'
 
@@ -286,7 +283,7 @@ class ParentalControlsChanged(SingularEvent):
     .. versionadded:: 3.8.0
 
     """
-    __tablename__ = 'parental_controls_changed'
+    __tablename__ = 'parental_controls_changed_v3'
     __event_uuid__ = '449ec188-cb7b-45d3-a0ed-291d943b9aa6'
     __payload_type__ = 'a{sv}'
 
@@ -382,7 +379,7 @@ class ParentalControlsEnabled(SingularEvent):
     .. versionadded:: 3.8.0
 
     """
-    __tablename__ = 'parental_controls_enabled'
+    __tablename__ = 'parental_controls_enabled_v3'
     __event_uuid__ = 'c227a817-808c-4fcb-b797-21002d17b69a'
     __payload_type__ = 'b'
 
@@ -410,7 +407,7 @@ class ProgramDumpedCore(SingularEvent):
     .. versionadded:: 3.2.5
 
     """
-    __tablename__ = 'program_dumped_core'
+    __tablename__ = 'program_dumped_core_v3'
     __event_uuid__ = 'ed57b607-4a56-47f1-b1e4-5dc3e74335ec'
     __payload_type__ = 'a{sv}'
 
@@ -447,7 +444,7 @@ class RAMSize(SingularEvent):
     .. versionadded:: 3.4.3
 
     """
-    __tablename__ = 'ram_size'
+    __tablename__ = 'ram_size_v3'
     __event_uuid__ = 'aee94585-07a2-4483-a090-25abda650b12'
     __payload_type__ = 'u'
 
@@ -471,7 +468,7 @@ class UpdaterFailure(SingularEvent):
     .. versionadded:: 2.6.0
 
     """
-    __tablename__ = 'updater_failure'
+    __tablename__ = 'updater_failure_v3'
     __event_uuid__ = '927d0f61-4890-4912-a513-b2cb0205908f'
     __payload_type__ = '(ss)'
 
@@ -494,7 +491,7 @@ class WindowsAppOpened(SingularEvent):
     .. versionadded:: 2.1.5
 
     """
-    __tablename__ = 'windows_app_opened'
+    __tablename__ = 'windows_app_opened_v3'
     __event_uuid__ = 'cf09194a-3090-4782-ab03-87b2f1515aed'
     __payload_type__ = 'as'
 
@@ -523,7 +520,7 @@ class StartupFinished(SingularEvent):
     .. versionadded:: 2.1.2
 
     """
-    __tablename__ = 'startup_finished'
+    __tablename__ = 'startup_finished_v3'
     __event_uuid__ = 'bf7e8aed-2932-455c-a28e-d407cfd5aaba'
     __payload_type__ = '(tttttt)'
 
@@ -557,55 +554,3 @@ class StartupFinished(SingularEvent):
 # -- Aggregate events ---------------------------------------------------------
 
 # TODO: Add aggregate event implementations here
-
-
-# -- Model listeners ----------------------------------------------------------
-
-@listens_for(DbSession, 'after_attach')
-def receive_after_attach(dbsession: DbSession, instance: Base) -> None:
-    if not isinstance(instance, (DualBootBooted, ImageVersion, LiveUsbBooted)):
-        return
-
-    # So we have just added an event to the session, but we only want to keep it if there
-    # wasn't already a pending one for the same metrics request
-
-    instance_type = type(instance)
-
-    pending_events_of_same_type = (
-        x for x in dbsession.new
-        if isinstance(x, instance_type) and inspect(x).pending
-    )
-    pending_events_of_same_type_in_same_request = [
-        # Requests don't have an id yet, because they have just been added to the db session which
-        # hasn't been committed yet; their sha512 is a good replacement identifier given that we
-        # have a unicity constraint on them
-        x for x in pending_events_of_same_type if x.request.sha512 == instance.request.sha512
-    ]
-
-    if len(pending_events_of_same_type_in_same_request) > 1:
-        dbsession.expunge(instance)
-
-
-@listens_for(DbSession, 'before_commit')
-def receive_before_commit(dbsession: DbSession) -> None:
-    for instance in dbsession.new:
-        if isinstance(instance, ImageVersion):
-            # Resolve instance.request even if dbsession is not flushed yet
-            dbsession.enable_relationship_loading(instance)
-            upsert_machine_image(dbsession, instance.request.machine_id, image_id=instance.image_id)
-
-        elif isinstance(instance, DualBootBooted):
-            dbsession.enable_relationship_loading(instance)
-            upsert_machine_dualboot(dbsession, instance.request.machine_id)
-
-        elif isinstance(instance, EnteredDemoMode):
-            dbsession.enable_relationship_loading(instance)
-            upsert_machine_demo(dbsession, instance.request.machine_id)
-
-        elif isinstance(instance, LiveUsbBooted):
-            dbsession.enable_relationship_loading(instance)
-            upsert_machine_live(dbsession, instance.request.machine_id)
-
-        elif isinstance(instance, LocationLabel):
-            dbsession.enable_relationship_loading(instance)
-            upsert_machine_location(dbsession, instance.request.machine_id, info=instance.info)
