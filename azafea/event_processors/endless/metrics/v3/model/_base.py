@@ -8,7 +8,7 @@
 
 
 import logging
-from typing import Any, Dict, Optional, Set, Tuple, Type, Union, cast
+from typing import Any, Dict, Optional, Set, Tuple, Type, cast
 from uuid import UUID
 
 from gi.repository import GLib
@@ -23,7 +23,7 @@ from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary, Unicode
 
 from azafea.model import Base, DbSession
 
-from ..utils import get_bytes, get_child_values, get_event_datetime, get_variant
+from ..utils import get_bytes, get_event_datetime, get_variant
 from ._request import Request
 
 
@@ -183,11 +183,11 @@ class SingularEvent(MetricEvent):
 
 
 class InvalidSingularEvent(SingularEvent, InvalidEvent):
-    __tablename__ = 'invalid_singular_event'
+    __tablename__ = 'invalid_singular_event_v3'
 
 
 class UnknownSingularEvent(SingularEvent, UnknownEvent):
-    __tablename__ = 'unknown_singular_event'
+    __tablename__ = 'unknown_singular_event_v3'
 
 
 class AggregateEvent(MetricEvent):
@@ -198,11 +198,11 @@ class AggregateEvent(MetricEvent):
 
 
 class InvalidAggregateEvent(AggregateEvent, InvalidEvent):
-    __tablename__ = 'invalid_aggregate_event'
+    __tablename__ = 'invalid_aggregate_event_v3'
 
 
 class UnknownAggregateEvent(AggregateEvent, UnknownEvent):
-    __tablename__ = 'unknown_aggregate_event'
+    __tablename__ = 'unknown_aggregate_event_v3'
 
 
 def new_singular_event(request: Request, event_variant: GLib.Variant, dbsession: DbSession

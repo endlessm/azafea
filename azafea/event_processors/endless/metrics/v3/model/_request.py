@@ -34,7 +34,7 @@ class Request(Base):
 
 
 class MachineIdsByDay(View):
-    __tablename__ = 'machine_ids_by_day'
+    __tablename__ = 'machine_ids_by_day_v3'
     __query__ = DbSession().query(
         Request.received_at.cast(Date).label('day'),
         Request.machine_id.label('machine_id')).distinct()
