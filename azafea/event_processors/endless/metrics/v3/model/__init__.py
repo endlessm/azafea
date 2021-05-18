@@ -607,7 +607,7 @@ class DifferentUsers(AggregateEvent):
 class TimeSpentInSession(AggregateEvent):
     """Number of seconds spent on the computer with an open session.
 
-    Aggregation is done by day.
+    Aggregation is done by hour.
 
     :UUID name: TODO
 

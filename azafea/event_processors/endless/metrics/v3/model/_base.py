@@ -197,7 +197,7 @@ class AggregateEvent(MetricEvent):
     __abstract__ = True
 
     count = Column(BigInteger, nullable=False)
-    day = Column(DateTime(timezone=False), nullable=False, index=True)
+    period_start = Column(DateTime(timezone=False), nullable=False, index=True)
 
 
 class InvalidAggregateEvent(AggregateEvent, InvalidEvent):
