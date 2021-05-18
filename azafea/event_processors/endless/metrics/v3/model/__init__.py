@@ -425,28 +425,6 @@ class ProgramDumpedCore(SingularEvent):
         return {'info': payload.unpack()}
 
 
-class RAMSize(SingularEvent):
-    """RAM size at startup.
-
-    See `T18445 <https://phabricator.endlessm.com/T18445>`_.
-
-    :UUID name: ``RAM_SIZE_EVENT`` in eos-metrics-instrumentation
-
-    .. versionadded:: 3.4.3
-
-    """
-    __tablename__ = 'ram_size_v3'
-    __event_uuid__ = 'aee94585-07a2-4483-a090-25abda650b12'
-    __payload_type__ = 'u'
-
-    #: total RAM size in mebibytes (2^20)
-    total = Column(BigInteger, nullable=False)
-
-    @staticmethod
-    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {'total': payload.get_uint32()}
-
-
 class UpdaterFailure(SingularEvent):
     """Failure of eos-updater or eos-updater-flatpak-installer for whatever reason.
 
@@ -543,18 +521,98 @@ class StartupFinished(SingularEvent):
 
 
 class ComputerInformation(SingularEvent):
+    """Information about the computer RAM, disk and CPU.
+
+    Sent at most once a day.
+
+    :UUID name: TODO
+
+    .. versionadded:: 4.0.0
+
+    """
     __tablename__ = 'computer_information_v3'
+    __event_uuid__ = '81f303aa-448d-443d-97f9-8d8a9169321c'
+    __payload_type__ = '(uuuua(sqd))'
+
+    #: total RAM size in mebibytes (2^20)
+    total_ram = Column(BigInteger, nullable=False)
+    #: total disk space in gibibytes (2^30)
+    total_disk = Column(BigInteger, nullable=False)
+    #: used disk space in gibibytes (2^30)
+    used_disk = Column(BigInteger, nullable=False)
+    #: free disk space in gibibytes (2^30)
+    free_disk = Column(BigInteger, nullable=False)
+    #: array of CPU model (e.g. Intel(R) Core(TM) i7-5500U CPU @ 2.40GHz),
+    #: number of cores (e.g. 4) and maximum CPU speed in MHz or current CPU speed
+    #: if maximum can’t be determined (e.g. 3000.0)
+    info = Column(JSONB, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        cpu_info = []
+        for i in range(payload.get_child_value(4).n_children()):
+            item = payload.get_child_value(i)
+            cpu_info.append({
+                'model': item.get_child_value(0).get_string(),
+                'cores': item.get_child_value(1).get_uint16(),
+                'max_frequency': item.get_child_value(2).get_double(),
+            })
+        return {
+            'total_ram': payload.get_child_value(0).get_uint32(),
+            'total_disk': payload.get_child_value(1).get_uint32(),
+            'used_disk': payload.get_child_value(2).get_uint32(),
+            'free_disk': payload.get_child_value(3).get_uint32(),
+            'cpu_info': cpu_info,
+        }
 
 
 # -- Aggregate events ---------------------------------------------------------
 
-class TimeSpentInSession(AggregateEvent):
-    __tablename__ = 'time_spent_in_session_v3'
-
-
 class TimeSpentByForegroundApp(AggregateEvent):
+    """Number of seconds spent by an application open in foreground.
+
+    Aggregation is done by day.
+
+    :UUID name: TODO
+
+    .. versionadded:: 4.0.0
+
+    """
     __tablename__ = 'time_spent_by_foreground_app_v3'
+    __event_uuid__ = '49d0451a-f706-4f50-81d2-70cc0ec923a4'
+    __payload_type__ = 's'
+
+    #: application ID
+    app_id = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'app_id': payload.get_string()}
 
 
 class DifferentUsers(AggregateEvent):
+    """Number of different users who opened a session.
+
+    Aggregation is done by month.
+
+    :UUID name: TODO
+
+    .. versionadded:: 4.0.0
+
+    """
     __tablename__ = 'different_users_v3'
+    __event_uuid__ = 'a3826320-9192-446a-8886-e2129c0ce302'
+
+
+class TimeSpentInSession(AggregateEvent):
+    """Number of seconds spent on the computer with an open session.
+
+    Aggregation is done by day.
+
+    :UUID name: TODO
+
+    .. versionadded:: 4.0.0
+
+    """
+    __tablename__ = 'time_spent_in_session_v3'
+    __event_uuid__ = '5dc0b53c-93f9-4df0-ad6f-bd25e9fe638f'
