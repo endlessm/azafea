@@ -18,7 +18,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.query import Query
-from sqlalchemy.schema import Column, ForeignKey
+from sqlalchemy.schema import Column, Computed, ForeignKey
 from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary, Unicode
 
 from azafea.model import Base, DbSession
@@ -196,8 +196,8 @@ class UnknownSingularEvent(SingularEvent, UnknownEvent):
 class AggregateEvent(MetricEvent):
     __abstract__ = True
 
-    occured_at = Column(DateTime(timezone=True), nullable=False, index=True)
     count = Column(BigInteger, nullable=False)
+    day = Column(DateTime(timezone=False), nullable=False, index=True)
 
 
 class InvalidAggregateEvent(AggregateEvent, InvalidEvent):
