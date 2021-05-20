@@ -18,6 +18,8 @@ from sqlalchemy.types import ARRAY, BigInteger, Boolean, Unicode
 from ..utils import clamp_to_int64, get_child_values
 from ._base import (  # noqa: F401
     AGGREGATE_EVENT_MODELS,
+    IGNORED_EMPTY_PAYLOAD_ERRORS,
+    IGNORED_EVENTS,
     SINGULAR_EVENT_MODELS,
     AggregateEvent,
     EmptyPayloadError,
@@ -35,6 +37,7 @@ from ._base import (  # noqa: F401
     replay_unknown_aggregate_events,
     replay_unknown_singular_events,
     aggregate_event_is_known,
+    parse_record,
     singular_event_is_known,
 )
 

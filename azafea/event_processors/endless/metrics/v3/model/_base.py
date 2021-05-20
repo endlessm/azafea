@@ -8,8 +8,9 @@
 
 
 import logging
-from typing import Any, Dict, Optional, Set, Tuple, Type, cast
-from uuid import UUID
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
+from typing import Any, Dict, Generator, Optional, Set, Tuple, Type, cast
 
 from gi.repository import GLib
 
@@ -18,16 +19,18 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.query import Query
-from sqlalchemy.schema import Column, Computed, ForeignKey
+from sqlalchemy.schema import Column, ForeignKey
 from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary, Unicode
 
 from azafea.model import Base, DbSession
 
-from ..utils import get_bytes, get_event_datetime, get_variant
+from ..utils import get_child_values, get_event_datetime, get_variant
 from ._channel import Channel
 
 
 log = logging.getLogger(__name__)
+
+VARIANT_TYPE = GLib.VariantType('(isa{ss}ya(aysxxmv)a(aysyxxmv))')
 
 SINGULAR_EVENT_MODELS: Dict[str, Type['SingularEvent']] = {}
 AGGREGATE_EVENT_MODELS: Dict[str, Type['AggregateEvent']] = {}
@@ -106,6 +109,7 @@ class MetricEvent(Base, metaclass=MetricMeta):
 
     absolute_timestamp = Column(BigInteger, nullable=False)
     relative_timestamp = Column(BigInteger, nullable=False)
+    os_version = Column(Unicode, nullable=False)
 
     @declared_attr
     def channel_id(cls) -> Column:
@@ -115,14 +119,14 @@ class MetricEvent(Base, metaclass=MetricMeta):
     def channel(cls) -> relationship:
         return relationship(Channel)
 
-    # This comes in as a uint32, but PostgreSQL only has signed types so we need a BIGINT (int64)
-    user_id = Column(BigInteger, nullable=False)
-
     def __init__(self, payload: GLib.Variant, **kwargs: Dict[str, Any]) -> None:
         payload_fields = self._parse_payload(payload)
-        kwargs.update(payload_fields)
+        fields = kwargs.copy()
+        del fields['singulars']
+        del fields['aggregates']
+        fields.update(payload_fields)
 
-        super().__init__(**kwargs)
+        super().__init__(**fields)
 
     def _parse_payload(self, maybe_payload: GLib.Variant) -> Dict[str, Any]:
         payload = maybe_payload.get_maybe()
@@ -131,7 +135,6 @@ class MetricEvent(Base, metaclass=MetricMeta):
             if payload is not None:
                 log.error('Metric event %s takes no payload, but got %s',
                           self.__event_uuid__, payload)
-
             return {}
 
         if payload is None:
@@ -160,17 +163,7 @@ class UnknownEvent(MetricEvent):
     payload_data = Column(LargeBinary, nullable=False)
 
     def _parse_payload(self, maybe_payload: GLib.Variant) -> Dict[str, Any]:
-        # Workaround an issue in GLib < 2.62
-        #        https://gitlab.gnome.org/GNOME/glib/issues/1865
-        as_bytes = maybe_payload.get_data_as_bytes()
-
-        if as_bytes is None:  # pragma: no cover
-            payload_data = b''
-
-        else:
-            payload_data = as_bytes.get_data()
-
-        return {'payload_data': payload_data}
+        return {'payload_data': maybe_payload.get_data_as_bytes()}
 
 
 class InvalidEvent(UnknownEvent):
@@ -196,8 +189,9 @@ class UnknownSingularEvent(SingularEvent, UnknownEvent):
 class AggregateEvent(MetricEvent):
     __abstract__ = True
 
-    count = Column(BigInteger, nullable=False)
+    period = Column(Unicode(length=1), nullable=False)
     period_start = Column(DateTime(timezone=False), nullable=False, index=True)
+    count = Column(BigInteger, nullable=False)
 
 
 class InvalidAggregateEvent(AggregateEvent, InvalidEvent):
@@ -208,81 +202,117 @@ class UnknownAggregateEvent(AggregateEvent, UnknownEvent):
     __tablename__ = 'unknown_aggregate_event_v3'
 
 
-def parse_record(record):
-    pass
+@dataclass
+class Request:
+    channel: Channel
+    relative_timestamp: int
+    absolute_timestamp: int
+    singulars: Generator[GLib.Variant, None, None]
+    aggregates: Generator[GLib.Variant, None, None]
 
 
-def new_singular_event(channel: Channel, event_variant: GLib.Variant, dbsession: DbSession
-                       ) -> Optional[SingularEvent]:
-    event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(1))))
+def parse_record(record: bytes) -> Request:
+    # record is an array of bytes, the concatenation of:
+    # - a datetime encoded on 8 bytes (a 64 bits integer timestamp in microseconds)
+    # - the metrics request (a serialized GVariant)
+    # timestamp_bytes, request_bytes = record[:8], record[8:]
+    request_bytes = record[8:]
 
-    if event_id in IGNORED_EVENTS:
-        return None
+    # TODO: is this useful?
+    # received_at_timestamp = int.from_bytes(timestamp_bytes, 'little')
+    # received_at = datetime.fromtimestamp(received_at_timestamp / 1000000, tz=timezone.utc)
 
-    user_id = event_variant.get_child_value(0).get_uint32()
+    payload = GLib.Variant.new_from_bytes(VARIANT_TYPE, GLib.Bytes.new(request_bytes), False)
+
+    if not payload.is_normal_form():
+        raise ValueError(
+            f'Metric request is not in the expected format: {VARIANT_TYPE.dup_string()}')
+
+    relative_timestamp = payload.get_child_value(0).get_int64()
+    absolute_timestamp = payload.get_child_value(1).get_int64()
+    image_id = payload.get_child_value(2).get_string()
+    site = {key: value for (key, value) in payload.get_child_value(3).unpack().items() if value}
+    flags = payload.get_child_value(4).get_byte()
+    dual_boot, live_usb = bool(flags & 1), bool(flags & 2)
+
+    singulars = get_child_values(payload.get_child_value(5))
+    aggregates = get_child_values(payload.get_child_value(6))
+
+    channel = Channel(image_id=image_id, site=site, dual_boot=dual_boot, live_usb=live_usb)
+    request = Request(channel, relative_timestamp, absolute_timestamp, singulars, aggregates)
+    return request
+
+
+def new_singular_event(request: Request, event_id: str, event_variant: GLib.Variant,
+                       dbsession: DbSession) -> Optional[SingularEvent]:
+    os_version = event_variant.get_child_value(1).get_string()
     event_relative_timestamp = event_variant.get_child_value(2).get_int64()
     payload = event_variant.get_child_value(3)
 
-    event_date = get_event_datetime(request.absolute_timestamp, request.relative_timestamp,
-                                    event_relative_timestamp)
-
-    try:
+    if event_id in SINGULAR_EVENT_MODELS:
         event_model = SINGULAR_EVENT_MODELS[event_id]
-
-    except KeyError:
+        event_date = get_event_datetime(
+            request.absolute_timestamp, request.relative_timestamp, event_relative_timestamp)
+        try:
+            # Mypy complains here, even though this should be fine:
+            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+            event = event_model(
+                payload=payload,  # type: ignore
+                occured_at=event_date, **asdict(request))
+        except Exception as e:
+            if isinstance(e, EmptyPayloadError) and event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
+                return None
+            log.exception('An error occured while processing the event:')
+            # Mypy complains here, even though this should be fine:
+            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+            event = InvalidSingularEvent(
+                payload=payload,  # type: ignore
+                event_id=event_id, os_version=os_version, occured_at=event_date, error=str(e),
+                **asdict(request))
+    else:
         # Mypy complains here, even though this should be fine:
         # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        event = UnknownSingularEvent(channel=channel, user_id=user_id,  # type: ignore
-                                     occured_at=event_date, event_id=event_id, payload=payload)
-        dbsession.add(event)
-        return event
-
-    try:
-        # Mypy complains here, even though this should be fine:
-        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        event = event_model(channel=channel, user_id=user_id,  # type: ignore
-                            occured_at=event_date, payload=payload)
-
-    except Exception as e:
-        if isinstance(e, EmptyPayloadError) and event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
-            return None
-
-        log.exception('An error occured while processing the event:')
-
-        # Mypy complains here, even though this should be fine:
-        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-        event = InvalidSingularEvent(channel=channel, user_id=user_id,  # type: ignore
-                                     occured_at=event_date, event_id=event_id, payload=payload,
-                                     error=str(e))
-
-    dbsession.add(event)
+        event = UnknownSingularEvent(
+            payload=payload,  # type: ignore
+            event_id=event_id, os_version=os_version, occured_at=event_date, **asdict(request))
 
     return event
 
 
-def new_aggregate_event(channel: Channel, event_variant: GLib.Variant, dbsession: DbSession
-                        ) -> Optional[AggregateEvent]:
-    event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(1))))
+def new_aggregate_event(request: Request, event_id: str, event_variant: GLib.Variant,
+                        dbsession: DbSession) -> Optional[AggregateEvent]:
+    os_version = event_variant.get_child_value(1).get_string()
+    period = chr(event_variant.get_child_value(2).get_byte())
+    period_start = datetime.fromtimestamp(
+        event_variant.get_child_value(3).get_int64(), tz=timezone.utc)
+    count = event_variant.get_child_value(4).get_int64()
+    payload = event_variant.get_child_value(5)
 
-    if event_id in IGNORED_EVENTS:
-        return None
-
-    user_id = event_variant.get_child_value(0).get_uint32()
-    count = event_variant.get_child_value(2).get_int64()
-    event_relative_timestamp = event_variant.get_child_value(3).get_int64()
-    payload = event_variant.get_child_value(4)
-
-    event_date = get_event_datetime(request.absolute_timestamp, request.relative_timestamp,
-                                    event_relative_timestamp)
-
-    # We don't have any aggregate event yet, therefore it can only be unknown
-
-    # Mypy complains here, even though this should be fine:
-    # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-    event = UnknownAggregateEvent(channel=channel, user_id=user_id,  # type: ignore
-                                  occured_at=event_date, count=count, event_id=event_id,
-                                  payload=payload)
-    dbsession.add(event)
+    if event_id in AGGREGATE_EVENT_MODELS:
+        event_model = AGGREGATE_EVENT_MODELS[event_id]
+        try:
+            # Mypy complains here, even though this should be fine:
+            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+            event = event_model(
+                payload=payload,  # type: ignore
+                **asdict(request))
+        except Exception as e:
+            if isinstance(e, EmptyPayloadError) and event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
+                return None
+            log.exception('An error occured while processing the event:')
+            # Mypy complains here, even though this should be fine:
+            # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+            event = InvalidAggregateEvent(
+                payload=payload,  # type: ignore
+                event_id=event_id, os_version=os_version, period=period, period_start=period_start,
+                count=count, error=str(e), **asdict(request))
+    else:
+        # Mypy complains here, even though this should be fine:
+        # https://github.com/dropbox/sqlalchemy-stubs/issues/97
+        event = UnknownAggregateEvent(
+            payload=payload,  # type: ignore
+            event_id=event_id, os_version=os_version, period=period, period_start=period_start,
+            count=count, **asdict(request))
 
     return event
 

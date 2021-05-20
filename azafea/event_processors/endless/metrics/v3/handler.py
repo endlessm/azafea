@@ -8,12 +8,12 @@
 
 
 import logging
-
-from sqlalchemy.exc import IntegrityError
+from uuid import UUID
 
 from azafea.model import DbSession
 
-from .model import new_aggregate_event, new_singular_event, parse_record
+from .model import IGNORED_EVENTS, new_aggregate_event, new_singular_event, parse_record
+from .utils import get_bytes
 
 
 log = logging.getLogger(__name__)
@@ -22,27 +22,19 @@ log = logging.getLogger(__name__)
 def process(dbsession: DbSession, record: bytes) -> None:
     log.debug('Processing metric v3 record: %s', record)
 
-    request_data = parse_record(record)
+    request = parse_record(record)
+    events_and_functions = (
+        (request.singulars, new_singular_event),
+        (request.aggregates, new_aggregate_event))
 
-    for event_variant in request_data.singulars:
-        singular_event = new_singular_event(event_variant, dbsession)
+    for events, new_event in events_and_functions:
+        for event_variant in events:
+            event_id = str(UUID(bytes=get_bytes(event_variant.get_child_value(0))))
+            if event_id in IGNORED_EVENTS:
+                continue
+            event = new_event(request, event_id, event_variant, dbsession)
+            if event is not None:
+                dbsession.add(event)
+                log.debug('Inserting metric:\n%s', event)
 
-        if singular_event is not None:
-            log.debug('Inserting singular metric:\n%s', singular_event)
-
-    for event_variant in request_data.aggregates:
-        aggregate_event = new_aggregate_event(event_variant, dbsession)
-        log.debug('Inserting aggregate metric:\n%s', aggregate_event)
-
-    try:
-        dbsession.commit()
-
-    except IntegrityError as e:
-        # FIXME: This is fragile, can we do better?
-        if "uq_metrics_request_v3_sha512" in str(e):
-            log.debug('Request had already been processed in the past')
-            return
-
-        # FIXME: Given how the request is built, this shouldn't ever happen; if it does though, we
-        # absolutely need an integration test
-        raise  # pragma: no cover
+    dbsession.commit()
