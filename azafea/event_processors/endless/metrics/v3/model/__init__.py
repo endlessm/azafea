@@ -22,6 +22,7 @@ from ._base import (  # noqa: F401
     IGNORED_EVENTS,
     SINGULAR_EVENT_MODELS,
     AggregateEvent,
+    Channel,
     EmptyPayloadError,
     InvalidAggregateEvent,
     InvalidSingularEvent,

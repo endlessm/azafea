@@ -15,17 +15,17 @@ from typing import Any, Dict, Generator, Optional, Set, Tuple, Type, cast
 from gi.repository import GLib
 
 from sqlalchemy.dialects import postgresql
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.query import Query
 from sqlalchemy.schema import Column, ForeignKey
-from sqlalchemy.types import BigInteger, DateTime, Integer, LargeBinary, Unicode
+from sqlalchemy.types import BigInteger, Boolean, DateTime, Integer, LargeBinary, Unicode
 
 from azafea.model import Base, DbSession
 
 from ..utils import get_child_values, get_event_datetime, get_variant
-from ._channel import Channel
 
 
 log = logging.getLogger(__name__)
@@ -64,6 +64,23 @@ IGNORED_EVENTS: Set[str] = {
     'fb59199e-5384-472e-af1e-00b7a419d5c2',
 }
 IGNORED_EMPTY_PAYLOAD_ERRORS: Set[str] = set()
+
+
+class Channel(Base):
+    __tablename__ = 'channel_v3'
+
+    id = Column(Integer, primary_key=True)
+
+    #: image ID (e.g. ``eos-eos3.1-amd64-amd64.170115-071322.base``)
+    image_id = Column(Unicode, nullable=False)
+    #: dictionary of string keys (such as ``facility``, ``city`` and
+    #: ``state``) to the values provided in the location.conf file (written by
+    #: the ``eos-label-location`` utility)
+    site = Column(JSONB, nullable=False)
+    #: dual boot computer
+    dual_boot = Column(Boolean, nullable=False)
+    #: live USB stick
+    live_usb = Column(Boolean, nullable=False)
 
 
 class EmptyPayloadError(Exception):
@@ -113,7 +130,7 @@ class MetricEvent(Base, metaclass=MetricMeta):
 
     @declared_attr
     def channel_id(cls) -> Column:
-        return Column(Integer, ForeignKey('channel_v3.id'), index=True)
+        return Column(Integer, ForeignKey(Channel.id), index=True)
 
     @declared_attr
     def channel(cls) -> relationship:
@@ -203,15 +220,22 @@ class UnknownAggregateEvent(AggregateEvent, UnknownEvent):
 
 
 @dataclass
+class RequestChannel:
+    image_id: str
+    site: Dict[str, str]
+    dual_boot: bool
+    live_usb: bool
+
+
+@dataclass
 class Request:
-    channel: Channel
     relative_timestamp: int
     absolute_timestamp: int
     singulars: Generator[GLib.Variant, None, None]
     aggregates: Generator[GLib.Variant, None, None]
 
 
-def parse_record(record: bytes) -> Request:
+def parse_record(record: bytes) -> Tuple[Request, RequestChannel]:
     # record is an array of bytes, the concatenation of:
     # - a datetime encoded on 8 bytes (a 64 bits integer timestamp in microseconds)
     # - the metrics request (a serialized GVariant)
@@ -238,13 +262,14 @@ def parse_record(record: bytes) -> Request:
     singulars = get_child_values(payload.get_child_value(5))
     aggregates = get_child_values(payload.get_child_value(6))
 
-    channel = Channel(image_id=image_id, site=site, dual_boot=dual_boot, live_usb=live_usb)
-    request = Request(channel, relative_timestamp, absolute_timestamp, singulars, aggregates)
-    return request
+    channel = RequestChannel(image_id=image_id, site=site, dual_boot=dual_boot, live_usb=live_usb)
+    request = Request(relative_timestamp, absolute_timestamp, singulars, aggregates)
+    return request, channel
 
 
-def new_singular_event(request: Request, event_id: str, event_variant: GLib.Variant,
-                       dbsession: DbSession) -> Optional[SingularEvent]:
+def new_singular_event(request: Request, channel: Channel, event_id: str,
+                       event_variant: GLib.Variant, dbsession: DbSession
+                       ) -> Optional[SingularEvent]:
     os_version = event_variant.get_child_value(1).get_string()
     event_relative_timestamp = event_variant.get_child_value(2).get_int64()
     payload = event_variant.get_child_value(3)
@@ -258,7 +283,7 @@ def new_singular_event(request: Request, event_id: str, event_variant: GLib.Vari
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
             event = event_model(
                 payload=payload,  # type: ignore
-                occured_at=event_date, **asdict(request))
+                occured_at=event_date, channel=channel, **asdict(request))
         except Exception as e:
             if isinstance(e, EmptyPayloadError) and event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
                 return None
@@ -279,8 +304,9 @@ def new_singular_event(request: Request, event_id: str, event_variant: GLib.Vari
     return event
 
 
-def new_aggregate_event(request: Request, event_id: str, event_variant: GLib.Variant,
-                        dbsession: DbSession) -> Optional[AggregateEvent]:
+def new_aggregate_event(request: Request, channel: Channel, event_id: str,
+                        event_variant: GLib.Variant, dbsession: DbSession
+                        ) -> Optional[AggregateEvent]:
     os_version = event_variant.get_child_value(1).get_string()
     period = chr(event_variant.get_child_value(2).get_byte())
     period_start = datetime.fromtimestamp(
@@ -305,7 +331,7 @@ def new_aggregate_event(request: Request, event_id: str, event_variant: GLib.Var
             event = InvalidAggregateEvent(
                 payload=payload,  # type: ignore
                 event_id=event_id, os_version=os_version, period=period, period_start=period_start,
-                count=count, error=str(e), **asdict(request))
+                count=count, error=str(e), channel=channel, **asdict(request))
     else:
         # Mypy complains here, even though this should be fine:
         # https://github.com/dropbox/sqlalchemy-stubs/issues/97
