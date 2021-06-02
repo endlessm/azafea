@@ -13,7 +13,7 @@ from typing import Optional
 
 from sqlalchemy.orm import validates
 from sqlalchemy.schema import CheckConstraint, Column
-from sqlalchemy.types import BigInteger, Boolean, DateTime, Integer, Numeric, Unicode
+from sqlalchemy.types import Boolean, DateTime, Integer, Numeric, Unicode
 
 from azafea.model import Base, DbSession
 from azafea.vendors import normalize_vendor
@@ -32,12 +32,8 @@ class Activation(Base):
     vendor = Column(Unicode, nullable=False)
     product = Column(Unicode, nullable=False)
     release = Column(Unicode, nullable=False)
-    serial = Column(Unicode)
     dualboot = Column(Boolean)
     live = Column(Boolean)
-
-    # This comes in as a uint32, but PostgreSQL only has signed types so we need a BIGINT (int64)
-    mac_hash = Column(BigInteger)
 
     country = Column(Unicode(length=3))
     region = Column(Unicode)
@@ -78,7 +74,6 @@ class Activation(Base):
         # Let's make the case of a missing "image" fail at the SQL level
         if 'image' in record:  # pragma: no branch
             record.update(**parse_endless_os_image(record['image']))
-
         return cls(**record)
 
 
