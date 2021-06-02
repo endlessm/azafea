@@ -20,6 +20,8 @@ def test_from_bytes():
         'vendor': 'the vendor',
         'product': 'product',
         'release': 'release',
+        'serial': 'serial',
+        'mac_hash': 694551690,
         'created_at': created_at.strftime('%Y-%m-%d %H:%M:%S.%fZ'),
     }).encode('utf-8'))
 
