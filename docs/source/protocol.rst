@@ -22,13 +22,20 @@ Global Structure
 
 The format is entirely little-endian. In order, its elements are:
 
-Network Send Number
-+++++++++++++++++++
+Relative Timestamp
+++++++++++++++++++
 
-- 32-bit signed integer
-- GVariant symbol: ``i``
-- Begins at 0 on each client and goes up by 1 each time we attempt a metrics network upload.
-- Does not go up on network retries.
+- 64 bit signed integer
+- GVariant symbol: ``x``
+- See: http://linux.die.net/man/3/clock_gettime
+
+Absolute Timestamp
+++++++++++++++++++
+
+- 64 bit signed integer
+- GVariant symbol: ``x``
+- Nanoseconds since the Unix epoch
+- See: http://linux.die.net/man/3/clock_gettime
 
 Image
 +++++
@@ -59,7 +66,7 @@ Singular Metrics
 
 - Array of singular metrics.
 - See `Singular Metric`_
-- GVariant symbol: ``a(uayxmv)``
+- GVariant symbol: ``a(aysxmv)``
 
 Aggregate Metrics
 +++++++++++++++++
@@ -158,7 +165,8 @@ Timestamp
 
 - 64-bit signed integer
 - GVariant symbol: ``x``
-- Beginning of the period
+- Nanoseconds since the Unix epoch
+- Beginning of the period, with aggregation done using user’s computer time
 
 Count
 +++++
@@ -248,7 +256,8 @@ Version 3
 - URI Format: ``https://production.metrics.endlessm.com/3/<SHA-512-Hash>``
 - No compression
 - Little Endian
-- GVariant Payload Format: ``(isa{ss}bba(aysxmv)a(aysyxxmv))``
+- GVariant Payload Format: ``(xxsa{ss}ya(aysxmv)a(aysyxxmv))``
+- Removed "network send number".
 
 Contents:
 
@@ -256,5 +265,7 @@ Contents:
 - Relative Timestamp
 - Absolute Timestamp
 - Channel (image, site, dualboot, live)
-- Singular Events (Event ID, OS Version, Timestamp, Auxiliary Payload)
-- Aggregate Events (Event ID, OS Version, Period, Timestamp, Count, Auxiliary Payload)
+- Singular Events (Event ID, OS Version, Relative Timestamp, Absolute
+  Timestamp, Auxiliary Payload)
+- Aggregate Events (Event ID, OS Version, Period, Relative Timestamp, Count,
+  Auxiliary Payload)
