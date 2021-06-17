@@ -57,6 +57,21 @@ jobs:
       - name: Lint and Type Checking
         run: docker run --rm --network=host --entrypoint="" azafea-tests pipenv run lint
 
+  doc:
+    name: Documentation Building Test
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get Docker Image
+        uses: actions/download-artifact@v2
+        with:
+          name: image
+      - name: Load Docker Image
+        run: docker load < docker-image.tar
+      - name: Documentation Building Test
+        run: docker run --rm --network=host --entrypoint="" azafea-tests pipenv run doc -nW --keep-going
+
   push:
     name: Upload the Docker image to Docker Hub
     runs-on: ubuntu-latest
