@@ -29,25 +29,23 @@ from sqlalchemy.types import (
 
 from azafea.model import Base, DbSession
 from azafea.vendors import normalize_vendor
-from ..machine import (
-    upsert_machine_demo,
-    upsert_machine_dualboot,
-    upsert_machine_image,
-    upsert_machine_live,
-    upsert_machine_location,
-)
 from ..utils import clamp_to_int64, get_bytes, get_child_values
 from ._base import (  # noqa: F401
+    AGGREGATE_EVENT_MODELS,
+    SEQUENCE_EVENT_MODELS,
+    SINGULAR_EVENT_MODELS,
+    AggregateEvent,
     EmptyPayloadError,
-    SequenceEvent,
-    SingularEvent,
-    # Reexport some symbols
     InvalidAggregateEvent,
     InvalidSequence,
     InvalidSingularEvent,
+    SequenceEvent,
+    SingularEvent,
     UnknownAggregateEvent,
+    UnknownEvent,
     UnknownSequence,
     UnknownSingularEvent,
+    WrongPayloadError,
     new_aggregate_event,
     new_sequence_event,
     new_singular_event,
@@ -61,6 +59,15 @@ from ._base import (  # noqa: F401
     sequence_is_known,
     singular_event_is_known,
 )
+from ._machine import (  # noqa: F401
+    Machine,
+    upsert_machine_demo,
+    upsert_machine_dualboot,
+    upsert_machine_image,
+    upsert_machine_live,
+    upsert_machine_location,
+)
+from ._request import MachineIdsByDay, Request, RequestBuilder  # noqa: F401
 
 
 # -- Singular events ----------------------------------------------------------

@@ -11,7 +11,7 @@ versions of Endless OS which are not recorded by current versions.
 Stored Events
 -------------
 
-.. automodule:: azafea.event_processors.endless.metrics.events
+.. automodule:: azafea.event_processors.endless.metrics.v2.model
    :members:
 
 
