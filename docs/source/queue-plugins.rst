@@ -268,20 +268,18 @@ anything wrong to happen.
 When multiple branches are deployed, their commit numbers will all be included
 in the ``alembic_version`` table. It is then impossible to create a new
 deployment, as Alembic can't know which head should be the parent. The solution
-is then to merge the branches, using a merge deployment script:
+is then to merge the branches, using a merge deployment script::
 
-```
-revision = '<random_hash>'
-down_revision = ('<head_1_hash>', '<head_2_hash>', …)
-branch_labels = None
-depends_on = None
+    revision = '<random_hash>'
+    down_revision = ('<head_1_hash>', '<head_2_hash>', …)
+    branch_labels = None
+    depends_on = None
 
-def upgrade():
-    pass
+    def upgrade():
+        pass
 
-def downgrade():
-    pass
-```
+    def downgrade():
+        pass
 
 This deployment does not modify the database schema, but it replaces the old
 head hashes with the new one in the ``alembic_version`` table. Alembic is then
