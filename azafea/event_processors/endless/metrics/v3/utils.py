@@ -9,7 +9,7 @@
 
 import logging
 from datetime import datetime, timezone
-from typing import Generator
+from typing import Tuple
 
 from gi.repository import GLib
 
@@ -23,8 +23,8 @@ def get_bytes(value: GLib.Variant) -> bytes:
 
 
 # This assumes value is an array/tuple variant, verify before calling this
-def get_child_values(value: GLib.Variant) -> Generator[GLib.Variant, None, None]:
-    return (value.get_child_value(i) for i in range(value.n_children()))
+def get_child_values(value: GLib.Variant) -> Tuple[GLib.Variant, ...]:
+    return tuple(value.get_child_value(i) for i in range(value.n_children()))
 
 
 def get_variant(value: GLib.Variant) -> GLib.Variant:
