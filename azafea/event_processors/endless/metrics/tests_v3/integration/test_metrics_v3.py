@@ -20,25 +20,24 @@ class TestMetrics(IntegrationTest):
     handler_module = 'azafea.event_processors.endless.metrics.v3'
 
     def test_request(self):
-        from azafea.event_processors.endless.metrics.v3.model import Request
+        from azafea.event_processors.endless.metrics.v3.model import Channel, Request
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(Request)
+        self.ensure_tables(Channel)
 
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
         request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            '(xxsa{ss}ya(aysxmv)a(aysxxmv))',
             (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
+                2000000,   # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),  # Absolute timestamp
+                'image_id',
+                {},
+                2,
                 [],                                    # singular events
-                [],                                    # aggregate events
-                []                                     # sequence events
+                []                                     # aggregate events
             )
         )
         assert request.is_normal_form()
@@ -58,41 +57,39 @@ class TestMetrics(IntegrationTest):
 
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
-            request = dbsession.query(Request).one()
+            channel = dbsession.query(Channel).one()
+            assert channel.image_id == 'image_id'
 
-            assert request.send_number == 0
-            assert request.machine_id == machine_id
+            request = dbsession.query(Request).one()
             assert request.sha512 == sha512(request_body).hexdigest()
-            assert request.received_at == received_at
 
     def test_duplicate_request(self):
         from azafea.event_processors.endless.metrics.v3.model import (
-            Request, UnknownSingularEvent)
+            Channel, UnknownSingularEvent)
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(Request)
+        self.ensure_tables(Channel)
 
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
         request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            '(xxsa{ss}ya(aysxmv)a(aysxxmv))',
             (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
+                2000000,   # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),  # Absolute timestamp
+                'image_id_t2',
+                {},
+                2,
+                [
                     (
-                        1000,                          # user id
-                        UUID('d3863909-8eff-43b6-9a33-ef7eda266195').bytes,
-                        3000000000,                    # event relative timestamp (3 secs)
-                        None,                          # empty payload
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
+                        UUID('d84b9a19-9353-73eb-70bf-f91a584abcbd').bytes,
+                        'sssss',
+                        100,
+                        GLib.Variant('(xsxs)', (1, 'sss', 2, 'xsxsxs'))
+                    )
+                ],              # singular events
+                []               # aggregate events
             )
         )
         assert request.is_normal_form()
@@ -113,12 +110,9 @@ class TestMetrics(IntegrationTest):
 
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
-            request = dbsession.query(Request).one()
+            channel = dbsession.query(Channel).one()
 
-            assert request.send_number == 0
-            assert request.machine_id == machine_id
-            assert request.sha512 == sha512(request_body).hexdigest()
-            assert request.received_at == received_at
+            assert channel.image_id == 'image_id_t2'
 
             # Ensure we deduplicated the request and the events it contains
             assert dbsession.query(UnknownSingularEvent).count() == 1
@@ -132,7 +126,7 @@ class TestMetrics(IntegrationTest):
 
         # Build an invalid request (GVariant not in its normal form)
         request = GLib.Variant.new_from_bytes(
-            GLib.VariantType('(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))'),
+            GLib.VariantType('(ixxaya(uayxmv)a(uayxmv)a(uaya(xmv)))'),
             GLib.Bytes.new(b'\x00'),
             False)
         assert not request.is_normal_form()
@@ -161,312 +155,173 @@ class TestMetrics(IntegrationTest):
 
     def test_singular_events(self):
         from azafea.event_processors.endless.metrics.v3.model import (
-            CacheIsCorrupt, CacheMetadataIsCorrupt, ControlCenterPanelOpened, CPUInfo,
-            DiscoveryFeedClicked, DiscoveryFeedClosed, DiscoveryFeedOpened, DiskSpaceExtra,
-            DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, EnteredDemoMode,
-            ImageVersion, InvalidSingularEvent, UnknownSingularEvent,
+            Request, Channel, InvalidSingularEvent, UnknownSingularEvent, StartupFinished,
             LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
-            LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
-            Location, LocationLabel, Machine, MissingCodec, MonitorConnected, MonitorDisconnected,
-            NetworkId, OSVersion, ProgramDumpedCore, RAMSize, Request, ShellAppAddedToDesktop,
-            ShellAppRemovedFromDesktop, UnderscanEnabled, UpdaterBranchSelected, Uptime,
-            WindowsAppOpened, WindowsLicenseTables,
+            LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened,
+            ParentalControlsBlockedFlatpakInstall, ParentalControlsBlockedFlatpakRun,
+            ProgramDumpedCore, UpdaterFailure, ParentalControlsEnabled,
+            ParentalControlsChanged, WindowsAppOpened,
         )
 
         # Create the table
         self.run_subcommand('initdb')
         self.ensure_tables(
-            Request, Machine, InvalidSingularEvent, UnknownSingularEvent,
-            CacheIsCorrupt, CacheMetadataIsCorrupt, ControlCenterPanelOpened, CPUInfo,
-            DiscoveryFeedClicked, DiscoveryFeedClosed, DiscoveryFeedOpened, DiskSpaceExtra,
-            DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, EnteredDemoMode,
-            ImageVersion, LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
-            LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
-            Location, LocationLabel, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
-            OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
-            ShellAppRemovedFromDesktop, UnderscanEnabled, UpdaterBranchSelected, Uptime,
-            WindowsAppOpened, WindowsLicenseTables,
+            Request, Channel, InvalidSingularEvent, UnknownSingularEvent, StartupFinished,
+            LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
+            LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened,
+            ParentalControlsBlockedFlatpakInstall, ParentalControlsBlockedFlatpakRun,
+            ProgramDumpedCore, UpdaterFailure, ParentalControlsEnabled,
+            ParentalControlsChanged, WindowsAppOpened,
         )
 
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
-        user_id = 2000
         request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            '(xxsa{ss}ya(aysxmv)a(aysxxmv))',
             (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
+                2000000,   # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),  # Absolute timestamp
+                image_id,
+                {},
+                2,
+                [                         # singular events
                     (
-                        user_id,
-                        UUID('d84b9a19-9353-73eb-70bf-f91a584abcbd').bytes,
-                        1000000000,                    # event relative timestamp (1 sec)
-                        None,                          # empty payload
+                        UUID('bf7e8aed-2932-455c-a28e-d407cfd5aaba').bytes,
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            '(tttttt)',
+                            (1000000, 1000000, 1000000, 1000000, 1000000, 1000000,)
+                        )
                     ),
                     (
-                        user_id,
-                        UUID('f0e8a206-3bc2-405e-90d0-ef6fe6dd7edc').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        None,                          # empty payload
-                    ),
-                    (
-                        user_id,
-                        UUID('3c5d59d2-6c3f-474b-95f4-ac6fcc192655').bytes,
-                        28000000000,                   # event relative timestamp (28 secs)
-                        GLib.Variant('s', 'privacy')
-                    ),
-                    (
-                        user_id,
-                        UUID('4a75488a-0d9a-4c38-8556-148f500edaf0').bytes,
-                        5000000000,                    # event relative timestamp (5 secs)
-                        GLib.Variant('a(sqd)', [
-                            ('Intel(R) Core(TM) i7-5600U CPU @ 2.60GHz', 4, 2600.0),
-                        ])
-                    ),
-                    (
-                        user_id,
-                        UUID('f2f31a64-2193-42b5-ae39-ca0b4d1f0691').bytes,
-                        29000000000,                   # event relative timestamp (29 secs)
-                        GLib.Variant('a{ss}', {
-                            'app_id': 'org.gnome.Totem',
-                            'content_type': 'knowledge_video',
-                        })
-                    ),
-                    (
-                        user_id,
-                        UUID('e7932cbd-7c20-49eb-94e9-4bf075e0c0c0').bytes,
-                        30000000000,                   # event relative timestamp (30 secs)
-                        GLib.Variant('a{ss}', {
-                            'closed_by': 'buttonclose',
-                            'time_open': '123',
-                        })
-                    ),
-                    (
-                        user_id,
-                        UUID('d54cbd8c-c977-4dac-ae72-535ad5633877').bytes,
-                        31000000000,                   # event relative timestamp (31 secs)
-                        GLib.Variant('a{ss}', {
-                            'opened_by': 'shell_button',
-                            'language': 'fr_FR.UTF-8',
-                        })
-                    ),
-                    (
-                        user_id,
-                        UUID('da505554-4248-4a38-bb32-84ab58e45a6d').bytes,
-                        6000000000,                    # event relative timestamp (6 secs)
-                        GLib.Variant('(uuu)', (30, 10, 20))
-                    ),
-                    (
-                        user_id,
-                        UUID('5f58024f-3b99-47d3-a17f-1ec876acd97e').bytes,
-                        7000000000,                    # event relative timestamp (7 secs)
-                        GLib.Variant('(uuu)', (5, 2, 3))
-                    ),
-                    (
-                        user_id,
-                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
-                        8000000000,                    # event relative timestamp (8 secs)
-                        None,                          # empty payload
-                    ),
-                    (
-                        user_id,
-                        UUID('2b5c044d-d819-4e2c-a3a6-c485c1ac371e').bytes,
-                        32000000000,                   # event relative timestamp (32 secs)
-                        GLib.Variant('s', 'org.gnome.Calendar')
-                    ),
-                    (
-                        user_id,
-                        UUID('c75af67f-cf2f-433d-a060-a670087d93a1').bytes,
-                        36000000000,                   # event relative timestamp (36 secs)
-                        None
-                    ),
-                    (
-                        user_id,
-                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        9000000000,                    # event relative timestamp (9 secs)
-                        GLib.Variant('s', image_id)
-                    ),
-                    (
-                        user_id,
                         UUID('00d7bc1e-ec93-4c53-ae78-a6b40450be4a').bytes,
-                        10000000000,                   # event relative timestamp (10 secs)
-                        GLib.Variant('(sas)', ('org.glimpse_editor.Glimpse', ['photoshop.exe']))
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            '(sas)',
+                            ('replacement_app_id', ['argv1', 'argv2'])
+                        )
                     ),
                     (
-                        user_id,
                         UUID('7de69d43-5f6b-4bef-b5f3-a21295b79185').bytes,
-                        11000000000,                   # event relative timestamp (11 secs)
-                        GLib.Variant('(sas)', ('org.glimpse_editor.Glimpse', ['photoshop.exe']))
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            '(sas)',
+                            ('replacement_app_id', ['argv1', 'argv2'])
+                        )
                     ),
                     (
-                        user_id,
                         UUID('192f39dd-79b3-4497-99fa-9d8aea28760c').bytes,
-                        12000000000,                   # event relative timestamp (12 secs)
-                        GLib.Variant('(sas)', ('org.gnome.Calendar', ['gnome-calendar.deb']))
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            '(sas)',
+                            ('replacement_app_id', ['argv1', 'argv2'])
+                        )
                     ),
                     (
-                        user_id,
                         UUID('e98bf6d9-8511-44f9-a1bd-a1d0518934b9').bytes,
-                        13000000000,                   # event relative timestamp (13 secs)
-                        GLib.Variant('(sas)', ('org.gnome.Calendar', ['gnome-calendar.deb']))
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            '(sas)',
+                            ('replacement_app_id', ['argv1', 'argv2'])
+                        )
                     ),
                     (
-                        user_id,
                         UUID('0bba3340-52e3-41a2-854f-e6ed36621379').bytes,
-                        17000000000,                   # event relative timestamp (17 secs)
-                        GLib.Variant('as', ['gnome-calendar.deb'])
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            'as',
+                            ['argv1', 'argv2']
+                        )
                     ),
                     (
-                        user_id,
-                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
-                        3000000000,                    # event relative timestamp (3 secs)
-                        None,                          # empty payload
+                        UUID('9d03daad-f1ed-41a8-bc5a-6b532c075832').bytes,
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            's', 'app'
+                        )
                     ),
                     (
-                        user_id,
-                        UUID('abe7af92-6704-4d34-93cf-8f1b46eb09b8').bytes,
-                        34000000000,                   # event relative timestamp (34 secs)
-                        GLib.Variant('(ddbdd)', (5.4, 6.5, False, 7.6, 8.7))
+                        UUID('afca2515-e9ce-43aa-b355-7663c770b4b6').bytes,
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            's', 'app'
+                        )
                     ),
                     (
-                        user_id,
-                        UUID('abe7af92-6704-4d34-93cf-8f1b46eb09b8').bytes,
-                        33000000000,                   # event relative timestamp (33 secs)
-                        GLib.Variant('(ddbdd)', (1.0, 2.1, True, 3.2, 4.3))
-                    ),
-                    (
-                        user_id,
-                        UUID('eb0302d8-62e7-274b-365f-cd4e59103983').bytes,
-                        35000000000,                   # event relative timestamp (35 secs)
-                        GLib.Variant('a{ss}',
-                                     {'city': 'City', 'state': 'State', 'facility': 'Facility'})
-                    ),
-                    (
-                        user_id,
-                        UUID('74ceec37-1f66-486e-99b0-d39b23daa113').bytes,
-                        18000000000,                   # event relative timestamp (18 secs)
-                        GLib.Variant('(ssssa{sv})', (
-                            '1.16.0',
-                            'Videos',
-                            'decoder',
-                            'audio/mp3',
-                            {
-                                "mpegaudioversion": GLib.Variant('i', 1),
-                                "mpegversion": GLib.Variant('i', 1),
-                                "layer": GLib.Variant('u', 3),
-                            },
-                        ))
-                    ),
-                    (
-                        user_id,
-                        UUID('fa82f422-a685-46e4-91a7-7b7bfb5b289f').bytes,
-                        15000000000,                   # event relative timestamp (15 secs)
-                        GLib.Variant('(ssssiiay)', (
-                            'Samsung Electric Company 22',
-                            'SAM',
-                            'S22E450',
-                            'serial number ignored',
-                            500,
-                            350,
-                            b'edid data'
-                        ))
-                    ),
-                    (
-                        user_id,
-                        UUID('5e8c3f40-22a2-4d5d-82f3-e3bf927b5b74').bytes,
-                        14000000000,                   # event relative timestamp (14 secs)
-                        GLib.Variant('(ssssiiay)', (
-                            'Samsung Electric Company 22',
-                            'SAM',
-                            'S22E450',
-                            'serial number ignored',
-                            500,
-                            350,
-                            b'edid data'
-                        ))
-                    ),
-                    (
-                        user_id,
-                        UUID('38eb48f8-e131-9b57-77c6-35e0590c82fd').bytes,
-                        19000000000,                   # event relative timestamp (19 secs)
-                        GLib.Variant('u', 123456)
-                    ),
-                    (
-                        user_id,
-                        UUID('1fa16a31-9225-467e-8502-e31806e9b4eb').bytes,
-                        16000000000,                   # event relative timestamp (16 secs)
-                        GLib.Variant('(sss)', ('Endless', '3.5.3', 'obsolete and ignored'))
-                    ),
-                    (
-                        user_id,
                         UUID('ed57b607-4a56-47f1-b1e4-5dc3e74335ec').bytes,
-                        21000000000,                   # event relative timestamp (21 secs)
-                        GLib.Variant('a{sv}', {
-                            'binary': GLib.Variant('s', '/app/bin/evolution'),
-                            'signal': GLib.Variant('u', 11),
-                        })
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            'a{sv}',
+                            {
+                                'binary': GLib.Variant('s', '/app/bin/evolution'),
+                                'signal': GLib.Variant('u', 11),
+                            }
+                        )
                     ),
                     (
-                        user_id,
-                        UUID('aee94585-07a2-4483-a090-25abda650b12').bytes,
-                        22000000000,                   # event relative timestamp (22 secs)
-                        GLib.Variant('u', 32000)
+                        UUID('927d0f61-4890-4912-a513-b2cb0205908f').bytes,
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            '(ss)',
+                            ('component', 'error_message')
+                        )
                     ),
                     (
-                        user_id,
-                        UUID('51640a4e-79aa-47ac-b7e2-d3106a06e129').bytes,
-                        23000000000,                   # event relative timestamp (23 secs)
-                        GLib.Variant('s', 'org.gnome.Calendar')
+                        UUID('c227a817-808c-4fcb-b797-21002d17b69a').bytes,
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            'b',
+                            True
+                        )
                     ),
                     (
-                        user_id,
-                        UUID('683b40a7-cac0-4f9a-994c-4b274693a0a0').bytes,
-                        24000000000,                   # event relative timestamp (24 secs)
-                        GLib.Variant('s', 'org.gnome.Evolution')
+                        UUID('449ec188-cb7b-45d3-a0ed-291d943b9aa6').bytes,
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            'a{sv}',
+                            {
+                                'AppFilter': GLib.Variant(
+                                    '(bas)', (True, ['app_filter_1', 'app_filter_2'])
+                                ),
+                                'OarsFilter': GLib.Variant(
+                                    '(sa{ss})',
+                                    (
+                                        'oars-1.0',
+                                        {'oars_filter_1': 'mild', 'oars_filter_2': 'moderate'}
+                                    )
+                                ),
+                                'AllowUserInstallation': GLib.Variant('b', True),
+                                'AllowSystemInstallation': GLib.Variant('b', True),
+                                'IsAdministrator': GLib.Variant('b', True),
+                                'IsInitialSetup': GLib.Variant('b', True),
+
+                            }
+                        )
                     ),
                     (
-                        user_id,
-                        UUID('304662c0-fdce-46b8-aa39-d1beb097efcd').bytes,
-                        36000000000,                   # event relative timestamp (36 secs)
-                        None
-                    ),
-                    (
-                        user_id,
-                        UUID('99f48aac-b5a0-426d-95f4-18af7d081c4e').bytes,
-                        25000000000,                   # event relative timestamp (25 secs)
-                        GLib.Variant('(sssb)', (
-                            'Asustek Computer Inc.',
-                            'To Be Filled By O.E.M.',
-                            'os/eos/amd64/eos3',
-                            False
-                        ))
-                    ),
-                    (
-                        user_id,
-                        UUID('9af2cc74-d6dd-423f-ac44-600a6eee2d96').bytes,
-                        4000000000,                    # event relative timestamp (4 secs)
-                        # Pack uptime payload into 2 levels of variants, that's how we receive them
-                        GLib.Variant('v', GLib.Variant('(xx)', (2, 1))),
-                    ),
-                    (
-                        user_id,
                         UUID('cf09194a-3090-4782-ab03-87b2f1515aed').bytes,
-                        26000000000,                   # event relative timestamp (26 secs)
-                        GLib.Variant('as', ['photoshop.exe'])
-                    ),
-                    (
-                        user_id,
-                        UUID('ef74310f-7c7e-ca05-0e56-3e495973070a').bytes,
-                        27000000000,                   # event relative timestamp (27 secs)
-                        GLib.Variant('u', 0)
-                    ),
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            'as',
+                            ['argv1', 'argv2']
+                        )
+                    )
                 ],
-                [],                                    # aggregate events
-                []                                     # sequence events
+                [],                                   # aggregate events
             )
         )
         assert request.is_normal_form()
@@ -487,487 +342,223 @@ class TestMetrics(IntegrationTest):
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
             request = dbsession.query(Request).one()
-            assert request.send_number == 0
-            assert request.machine_id == machine_id
+            assert request.sha512 == sha512(request_body).hexdigest()
 
-            machine = dbsession.query(Machine).one()
-            assert machine.machine_id == machine_id
-            assert machine.image_id == image_id
-            assert machine.image_product == 'eos'
-            assert machine.image_branch == 'eos3.7'
-            assert machine.image_arch == 'amd64'
-            assert machine.image_platform == 'amd64'
-            assert machine.image_timestamp == datetime(2019, 4, 19, 22, 56, 6, tzinfo=timezone.utc)
-            assert machine.image_personality == 'base'
+            channel = dbsession.query(Channel).one()
+            assert channel.image_id == image_id
+            assert not channel.dual_boot
+            assert channel.live
+            assert channel.site == {}
 
-            corrupted_cache = dbsession.query(CacheIsCorrupt).one()
-            assert corrupted_cache.request_id == request.id
-            assert corrupted_cache.user_id == user_id
-            assert corrupted_cache.occured_at == now - timedelta(seconds=2) + timedelta(seconds=1)
+            startup_finished = dbsession.query(StartupFinished).one()
+            assert startup_finished.os_version == 'os_version'
+            assert startup_finished.relative_timestamp == 2000000
+            assert startup_finished.absolute_timestamp == int(now.timestamp() * 1000000000)
+            assert startup_finished.firmware == 1000000
+            assert startup_finished.loader == 1000000
+            assert startup_finished.kernel == 1000000
+            assert startup_finished.initrd == 1000000
+            assert startup_finished.userspace == 1000000
+            assert startup_finished.total == 1000000
 
-            corrupted_meta = dbsession.query(CacheMetadataIsCorrupt).one()
-            assert corrupted_meta.request_id == request.id
-            assert corrupted_meta.user_id == user_id
-            assert corrupted_meta.occured_at == now - timedelta(seconds=2) + timedelta(seconds=2)
+            launched_equivalent_existing_flatpak = dbsession.query(
+                LaunchedEquivalentExistingFlatpak
+            ).one()
+            assert launched_equivalent_existing_flatpak.os_version == 'os_version'
+            assert launched_equivalent_existing_flatpak.relative_timestamp == 2000000
+            assert launched_equivalent_existing_flatpak.absolute_timestamp == int(
+                now.timestamp() * 1000000000
+            )
+            assert launched_equivalent_existing_flatpak.replacement_app_id == 'replacement_app_id'
+            assert launched_equivalent_existing_flatpak.argv == ['argv1', 'argv2']
 
-            panel = dbsession.query(ControlCenterPanelOpened).one()
-            assert panel.request_id == request.id
-            assert panel.user_id == user_id
-            assert panel.occured_at == now - timedelta(seconds=2) + timedelta(seconds=28)
-            assert panel.name == 'privacy'
+            launched_equivalent_installer_flatpak = dbsession.query(
+                LaunchedEquivalentInstallerForFlatpak
+            ).one()
+            assert launched_equivalent_installer_flatpak.os_version == 'os_version'
+            assert launched_equivalent_installer_flatpak.relative_timestamp == 2000000
+            assert launched_equivalent_installer_flatpak.absolute_timestamp == int(
+                now.timestamp() * 1000000000
+            )
+            assert launched_equivalent_installer_flatpak.replacement_app_id == 'replacement_app_id'
+            assert launched_equivalent_installer_flatpak.argv == ['argv1', 'argv2']
 
-            cpu_info = dbsession.query(CPUInfo).one()
-            assert cpu_info.request_id == request.id
-            assert cpu_info.user_id == user_id
-            assert cpu_info.occured_at == now - timedelta(seconds=2) + timedelta(seconds=5)
-            assert cpu_info.info == [{
-                'model': 'Intel(R) Core(TM) i7-5600U CPU @ 2.60GHz',
-                'cores': 4,
-                'max_frequency': 2600.0,
-            }]
+            launched_existing_flatpak = dbsession.query(
+                LaunchedExistingFlatpak
+            ).one()
+            assert launched_existing_flatpak.os_version == 'os_version'
+            assert launched_existing_flatpak.relative_timestamp == 2000000
+            assert launched_existing_flatpak.absolute_timestamp == int(
+                now.timestamp() * 1000000000
+            )
+            assert launched_existing_flatpak.replacement_app_id == 'replacement_app_id'
+            assert launched_existing_flatpak.argv == ['argv1', 'argv2']
 
-            feed = dbsession.query(DiscoveryFeedClicked).one()
-            assert feed.request_id == request.id
-            assert feed.user_id == user_id
-            assert feed.occured_at == now - timedelta(seconds=2) + timedelta(seconds=29)
-            assert feed.info == {
-                'app_id': 'org.gnome.Totem',
-                'content_type': 'knowledge_video',
+            launched_installer_flatpak = dbsession.query(
+                LaunchedInstallerForFlatpak
+            ).one()
+            assert launched_installer_flatpak.os_version == 'os_version'
+            assert launched_installer_flatpak.relative_timestamp == 2000000
+            assert launched_installer_flatpak.absolute_timestamp == int(
+                now.timestamp() * 1000000000
+            )
+            assert launched_installer_flatpak.replacement_app_id == 'replacement_app_id'
+            assert launched_installer_flatpak.argv == ['argv1', 'argv2']
+
+            linux_package_opened = dbsession.query(
+                LinuxPackageOpened
+            ).one()
+            assert linux_package_opened.os_version == 'os_version'
+            assert linux_package_opened.relative_timestamp == 2000000
+            assert linux_package_opened.absolute_timestamp == int(
+                now.timestamp() * 1000000000
+            )
+            assert linux_package_opened.argv == ['argv1', 'argv2']
+
+            parental_controls_blocked_flatpak_install = dbsession.query(
+                ParentalControlsBlockedFlatpakInstall
+            ).one()
+            assert parental_controls_blocked_flatpak_install.os_version == 'os_version'
+            assert parental_controls_blocked_flatpak_install.relative_timestamp == 2000000
+            assert parental_controls_blocked_flatpak_install.absolute_timestamp == int(
+                now.timestamp() * 1000000000
+            )
+            assert parental_controls_blocked_flatpak_install.app == 'app'
+
+            parental_controls_blocked_flatpak_run = dbsession.query(
+                ParentalControlsBlockedFlatpakRun
+            ).one()
+            assert parental_controls_blocked_flatpak_run.os_version == 'os_version'
+            assert parental_controls_blocked_flatpak_run.relative_timestamp == 2000000
+            assert parental_controls_blocked_flatpak_run.absolute_timestamp == int(
+                now.timestamp() * 1000000000
+            )
+            assert parental_controls_blocked_flatpak_run.app == 'app'
+
+            program_dumped_core = dbsession.query(ProgramDumpedCore).one()
+            assert program_dumped_core.os_version == 'os_version'
+            assert program_dumped_core.relative_timestamp == 2000000
+            assert program_dumped_core.absolute_timestamp == int(
+                now.timestamp() * 1000000000
+            )
+            assert program_dumped_core.info == {
+                'binary': '/app/bin/evolution',
+                'signal': 11,
             }
 
-            feed = dbsession.query(DiscoveryFeedClosed).one()
-            assert feed.request_id == request.id
-            assert feed.user_id == user_id
-            assert feed.occured_at == now - timedelta(seconds=2) + timedelta(seconds=30)
-            assert feed.info == {
-                'closed_by': 'buttonclose',
-                'time_open': '123',
+            updater_failure = dbsession.query(UpdaterFailure).one()
+            assert updater_failure.os_version == 'os_version'
+            assert updater_failure.relative_timestamp == 2000000
+            assert updater_failure.absolute_timestamp == int(
+                now.timestamp() * 1000000000
+            )
+            assert updater_failure.component == 'component'
+            assert updater_failure.error_message == 'error_message'
+
+            parental_controls_enabled = dbsession.query(ParentalControlsEnabled).one()
+            assert parental_controls_enabled.os_version == 'os_version'
+            assert parental_controls_enabled.relative_timestamp == 2000000
+            assert parental_controls_enabled.absolute_timestamp == int(
+                now.timestamp() * 1000000000
+            )
+            assert parental_controls_enabled.enabled
+
+            parental_controls_changed = dbsession.query(ParentalControlsChanged).one()
+            assert parental_controls_changed.os_version == 'os_version'
+            assert parental_controls_changed.relative_timestamp == 2000000
+            assert parental_controls_changed.absolute_timestamp == int(
+                now.timestamp() * 1000000000
+            )
+            assert parental_controls_changed.app_filter_is_whitelist
+            assert parental_controls_changed.app_filter == ['app_filter_1', 'app_filter_2']
+            assert parental_controls_changed.oars_filter == {
+                'oars_filter_1': 'mild',
+                'oars_filter_2': 'moderate',
             }
+            assert parental_controls_changed.allow_user_installation
+            assert parental_controls_changed.allow_system_installation
+            assert parental_controls_changed.is_administrator
+            assert parental_controls_changed.is_initial_setup
 
-            feed = dbsession.query(DiscoveryFeedOpened).one()
-            assert feed.request_id == request.id
-            assert feed.user_id == user_id
-            assert feed.occured_at == now - timedelta(seconds=2) + timedelta(seconds=31)
-            assert feed.info == {
-                'opened_by': 'shell_button',
-                'language': 'fr_FR.UTF-8',
-            }
-
-            extra_space = dbsession.query(DiskSpaceExtra).one()
-            assert extra_space.request_id == request.id
-            assert extra_space.user_id == user_id
-            assert extra_space.occured_at == now - timedelta(seconds=2) + timedelta(seconds=6)
-            assert extra_space.total == 30
-            assert extra_space.used == 10
-            assert extra_space.free == 20
-
-            root_space = dbsession.query(DiskSpaceSysroot).one()
-            assert root_space.request_id == request.id
-            assert root_space.user_id == user_id
-            assert root_space.occured_at == now - timedelta(seconds=2) + timedelta(seconds=7)
-            assert root_space.total == 5
-            assert root_space.used == 2
-            assert root_space.free == 3
-
-            dual_boot = dbsession.query(DualBootBooted).one()
-            assert dual_boot.request_id == request.id
-            assert dual_boot.user_id == user_id
-            assert dual_boot.occured_at == now - timedelta(seconds=2) + timedelta(seconds=8)
-
-            unmaximized = dbsession.query(EndlessApplicationUnmaximized).one()
-            assert unmaximized.request_id == request.id
-            assert unmaximized.user_id == user_id
-            assert unmaximized.occured_at == now - timedelta(seconds=2) + timedelta(seconds=32)
-            assert unmaximized.app_id == 'org.gnome.Calendar'
-
-            demo = dbsession.query(EnteredDemoMode).one()
-            assert demo.request_id == request.id
-            assert demo.user_id == user_id
-            assert demo.occured_at == now - timedelta(seconds=2) + timedelta(seconds=36)
-
-            image = dbsession.query(ImageVersion).one()
-            assert image.request_id == request.id
-            assert image.user_id == user_id
-            assert image.occured_at == now - timedelta(seconds=2) + timedelta(seconds=9)
-            assert image.image_id == image_id
-
-            equivalent = dbsession.query(LaunchedEquivalentExistingFlatpak).one()
-            assert equivalent.request_id == request.id
-            assert equivalent.user_id == user_id
-            assert equivalent.occured_at == now - timedelta(seconds=2) + timedelta(seconds=10)
-            assert equivalent.replacement_app_id == 'org.glimpse_editor.Glimpse'
-            assert equivalent.argv == ['photoshop.exe']
-
-            equivalent = dbsession.query(LaunchedEquivalentInstallerForFlatpak).one()
-            assert equivalent.request_id == request.id
-            assert equivalent.user_id == user_id
-            assert equivalent.occured_at == now - timedelta(seconds=2) + timedelta(seconds=11)
-            assert equivalent.replacement_app_id == 'org.glimpse_editor.Glimpse'
-            assert equivalent.argv == ['photoshop.exe']
-
-            existing = dbsession.query(LaunchedExistingFlatpak).one()
-            assert existing.request_id == request.id
-            assert existing.user_id == user_id
-            assert existing.occured_at == now - timedelta(seconds=2) + timedelta(seconds=12)
-            assert existing.replacement_app_id == 'org.gnome.Calendar'
-            assert existing.argv == ['gnome-calendar.deb']
-
-            installer = dbsession.query(LaunchedInstallerForFlatpak).one()
-            assert installer.request_id == request.id
-            assert installer.user_id == user_id
-            assert installer.occured_at == now - timedelta(seconds=2) + timedelta(seconds=13)
-            assert installer.replacement_app_id == 'org.gnome.Calendar'
-            assert installer.argv == ['gnome-calendar.deb']
-
-            package = dbsession.query(LinuxPackageOpened).one()
-            assert package.request_id == request.id
-            assert package.user_id == user_id
-            assert package.occured_at == now - timedelta(seconds=2) + timedelta(seconds=17)
-            assert package.argv == ['gnome-calendar.deb']
-
-            live_boot = dbsession.query(LiveUsbBooted).one()
-            assert live_boot.request_id == request.id
-            assert live_boot.user_id == user_id
-            assert live_boot.occured_at == now - timedelta(seconds=2) + timedelta(seconds=3)
-
-            locations = dbsession.query(Location).order_by(Location.altitude).all()
-
-            location = locations[0]
-            assert location.request_id == request.id
-            assert location.user_id == user_id
-            assert location.occured_at == now - timedelta(seconds=2) + timedelta(seconds=33)
-            assert location.latitude == 1.0
-            assert location.longitude == 2.1
-            assert location.altitude == 3.2
-            assert location.accuracy == 4.3
-
-            location = locations[1]
-            assert location.request_id == request.id
-            assert location.user_id == user_id
-            assert location.occured_at == now - timedelta(seconds=2) + timedelta(seconds=34)
-            assert location.latitude == 5.4
-            assert location.longitude == 6.5
-            assert location.altitude is None
-            assert location.accuracy == 8.7
-
-            location = dbsession.query(LocationLabel).one()
-            assert location.request_id == request.id
-            assert location.user_id == user_id
-            assert location.occured_at == now - timedelta(seconds=2) + timedelta(seconds=35)
-            assert location.info == {'facility': 'Facility', 'city': 'City', 'state': 'State'}
-
-            codec = dbsession.query(MissingCodec).one()
-            assert codec.request_id == request.id
-            assert codec.user_id == user_id
-            assert codec.occured_at == now - timedelta(seconds=2) + timedelta(seconds=18)
-            assert codec.gstreamer_version == '1.16.0'
-            assert codec.app_name == 'Videos'
-            assert codec.type == 'decoder'
-            assert codec.name == 'audio/mp3'
-            assert codec.extra_info == {
-                "mpegaudioversion": 1,
-                "mpegversion": 1,
-                "layer": 3,
-            }
-
-            monitor = dbsession.query(MonitorConnected).one()
-            assert monitor.request_id == request.id
-            assert monitor.user_id == user_id
-            assert monitor.occured_at == now - timedelta(seconds=2) + timedelta(seconds=15)
-            assert monitor.display_name == 'Samsung Electric Company 22'
-            assert monitor.display_vendor == 'SAM'
-            assert monitor.display_product == 'S22E450'
-            assert monitor.display_width == 500
-            assert monitor.display_height == 350
-            assert monitor.edid == b'edid data'
-
-            monitor = dbsession.query(MonitorDisconnected).one()
-            assert monitor.request_id == request.id
-            assert monitor.user_id == user_id
-            assert monitor.occured_at == now - timedelta(seconds=2) + timedelta(seconds=14)
-            assert monitor.display_name == 'Samsung Electric Company 22'
-            assert monitor.display_vendor == 'SAM'
-            assert monitor.display_product == 'S22E450'
-            assert monitor.display_width == 500
-            assert monitor.display_height == 350
-            assert monitor.edid == b'edid data'
-
-            network = dbsession.query(NetworkId).one()
-            assert network.request_id == request.id
-            assert network.user_id == user_id
-            assert network.occured_at == now - timedelta(seconds=2) + timedelta(seconds=19)
-            assert network.network_id == 123456
-
-            os = dbsession.query(OSVersion).one()
-            assert os.request_id == request.id
-            assert os.user_id == user_id
-            assert os.occured_at == now - timedelta(seconds=2) + timedelta(seconds=16)
-            assert os.version == '3.5.3'
-
-            crash = dbsession.query(ProgramDumpedCore).one()
-            assert crash.request_id == request.id
-            assert crash.user_id == user_id
-            assert crash.occured_at == now - timedelta(seconds=2) + timedelta(seconds=21)
-            assert crash.info == {'binary': '/app/bin/evolution', 'signal': 11}
-
-            ram = dbsession.query(RAMSize).one()
-            assert ram.request_id == request.id
-            assert ram.user_id == user_id
-            assert ram.occured_at == now - timedelta(seconds=2) + timedelta(seconds=22)
-            assert ram.total == 32000
-
-            app_added = dbsession.query(ShellAppAddedToDesktop).one()
-            assert app_added.request_id == request.id
-            assert app_added.user_id == user_id
-            assert app_added.occured_at == now - timedelta(seconds=2) + timedelta(seconds=23)
-            assert app_added.app_id == 'org.gnome.Calendar'
-
-            app_removed = dbsession.query(ShellAppRemovedFromDesktop).one()
-            assert app_removed.request_id == request.id
-            assert app_removed.user_id == user_id
-            assert app_removed.occured_at == now - timedelta(seconds=2) + timedelta(seconds=24)
-            assert app_removed.app_id == 'org.gnome.Evolution'
-
-            underscan = dbsession.query(UnderscanEnabled).one()
-            assert underscan.request_id == request.id
-            assert underscan.user_id == user_id
-            assert underscan.occured_at == now - timedelta(seconds=2) + timedelta(seconds=36)
-
-            branch = dbsession.query(UpdaterBranchSelected).one()
-            assert branch.request_id == request.id
-            assert branch.user_id == user_id
-            assert branch.occured_at == now - timedelta(seconds=2) + timedelta(seconds=25)
-            assert branch.hardware_vendor == 'ASUS'
-            assert branch.hardware_product == 'To Be Filled By O.E.M.'
-            assert branch.ostree_branch == 'os/eos/amd64/eos3'
-            assert not branch.on_hold
-
-            uptime = dbsession.query(Uptime).one()
-            assert uptime.request_id == request.id
-            assert uptime.user_id == user_id
-            assert uptime.occured_at == now - timedelta(seconds=2) + timedelta(seconds=4)
-            assert uptime.accumulated_uptime == 2
-            assert uptime.number_of_boots == 1
-
-            windows_app = dbsession.query(WindowsAppOpened).one()
-            assert windows_app.request_id == request.id
-            assert windows_app.user_id == user_id
-            assert windows_app.occured_at == now - timedelta(seconds=2) + timedelta(seconds=26)
-            assert windows_app.argv == ['photoshop.exe']
-
-            windows_tables = dbsession.query(WindowsLicenseTables).one()
-            assert windows_tables.request_id == request.id
-            assert windows_tables.user_id == user_id
-            assert windows_tables.occured_at == now - timedelta(seconds=2) + timedelta(seconds=27)
-            assert windows_tables.tables == 0
+            windows_app_opened = dbsession.query(
+                WindowsAppOpened
+            ).one()
+            assert windows_app_opened.os_version == 'os_version'
+            assert windows_app_opened.relative_timestamp == 2000000
+            assert windows_app_opened.absolute_timestamp == int(
+                now.timestamp() * 1000000000
+            )
+            assert windows_app_opened.argv == ['argv1', 'argv2']
 
             assert dbsession.query(InvalidSingularEvent).count() == 0
             assert dbsession.query(UnknownSingularEvent).count() == 0
 
-    def test_no_payload_singular_event_with_payload(self, capfd):
-        from azafea.event_processors.endless.metrics.v3.model import LiveUsbBooted, Request
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, LiveUsbBooted)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        user_id = 2000
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        user_id,
-                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
-                        3000000000,                    # event relative timestamp (3 secs)
-                        GLib.Variant('x', 2),          # non-empty payload, expected empty
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_no_payload_singular_event_with_payload', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            request = dbsession.query(Request).one()
-            assert request.send_number == 0
-            assert request.machine_id == machine_id
-
-            live_boot = dbsession.query(LiveUsbBooted).one()
-            assert live_boot.request_id == request.id
-            assert live_boot.user_id == user_id
-            assert live_boot.occured_at == now - timedelta(seconds=2) + timedelta(seconds=3)
-
-        capture = capfd.readouterr()
-        assert ('Metric event 56be0b38-e47b-4578-9599-00ff9bda54bb takes no payload, but got '
-                '<int64 2>') in capture.err
-
-    def test_insert_machine_image_id(self):
-        from azafea.event_processors.endless.metrics.v3.model import ImageVersion, Machine, Request
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, Machine, ImageVersion)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
-        user_id = 2000
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        user_id,
-                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        1000000000,                    # event relative timestamp (1 secs)
-                        GLib.Variant('s', image_id)
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_insert_machine_image_id', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            request = dbsession.query(Request).one()
-
-            image = dbsession.query(ImageVersion).one()
-            assert image.request_id == request.id
-            assert image.image_id == image_id
-
-            machine = dbsession.query(Machine).one()
-            assert machine.machine_id == request.machine_id
-            assert machine.image_id == image_id
-            assert machine.dualboot is False
-            assert machine.live is False
-            assert machine.demo is False
-
-    def test_insert_machine_invalid_image_id(self, capfd):
-        from azafea.event_processors.endless.metrics.v3.model import ImageVersion, Machine, Request
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, Machine, ImageVersion)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        image_id = 'image'
-        user_id = 2000
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        user_id,
-                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        1000000000,                    # event relative timestamp (1 secs)
-                        GLib.Variant('s', image_id)
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_insert_machine_invalid_image_id', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            assert dbsession.query(Request).order_by(Request.id).count() == 0
-            assert dbsession.query(Machine).order_by(Machine.id).count() == 0
-            assert dbsession.query(ImageVersion).order_by(ImageVersion.id).count() == 0
-
-        capture = capfd.readouterr()
-        assert f'Invalid image id {image_id!r}: Did not match the expected format' in capture.err
-
-    def test_insert_machine_demo(self):
+    def test_aggregate_events(self):
         from azafea.event_processors.endless.metrics.v3.model import (
-            EnteredDemoMode, Machine, Request)
-
-        # Create the table
+            Channel, DailyAppUsage, MonthlyAppUsage, DailyUsers,
+            MonthlyUsers, DailySessionTime, MonthlySessionTime
+        )
         self.run_subcommand('initdb')
-        self.ensure_tables(Request, Machine, EnteredDemoMode)
-
-        # Build a request as it would have been sent to us
+        self.ensure_tables(
+            Channel, DailyAppUsage, MonthlyAppUsage, DailyUsers,
+            MonthlyUsers, DailySessionTime, MonthlySessionTime
+        )
         now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
+
         request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            '(xxsa{ss}ya(aysxmv)a(aysxxmv))',
             (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
+                2000000,   # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),  # Absolute timestamp
+                image_id,
+                {},
+                2,
+                [],                         # singular events
+                [                           # aggregate events
                     (
-                        1001,
-                        UUID('c75af67f-cf2f-433d-a060-a670087d93a1').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        None
+                        UUID('49d0451a-f706-4f50-81d2-70cc0ec923a4').bytes,
+                        'os_version',
+                        int(now.timestamp()) - 100000,
+                        1000,
+                        GLib.Variant('s', 'app_id')
+                    ),
+                    (
+                        UUID('f2839256-ccbf-45ec-a5b0-fdc99c3f0a2b').bytes,
+                        'os_version',
+                        int(now.timestamp()) - 100000,
+                        1000,
+                        GLib.Variant('s', 'app_id')
+                    ),
+                    (
+                        UUID('a3826320-9192-446a-8886-e2129c0ce302').bytes,
+                        'os_version',
+                        int(now.timestamp()) - 100000,
+                        1000,
+                        None,
+                    ),
+                    (
+                        UUID('86cacd30-e1c0-4c66-8f1e-99fdb4c3546f').bytes,
+                        'os_version',
+                        int(now.timestamp()) - 100000,
+                        1000,
+                        None,
+                    ),
+                    (
+                        UUID('5dc0b53c-93f9-4df0-ad6f-bd25e9fe638f').bytes,
+                        'os_version',
+                        int(now.timestamp()) - 100000,
+                        1000,
+                        None,
+                    ),
+                    (
+                        UUID('8023ae8e-f0c7-4fee-bc00-2d6b28061fce').bytes,
+                        'os_version',
+                        int(now.timestamp()) - 100000,
+                        1000,
+                        None,
                     ),
                 ],
-                [],                                    # aggregate events
-                []                                     # sequence events
             )
         )
         assert request.is_normal_form()
@@ -979,1094 +570,97 @@ class TestMetrics(IntegrationTest):
 
         record = received_at_timestamp_bytes + request_body
 
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_insert_machine_demo', record)
+        self.redis.lpush('test_aggregate_events', record)
 
         # Run Azafea so it processes the event
         self.run_azafea()
 
-        # Ensure the record was inserted into the DB
         with self.db as dbsession:
-            request = dbsession.query(Request).one()
+            channel = dbsession.query(Channel).one()
+            assert channel.image_id == image_id
+            assert not channel.dual_boot
+            assert channel.live
+            assert channel.site == {}
 
-            demo = dbsession.query(EnteredDemoMode).one()
-            assert demo.request_id == request.id
-
-            machine = dbsession.query(Machine).one()
-            assert machine.machine_id == request.machine_id
-            assert machine.image_id is None
-            assert machine.dualboot is False
-            assert machine.live is False
-            assert machine.demo is True
-
-    def test_insert_machine_dualboot(self):
-        from azafea.event_processors.endless.metrics.v3.model import (
-            DualBootBooted, Machine, Request)
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, Machine, DualBootBooted)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        1001,
-                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        None
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
+            daily_app_usage = dbsession.query(DailyAppUsage).one()
+            assert daily_app_usage.channel_id == channel.id
+            assert daily_app_usage.count == 1000
+            assert daily_app_usage.period_start == datetime.fromtimestamp(
+                int(now.timestamp()) - 100000
             )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
+            assert daily_app_usage.app_id == 'app_id'
 
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_insert_machine_dualboot', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            request = dbsession.query(Request).one()
-
-            dualboot = dbsession.query(DualBootBooted).one()
-            assert dualboot.request_id == request.id
-
-            machine = dbsession.query(Machine).one()
-            assert machine.machine_id == request.machine_id
-            assert machine.image_id is None
-            assert machine.dualboot is True
-            assert machine.live is False
-            assert machine.demo is False
-
-    def test_insert_machine_live(self):
-        from azafea.event_processors.endless.metrics.v3.model import (
-            LiveUsbBooted, Machine, Request)
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, Machine, LiveUsbBooted)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        1001,
-                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        None
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
+            monthly_app_usage = dbsession.query(MonthlyAppUsage).one()
+            assert monthly_app_usage.channel_id == channel.id
+            assert monthly_app_usage.count == 1000
+            assert monthly_app_usage.period_start == datetime.fromtimestamp(
+                int(now.timestamp()) - 100000
             )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
+            assert monthly_app_usage.app_id == 'app_id'
 
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_insert_machine_live', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            request = dbsession.query(Request).one()
-
-            live = dbsession.query(LiveUsbBooted).one()
-            assert live.request_id == request.id
-
-            machine = dbsession.query(Machine).one()
-            assert machine.machine_id == request.machine_id
-            assert machine.image_id is None
-            assert machine.dualboot is False
-            assert machine.live is True
-            assert machine.demo is False
-
-    def test_upsert_machine_image_id_then_dualboot(self):
-        from azafea.event_processors.endless.metrics.v3.model import (
-            DualBootBooted, ImageVersion, Machine, Request)
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, Machine, DualBootBooted, ImageVersion)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
-        user_id = 2000
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        user_id,
-                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        1000000000,                    # event relative timestamp (1 secs)
-                        GLib.Variant('s', image_id)
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
+            daily_users = dbsession.query(DailyUsers).one()
+            assert daily_users.channel_id == channel.id
+            assert daily_users.count == 1000
+            assert daily_users.period_start == datetime.fromtimestamp(
+                int(now.timestamp()) - 100000
             )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
 
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_upsert_machine_image_id_then_dualboot', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            request = dbsession.query(Request).one()
-
-            image = dbsession.query(ImageVersion).one()
-            assert image.request_id == request.id
-            assert image.image_id == image_id
-
-            machine = dbsession.query(Machine).one()
-            assert machine.machine_id == request.machine_id
-            assert machine.image_id == image_id
-            assert machine.dualboot is False
-            assert machine.live is False
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        1001,
-                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        None
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
+            monthly_users = dbsession.query(MonthlyUsers).one()
+            assert monthly_users.channel_id == channel.id
+            assert monthly_users.count == 1000
+            assert monthly_users.period_start == datetime.fromtimestamp(
+                int(now.timestamp()) - 100000
             )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
 
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_upsert_machine_image_id_then_dualboot', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            request = dbsession.query(Request).order_by(Request.received_at.desc()).first()
-
-            dualboot = dbsession.query(DualBootBooted).one()
-            assert dualboot.request_id == request.id
-
-            machine = dbsession.query(Machine).one()
-            assert machine.machine_id == request.machine_id
-            assert machine.image_id == image_id
-            assert machine.dualboot is True
-            assert machine.live is False
-
-    def test_upsert_machine_live_then_image_id(self):
-        from azafea.event_processors.endless.metrics.v3.model import (
-            ImageVersion, LiveUsbBooted, Machine, Request)
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, Machine, ImageVersion, LiveUsbBooted)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        1001,
-                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        None
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
+            daily_session_time = dbsession.query(DailySessionTime).one()
+            assert daily_session_time.channel_id == channel.id
+            assert daily_session_time.count == 1000
+            assert daily_session_time.period_start == datetime.fromtimestamp(
+                int(now.timestamp()) - 100000
             )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_upsert_machine_live_then_image_id', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            request = dbsession.query(Request).one()
-
-            live = dbsession.query(LiveUsbBooted).one()
-            assert live.request_id == request.id
-
-            machine = dbsession.query(Machine).one()
-            assert machine.machine_id == request.machine_id
-            assert machine.image_id is None
-            assert machine.dualboot is False
-            assert machine.live is True
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
-        user_id = 2000
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        user_id,
-                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        1000000000,                    # event relative timestamp (1 secs)
-                        GLib.Variant('s', image_id)
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
+            monthly_session_time = dbsession.query(MonthlySessionTime).one()
+            assert monthly_session_time.channel_id == channel.id
+            assert monthly_session_time.count == 1000
+            assert monthly_session_time.period_start == datetime.fromtimestamp(
+                int(now.timestamp()) - 100000
             )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_upsert_machine_live_then_image_id', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            request = dbsession.query(Request).order_by(Request.received_at.desc()).first()
-
-            image = dbsession.query(ImageVersion).one()
-            assert image.request_id == request.id
-            assert image.image_id == image_id
-
-            machine = dbsession.query(Machine).one()
-            assert machine.machine_id == request.machine_id
-            assert machine.image_id == image_id
-            assert machine.dualboot is False
-            assert machine.live is True
-
-    def test_upsert_machine_location_then_image_id(self):
-        from azafea.event_processors.endless.metrics.v3.model import (
-            ImageVersion, LocationLabel, Machine, Request)
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, Machine, ImageVersion, LocationLabel)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        1001,
-                        UUID('eb0302d8-62e7-274b-365f-cd4e59103983').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        GLib.Variant('a{ss}', {
-                            'city': 'City', 'state': 'State', 'facility': 'Facility'})
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_upsert_machine_location_then_image_id', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            request = dbsession.query(Request).one()
-
-            location = dbsession.query(LocationLabel).one()
-            assert location.request_id == request.id
-
-            machine = dbsession.query(Machine).one()
-            assert machine.machine_id == request.machine_id
-            assert machine.image_id is None
-            assert machine.location == {'city': 'City', 'state': 'State', 'facility': 'Facility'}
-            assert machine.location_city == 'City'
-            assert machine.location_state == 'State'
-            assert machine.location_facility == 'Facility'
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
-        user_id = 2000
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        user_id,
-                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        1000000000,                    # event relative timestamp (1 secs)
-                        GLib.Variant('s', image_id)
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_upsert_machine_location_then_image_id', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            request = dbsession.query(Request).order_by(Request.received_at.desc()).first()
-
-            image = dbsession.query(ImageVersion).one()
-            assert image.request_id == request.id
-            assert image.image_id == image_id
-
-            machine = dbsession.query(Machine).one()
-            assert machine.machine_id == request.machine_id
-            assert machine.image_id == image_id
-            assert machine.location == {'city': 'City', 'state': 'State', 'facility': 'Facility'}
-            assert machine.location_city == 'City'
-            assert machine.location_state == 'State'
-            assert machine.location_facility == 'Facility'
-
-    def test_upsert_machine_location_unknown_keys(self):
-        from azafea.event_processors.endless.metrics.v3.model import (
-            ImageVersion, LocationLabel, Machine, Request)
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, Machine, ImageVersion, LocationLabel)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        1001,
-                        UUID('eb0302d8-62e7-274b-365f-cd4e59103983').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        GLib.Variant('a{ss}', {
-                            'city': 'City', 'state': 'State', 'unknown': 'Unknown'})
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_upsert_machine_location_unknown_keys', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            request = dbsession.query(Request).one()
-
-            location = dbsession.query(LocationLabel).one()
-            assert location.request_id == request.id
-
-            machine = dbsession.query(Machine).one()
-            assert machine.machine_id == request.machine_id
-            assert machine.image_id is None
-            assert machine.location == {'city': 'City', 'state': 'State', 'unknown': 'Unknown'}
-            assert machine.location_city == 'City'
-            assert machine.location_state == 'State'
-
-    def test_upsert_machine_all_at_once(self):
-        from azafea.event_processors.endless.metrics.v3.model import (
-            DualBootBooted, EnteredDemoMode, ImageVersion, LiveUsbBooted, Machine, Request)
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, Machine, DualBootBooted, EnteredDemoMode, ImageVersion,
-                           LiveUsbBooted)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
-        user_id = 2000
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        user_id,
-                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        1000000000,                    # event relative timestamp (1 secs)
-                        GLib.Variant('s', image_id)
-                    ),
-                    (
-                        1001,
-                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        None
-                    ),
-                    (
-                        1001,
-                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
-                        2000000000,                    # event relative timestamp (3 secs)
-                        None
-                    ),
-                    (
-                        1001,
-                        UUID('c75af67f-cf2f-433d-a060-a670087d93a1').bytes,
-                        2000000000,                    # event relative timestamp (4 secs)
-                        None
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_upsert_machine_all_at_once', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            request = dbsession.query(Request).one()
-
-            live = dbsession.query(LiveUsbBooted).one()
-            assert live.request_id == request.id
-
-            machine = dbsession.query(Machine).one()
-            assert machine.machine_id == request.machine_id
-            assert machine.image_id == image_id
-            assert machine.dualboot is True
-            assert machine.live is True
-            assert machine.demo is True
-
-    def test_upsert_multiple_machines(self):
-        from azafea.event_processors.endless.metrics.v3.model import (
-            DualBootBooted, EnteredDemoMode, ImageVersion, LiveUsbBooted, Machine, Request)
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, Machine, DualBootBooted, EnteredDemoMode, ImageVersion,
-                           LiveUsbBooted)
-
-        # Build a request as it would have been sent to us, with an image version event
-        now = datetime.now(tz=timezone.utc)
-        machine_id_1 = 'ffffffffffffffffffffffffffffffff'
-        image_id_1 = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
-        user_id = 2000
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id_1),
-                [                                      # singular events
-                    (
-                        user_id,
-                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        1000000000,                    # event relative timestamp (1 secs)
-                        GLib.Variant('s', image_id_1)
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=1)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_upsert_multiple_machines', record)
-
-        # Build a request as it would have been sent to us, with an image version and a live events
-        user_id = 2000
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id_1),
-                [                                      # singular events
-                    (
-                        user_id,
-                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        3000000000,                    # event relative timestamp (3 secs)
-                        GLib.Variant('s', image_id_1)
-                    ),
-                    (
-                        user_id,
-                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        None
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_upsert_multiple_machines', record)
-
-        # Build a request as it would have been sent to us, with a dualboot event
-        machine_id_2 = '00000000000000000000000000000000'
-        user_id = 2000
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id_2),
-                [                                      # singular events
-                    (
-                        user_id,
-                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        None
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=3)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_upsert_multiple_machines', record)
-
-        # Build a request as it would have been sent to us, with a demo mode event
-        user_id = 2000
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id_2),
-                [                                      # singular events
-                    (
-                        user_id,
-                        UUID('c75af67f-cf2f-433d-a060-a670087d93a1').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        None
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=3)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_upsert_multiple_machines', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            requests = dbsession.query(Request).order_by(Request.received_at).all()
-            assert len(requests) == 4
-            assert requests[0].machine_id == machine_id_1
-            assert requests[1].machine_id == machine_id_1
-            assert requests[2].machine_id == machine_id_2
-            assert requests[3].machine_id == machine_id_2
-
-            machines = dbsession.query(Machine).order_by(Machine.id).all()
-            assert len(machines) == 2
-            assert machines[0].machine_id == machine_id_1
-            assert machines[0].image_id == image_id_1
-            assert machines[0].dualboot is False
-            assert machines[0].live is True
-            assert machines[0].demo is False
-            assert machines[1].machine_id == machine_id_2
-            assert machines[1].image_id is None
-            assert machines[1].dualboot is True
-            assert machines[1].live is False
-            assert machines[1].demo is True
-
-            assert dbsession.query(DualBootBooted).count() == 1
-            assert dbsession.query(EnteredDemoMode).count() == 1
-            assert dbsession.query(ImageVersion).count() == 2
-            assert dbsession.query(LiveUsbBooted).count() == 1
-
-    def test_deduplicate_dualboots(self):
-        from azafea.event_processors.endless.metrics.v3.model import DualBootBooted, Request
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, DualBootBooted)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        1001,
-                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
-                        1000000000,                    # event relative timestamp (1 secs)
-                        None
-                    ),
-                    (
-                        1002,
-                        UUID('16cfc671-5525-4a99-9eb9-4f6c074803a9').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        None
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_deduplicate_dualboots', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            assert dbsession.query(Request).order_by(Request.id).count() == 1
-
-            dualboot = dbsession.query(DualBootBooted).one()
-            assert dualboot.user_id == 1001
-
-    def test_deduplicate_image_versions(self):
-        from azafea.event_processors.endless.metrics.v3.model import ImageVersion, Request
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, ImageVersion)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        1001,
-                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        1000000000,                    # event relative timestamp (1 secs)
-                        GLib.Variant('s', image_id)
-                    ),
-                    (
-                        1002,
-                        UUID('6b1c1cfc-bc36-438c-0647-dacd5878f2b3').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        GLib.Variant('s', image_id)
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_deduplicate_image_versions', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            assert dbsession.query(Request).order_by(Request.id).count() == 1
-
-            image = dbsession.query(ImageVersion).order_by(ImageVersion.id).one()
-            assert image.user_id == 1001
-
-    def test_deduplicate_live_usb_booted(self):
-        from azafea.event_processors.endless.metrics.v3.model import LiveUsbBooted, Request
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, LiveUsbBooted)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [                                      # singular events
-                    (
-                        1001,
-                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
-                        1000000000,                    # event relative timestamp (1 secs)
-                        None
-                    ),
-                    (
-                        1002,
-                        UUID('56be0b38-e47b-4578-9599-00ff9bda54bb').bytes,
-                        2000000000,                    # event relative timestamp (2 secs)
-                        None
-                    ),
-                ],
-                [],                                    # aggregate events
-                []                                     # sequence events
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_deduplicate_live_usb_booted', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            assert dbsession.query(Request).order_by(Request.id).count() == 1
-
-            live = dbsession.query(LiveUsbBooted).one()
-            assert live.user_id == 1001
-
-    def test_deduplicate_multiple_events_per_request(self):
-        # This test is a bit different from the others, because it does not push a request to Redis
-        # for Azafea to process, it operates directly on the model.
-        #
-        # This is because the goal here is to test what happens when we process multiple metrics
-        # requests in a single database transaction, but Azafea (currently) always opens a new
-        # database transaction for each request.
-
-        from azafea.event_processors.endless.metrics.v3.model import (
-            DualBootBooted, ImageVersion, LiveUsbBooted, Request)
-
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, DualBootBooted, ImageVersion, LiveUsbBooted)
-
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
-
-        with self.db as dbsession:
-            # Add a first request with 1 dualboot, 2 image version and 3 live usb events
-            request = Request(sha512='whatever', received_at=occured_at,
-                              absolute_timestamp=1, relative_timestamp=2, machine_id='machine1',
-                              send_number=0)
-            dbsession.add(request)
-
-            image_id_1 = 'eos-eos3.6-amd64-amd64.190619-225606.base'
-            dbsession.add(DualBootBooted(request=request, user_id=1001, occured_at=occured_at,
-                                         payload=GLib.Variant('mv', None)))
-            dbsession.add(ImageVersion(request=request, user_id=1001, occured_at=occured_at,
-                                       payload=GLib.Variant('mv', GLib.Variant('s', image_id_1))))
-            dbsession.add(ImageVersion(request=request, user_id=1002, occured_at=occured_at,
-                                       payload=GLib.Variant('mv', GLib.Variant('s', image_id_1))))
-            dbsession.add(LiveUsbBooted(request=request, user_id=1001, occured_at=occured_at,
-                                        payload=GLib.Variant('mv', None)))
-            dbsession.add(LiveUsbBooted(request=request, user_id=1002, occured_at=occured_at,
-                                        payload=GLib.Variant('mv', None)))
-            dbsession.add(LiveUsbBooted(request=request, user_id=1003, occured_at=occured_at,
-                                        payload=GLib.Variant('mv', None)))
-
-            # Add a second request with 1 dualboot, 2 image version and 3 live usb events
-            request = Request(sha512='whatever2', received_at=occured_at,
-                              absolute_timestamp=1, relative_timestamp=2, machine_id='machine2',
-                              send_number=0)
-            dbsession.add(request)
-
-            image_id_2 = 'eos-eos3.7-amd64-amd64.191019-225606.base'
-            dbsession.add(DualBootBooted(request=request, user_id=2001, occured_at=occured_at,
-                                         payload=GLib.Variant('mv', None)))
-            dbsession.add(ImageVersion(request=request, user_id=2001, occured_at=occured_at,
-                                       payload=GLib.Variant('mv', GLib.Variant('s', image_id_2))))
-            dbsession.add(ImageVersion(request=request, user_id=2002, occured_at=occured_at,
-                                       payload=GLib.Variant('mv', GLib.Variant('s', image_id_2))))
-            dbsession.add(LiveUsbBooted(request=request, user_id=2001, occured_at=occured_at,
-                                        payload=GLib.Variant('mv', None)))
-            dbsession.add(LiveUsbBooted(request=request, user_id=2002, occured_at=occured_at,
-                                        payload=GLib.Variant('mv', None)))
-            dbsession.add(LiveUsbBooted(request=request, user_id=2003, occured_at=occured_at,
-                                        payload=GLib.Variant('mv', None)))
-
-        with self.db as dbsession:
-            requests = dbsession.query(Request).order_by(Request.id).all()
-            assert len(requests) == 2
-
-            dualboots = dbsession.query(DualBootBooted).order_by(DualBootBooted.request_id).all()
-            assert len(dualboots) == 2
-            assert dualboots[0].request_id == requests[0].id
-            assert dualboots[0].user_id == 1001
-            assert dualboots[1].request_id == requests[1].id
-            assert dualboots[1].user_id == 2001
-
-            images = dbsession.query(ImageVersion).order_by(ImageVersion.request_id).all()
-            assert len(images) == 2
-            assert images[0].image_id == image_id_1
-            assert images[0].request_id == requests[0].id
-            assert images[0].user_id == 1001
-            assert images[1].image_id == image_id_2
-            assert images[1].request_id == requests[1].id
-            assert images[1].user_id == 2001
-
-            live_usbs = dbsession.query(LiveUsbBooted).order_by(LiveUsbBooted.request_id).all()
-            assert len(live_usbs) == 2
-            assert live_usbs[0].request_id == requests[0].id
-            assert live_usbs[0].user_id == 1001
-            assert live_usbs[1].request_id == requests[1].id
-            assert live_usbs[1].user_id == 2001
 
     def test_unknown_singular_events(self):
-        from azafea.event_processors.endless.metrics.v3.model import Request, UnknownSingularEvent
+        from azafea.event_processors.endless.metrics.v3.model import (
+            Request, Channel, UnknownSingularEvent
+        )
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(Request, UnknownSingularEvent)
+        self.ensure_tables(Request, Channel, UnknownSingularEvent)
 
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        user_id = 2000
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
         event_id = UUID('d3863909-8eff-43b6-9a33-ef7eda266195')
         request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            '(xxsa{ss}ya(aysxmv)a(aysxxmv))',
             (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
+                2000000,   # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),  # Absolute timestamp
+                image_id,
+                {},
+                2,
                 [                                      # singular events
                     (
-                        user_id,
                         event_id.bytes,
+                        'os_version',
                         3000000000,                    # event relative timestamp (3 secs)
                         None,                          # empty payload
                     ),
                     (
-                        user_id,
                         event_id.bytes,
+                        'os_version',
                         4000000000,                    # event relative timestamp (4 secs)
                         GLib.Variant('(xx)', (1, 2)),  # Non empty payload
                     ),
                 ],
-                [],                                    # aggregate events
-                []                                     # sequence events
+                [],                                   # aggregate events
             )
         )
         assert request.is_normal_form()
@@ -2087,8 +681,9 @@ class TestMetrics(IntegrationTest):
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
             request = dbsession.query(Request).one()
-            assert request.send_number == 0
-            assert request.machine_id == machine_id
+            assert request.sha512 == sha512(request_body).hexdigest()
+
+            channel = dbsession.query(Channel).one()
 
             events = dbsession.query(UnknownSingularEvent).order_by(UnknownSingularEvent.occured_at)
             assert events.count() == 2
@@ -2096,16 +691,12 @@ class TestMetrics(IntegrationTest):
             events = events.all()
 
             event = events[0]
-            assert event.request_id == request.id
-            assert event.user_id == user_id
-            assert event.occured_at == now - timedelta(seconds=2) + timedelta(seconds=3)
+            assert event.channel == channel
             assert event.event_id == event_id
             assert event.payload_data == b''
 
             event = events[1]
-            assert event.request_id == request.id
-            assert event.user_id == user_id
-            assert event.occured_at == now - timedelta(seconds=2) + timedelta(seconds=4)
+            assert event.channel_id == channel.id
             assert event.event_id == event_id
             assert GLib.Variant.new_from_bytes(GLib.VariantType('mv'),
                                                GLib.Bytes.new(event.payload_data),
@@ -2113,40 +704,39 @@ class TestMetrics(IntegrationTest):
 
     def test_invalid_singular_event_payload(self, capfd):
         from azafea.event_processors.endless.metrics.v3.model import (
-            InvalidSingularEvent, Request, Uptime)
+            InvalidSingularEvent, Request, Channel)
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(Request, Uptime, InvalidSingularEvent)
+        self.ensure_tables(Request, Channel, InvalidSingularEvent)
 
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        user_id = 2000
-        event_id = UUID('aee94585-07a2-4483-a090-25abda650b12')
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
+        event_id = UUID('00d7bc1e-ec93-4c53-ae78-a6b40450be4a')
         request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            '(xxsa{ss}ya(aysxmv)a(aysxxmv))',
             (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
+                2000000,   # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),  # Absolute timestamp
+                image_id,
+                {},
+                2,
                 [                                      # singular events
                     (
-                        user_id,
                         event_id.bytes,
+                        'os_version',
                         3000000000,                    # event relative timestamp (3 secs)
                         None,                          # empty payload, expected '(xx)'
                     ),
                     (
-                        user_id,
                         event_id.bytes,
+                        'os_version',
                         4000000000,                    # event relative timestamp (3 secs)
                         GLib.Variant('s', 'Up!'),      # 's' payload, expected '(xx)'
                     ),
                 ],
-                [],                                    # aggregate events
-                []                                     # sequence events
+                [],                                   # aggregate events
             )
         )
         assert request.is_normal_form()
@@ -2167,10 +757,9 @@ class TestMetrics(IntegrationTest):
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
             request = dbsession.query(Request).one()
-            assert request.send_number == 0
-            assert request.machine_id == machine_id
+            assert request.sha512 == sha512(request_body).hexdigest()
 
-            assert dbsession.query(Uptime).count() == 0
+            channel = dbsession.query(Channel).one()
 
             events = dbsession.query(InvalidSingularEvent).order_by(InvalidSingularEvent.occured_at)
             assert events.count() == 2
@@ -2178,72 +767,159 @@ class TestMetrics(IntegrationTest):
             events = events.all()
 
             event = events[0]
-            assert event.request_id == request.id
-            assert event.user_id == user_id
-            assert event.occured_at == now - timedelta(seconds=2) + timedelta(seconds=3)
+            assert event.channel_id == channel.id
             assert event.event_id == event_id
             assert event.payload_data == b''
             assert event.error == (
-                'Metric event aee94585-07a2-4483-a090-25abda650b12 needs a u payload, '
+                'Metric event 00d7bc1e-ec93-4c53-ae78-a6b40450be4a needs a (sas) payload, '
                 'but got none')
 
             event = events[1]
-            assert event.request_id == request.id
-            assert event.user_id == user_id
-            assert event.occured_at == now - timedelta(seconds=2) + timedelta(seconds=4)
+            assert event.channel_id == channel.id
             assert event.event_id == event_id
             assert GLib.Variant.new_from_bytes(GLib.VariantType('mv'),
                                                GLib.Bytes.new(event.payload_data),
                                                False).unpack() == 'Up!'
             assert event.error == (
-                'Metric event aee94585-07a2-4483-a090-25abda650b12 needs a u payload, '
+                'Metric event 00d7bc1e-ec93-4c53-ae78-a6b40450be4a needs a (sas) payload, '
                 "but got 'Up!' (s)")
 
         capture = capfd.readouterr()
         assert 'An error occured while processing the event:' in capture.err
-        assert ('Metric event aee94585-07a2-4483-a090-25abda650b12 needs a u payload, '
+        assert ('Metric event 00d7bc1e-ec93-4c53-ae78-a6b40450be4a needs a (sas) payload, '
                 'but got none') in capture.err
-        assert ('Metric event aee94585-07a2-4483-a090-25abda650b12 needs a u payload, '
+        assert ('Metric event 00d7bc1e-ec93-4c53-ae78-a6b40450be4a needs a (sas) payload, '
                 "but got 'Up!' (s)") in capture.err
 
-    def test_unknown_aggregate_events(self):
+    def test_invalid_aggregate_event_payload(self, capfd):
         from azafea.event_processors.endless.metrics.v3.model import (
-            Request, UnknownAggregateEvent)
+            InvalidAggregateEvent, Channel)
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(Request, UnknownAggregateEvent)
+        self.ensure_tables(Channel, InvalidAggregateEvent)
 
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        user_id = 2000
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
+        event_id = UUID('49d0451a-f706-4f50-81d2-70cc0ec923a4')
+        request = GLib.Variant(
+            '(xxsa{ss}ya(aysxmv)a(aysxxmv))',
+            (
+                2000000,   # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),  # Absolute timestamp
+                image_id,
+                {},
+                2,
+                [],
+                [                                      # singular events
+                    (
+                        event_id.bytes,
+                        'os_version',
+                        int(now.timestamp()) - 100000,
+                        1000,
+                        GLib.Variant('(ss)', ('str_1', 'str_2'))
+                    ),
+                    (
+                        event_id.bytes,
+                        'os_version',
+                        int(now.timestamp()) - 100000,
+                        1000,
+                        None,
+                    ),
+                ],                                # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_invalid_aggregate_event_payload', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was inserted into the DB
+        with self.db as dbsession:
+            channel = dbsession.query(Channel).one()
+
+            events = dbsession.query(
+                InvalidAggregateEvent
+            )
+            assert events.count() == 2
+
+            events = events.all()
+
+            event = events[0]
+            assert event.channel_id == channel.id
+            assert event.event_id == event_id
+            assert GLib.Variant.new_from_bytes(GLib.VariantType('mv'),
+                                               GLib.Bytes.new(event.payload_data),
+                                               False).unpack() == ('str_1', 'str_2')
+            assert event.error == (
+                'Metric event 49d0451a-f706-4f50-81d2-70cc0ec923a4 needs a s payload, '
+                'but got (\'str_1\', \'str_2\') ((ss))'
+            )
+
+            event = events[1]
+            assert event.channel_id == channel.id
+            assert event.event_id == event_id
+            assert event.payload_data == b''
+            assert event.error == (
+                'Metric event 49d0451a-f706-4f50-81d2-70cc0ec923a4 needs a s payload, '
+                "but got none")
+
+        capture = capfd.readouterr()
+        assert 'An error occured while processing the event:' in capture.err
+        assert ('Metric event 49d0451a-f706-4f50-81d2-70cc0ec923a4 needs a s payload, '
+                'but got none') in capture.err
+        assert ('Metric event 49d0451a-f706-4f50-81d2-70cc0ec923a4 needs a s payload, '
+                "but got (\'str_1\', \'str_2\') ((ss))") in capture.err
+
+    def test_unknown_aggregate_events(self):
+        from azafea.event_processors.endless.metrics.v3.model import (
+            Request, UnknownAggregateEvent, Channel
+        )
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, UnknownAggregateEvent, Channel)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
         event_id = UUID('d3863909-8eff-43b6-9a33-ef7eda266195')
         request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            '(xxsa{ss}ya(aysxmv)a(aysxxmv))',
             (
-                0,                                     # network send number
-                2000000000,                            # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),     # request absolute timestamp
-                bytes.fromhex(machine_id),
+                2000000,   # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),  # Absolute timestamp
+                image_id,
+                {},
+                2,
                 [],                                    # singular events
                 [                                      # aggregate events
                     (
-                        user_id,
                         event_id.bytes,
-                        0,                             # count
-                        3000000000,                    # event relative timestamp (3 secs)
+                        'os_version',
+                        3000000,                  # event relative timestamp (3 secs)
+                        2,
                         None,                          # empty payload
                     ),
                     (
-                        user_id,
                         event_id.bytes,
-                        10,                            # count
-                        4000000000,                    # event relative timestamp (4 secs)
+                        'os_version',
+                        3000000,                   # event relative timestamp (4 secs)
+                        10,
                         GLib.Variant('(xx)', (1, 2)),  # Non empty payload
                     ),
                 ],
-                []                                     # sequence events
             )
         )
         assert request.is_normal_form()
@@ -2264,146 +940,26 @@ class TestMetrics(IntegrationTest):
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
             request = dbsession.query(Request).one()
-            assert request.send_number == 0
-            assert request.machine_id == machine_id
+            assert request.sha512 == sha512(request_body).hexdigest()
+
+            channel = dbsession.query(Channel).one()
 
             events = dbsession.query(UnknownAggregateEvent) \
-                              .order_by(UnknownAggregateEvent.occured_at)
+                              .order_by(UnknownAggregateEvent.period_start)
             assert events.count() == 2
 
             events = events.all()
 
             event = events[0]
-            assert event.request_id == request.id
-            assert event.user_id == user_id
-            assert event.occured_at == now - timedelta(seconds=2) + timedelta(seconds=3)
-            assert event.count == 0
+            assert event.channel_id == channel.id
+            assert event.count == 2
             assert event.event_id == event_id
             assert event.payload_data == b''
 
             event = events[1]
-            assert event.request_id == request.id
-            assert event.user_id == user_id
-            assert event.occured_at == now - timedelta(seconds=2) + timedelta(seconds=4)
+            assert event.channel_id == channel.id
             assert event.count == 10
             assert event.event_id == event_id
             assert GLib.Variant.new_from_bytes(GLib.VariantType('mv'),
                                                GLib.Bytes.new(event.payload_data),
                                                False).unpack() == (1, 2)
-
-    def test_sequence_events(self):
-        from azafea.event_processors.endless.metrics.v3.model import (
-            Request, ShellAppIsOpen, UserIsLoggedIn)
-
-        # Create the table
-        self.run_subcommand('initdb')
-        self.ensure_tables(Request, ShellAppIsOpen)
-
-        # Build a request as it would have been sent to us
-        now = datetime.now(tz=timezone.utc)
-        machine_id = 'ffffffffffffffffffffffffffffffff'
-        user_id = 2000
-        request = GLib.Variant(
-            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
-            (
-                0,                                  # network send number
-                2000000000,                         # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),  # request absolute timestamp
-                bytes.fromhex(machine_id),
-                [],                                 # singular events
-                [],                                 # aggregate events
-                [                                   # sequence events
-                    (
-                        user_id,
-                        UUID('b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0').bytes,
-                        [                           # events in the sequence
-                            (
-                                3000000000,         # event relative timestamp (3 secs)
-                                GLib.Variant('s',   # app id
-                                             'org.gnome.Podcasts'),
-                            ),
-                            (
-                                120000000000,       # event relative timestamp (2 mins)
-                                None,               # no payload on stop event
-                            ),
-                        ]
-                    ),
-                    (
-                        user_id,
-                        UUID('b5e11a3d-13f8-4219-84fd-c9ba0bf3d1f0').bytes,
-                        [                           # events in the sequence
-                            (
-                                4000000000,         # event relative timestamp (4 secs)
-                                GLib.Variant('s',   # app id
-                                             'org.gnome.Fractal'),
-                            ),
-                            (
-                                3600000000000,      # event relative timestamp (1 hour)
-                                None,               # no payload on stop event
-                            ),
-                        ]
-                    ),
-                    (
-                        0,
-                        UUID('add052be-7b2a-4959-81a5-a7f45062ee98').bytes,
-                        [
-                            (
-                                2000000000,         # event relative timestamp (5 secs)
-                                GLib.Variant('u', user_id),
-                            ),
-                            (
-                                3610000000000,      # event relative timestamp (1 hour 10 secs)
-                                None,
-                            ),
-                        ]
-                    ),
-                ]
-            )
-        )
-        assert request.is_normal_form()
-        request_body = request.get_data_as_bytes().get_data()
-
-        received_at = now + timedelta(minutes=2)
-        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
-        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
-
-        record = received_at_timestamp_bytes + request_body
-
-        # Send the event request to the Redis queue
-        self.redis.lpush('test_sequence_events', record)
-
-        # Run Azafea so it processes the event
-        self.run_azafea()
-
-        # Ensure the record was inserted into the DB
-        with self.db as dbsession:
-            request = dbsession.query(Request).one()
-            assert request.send_number == 0
-            assert request.machine_id == machine_id
-
-            events = dbsession.query(ShellAppIsOpen).order_by(ShellAppIsOpen.started_at)
-            assert events.count() == 2
-
-            events = events.all()
-
-            podcasts = events[0]
-            assert podcasts.request_id == request.id
-            assert podcasts.user_id == user_id
-            assert podcasts.started_at == now - timedelta(seconds=2) + timedelta(seconds=3)
-            assert podcasts.stopped_at == now - timedelta(seconds=2) + timedelta(minutes=2)
-            assert podcasts.app_id == 'org.gnome.Podcasts'
-
-            fractal = events[1]
-            assert fractal.request_id == request.id
-            assert fractal.user_id == user_id
-            assert fractal.started_at == now - timedelta(seconds=2) + timedelta(seconds=4)
-            assert fractal.stopped_at == now - timedelta(seconds=2) + timedelta(hours=1)
-            assert fractal.app_id == 'org.gnome.Fractal'
-
-            logged_in = dbsession.query(UserIsLoggedIn).one()
-            assert logged_in.request_id == request.id
-            assert logged_in.user_id == 0
-            assert logged_in.started_at == now - timedelta(seconds=2) + timedelta(seconds=2)
-            assert logged_in.stopped_at == now - timedelta(seconds=2) + timedelta(hours=1,
-                                                                                  seconds=10)
-            assert logged_in.logged_in_user_id == user_id

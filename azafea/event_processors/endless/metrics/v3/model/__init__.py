@@ -23,6 +23,7 @@ from ._base import (  # noqa: F401
     SINGULAR_EVENT_MODELS,
     AggregateEvent,
     Channel,
+    Request,
     EmptyPayloadError,
     InvalidAggregateEvent,
     InvalidSingularEvent,
@@ -572,8 +573,8 @@ class ComputerInformation(SingularEvent):
 
 # -- Aggregate events ---------------------------------------------------------
 
-class TimeSpentByForegroundApp(AggregateEvent):
-    """Number of seconds spent by an application open in foreground.
+class DailyAppUsage(AggregateEvent):
+    """Time that an app has an open window.
 
     Aggregation is done by day.
 
@@ -582,7 +583,7 @@ class TimeSpentByForegroundApp(AggregateEvent):
     .. versionadded:: 4.0.0
 
     """
-    __tablename__ = 'time_spent_by_foreground_app_v3'
+    __tablename__ = 'daily_app_usage_v3'
     __event_uuid__ = '49d0451a-f706-4f50-81d2-70cc0ec923a4'
     __payload_type__ = 's'
 
@@ -594,7 +595,44 @@ class TimeSpentByForegroundApp(AggregateEvent):
         return {'app_id': payload.get_string()}
 
 
-class DifferentUsers(AggregateEvent):
+class MonthlyAppUsage(AggregateEvent):
+    """Time that an app has an open window.
+
+    Aggregation is done by month.
+
+    :UUID name: TODO
+
+    .. versionadded:: 4.0.0
+
+    """
+    __tablename__ = 'monthly_app_usage_v3'
+    __event_uuid__ = 'f2839256-ccbf-45ec-a5b0-fdc99c3f0a2b'
+    __payload_type__ = 's'
+
+    #: application ID
+    app_id = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {'app_id': payload.get_string()}
+
+
+class DailyUsers(AggregateEvent):
+    """Number of different users who opened a session.
+
+    Aggregation is done by day.
+
+    :UUID name: TODO
+
+    .. versionadded:: 4.0.0
+
+    """
+    __tablename__ = 'daily_users_v3'
+    __event_uuid__ = 'a3826320-9192-446a-8886-e2129c0ce302'
+    __payload_type__ = None
+
+
+class MonthlyUsers(AggregateEvent):
     """Number of different users who opened a session.
 
     Aggregation is done by month.
@@ -604,19 +642,36 @@ class DifferentUsers(AggregateEvent):
     .. versionadded:: 4.0.0
 
     """
-    __tablename__ = 'different_users_v3'
-    __event_uuid__ = 'a3826320-9192-446a-8886-e2129c0ce302'
+    __tablename__ = 'monthly_users_v3'
+    __event_uuid__ = '86cacd30-e1c0-4c66-8f1e-99fdb4c3546f'
+    __payload_type__ = None
 
 
-class TimeSpentInSession(AggregateEvent):
+class DailySessionTime(AggregateEvent):
     """Number of seconds spent on the computer with an open session.
 
-    Aggregation is done by hour.
+    Aggregation is done by day.
 
     :UUID name: TODO
 
     .. versionadded:: 4.0.0
 
     """
-    __tablename__ = 'time_spent_in_session_v3'
+    __tablename__ = 'daily_session_time_v3'
     __event_uuid__ = '5dc0b53c-93f9-4df0-ad6f-bd25e9fe638f'
+    __payload_type__ = None
+
+
+class MonthlySessionTime(AggregateEvent):
+    """Number of seconds spent on the computer with an open session.
+
+    Aggregation is done by month.
+
+    :UUID name: TODO
+
+    .. versionadded:: 4.0.0
+
+    """
+    __tablename__ = 'monthly_session_time_v3'
+    __event_uuid__ = '8023ae8e-f0c7-4fee-bc00-2d6b28061fce'
+    __payload_type__ = None

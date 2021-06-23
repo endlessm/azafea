@@ -8,9 +8,10 @@
 
 
 import logging
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import datetime, timezone
-from typing import Any, Dict, Generator, Optional, Set, Tuple, Type, cast
+from hashlib import sha512
+from typing import Any, Dict, Optional, Set, Tuple, Type, cast
 
 from gi.repository import GLib
 
@@ -30,7 +31,7 @@ from ..utils import get_child_values, get_event_datetime, get_variant
 
 log = logging.getLogger(__name__)
 
-VARIANT_TYPE = GLib.VariantType('(isa{ss}ya(aysxxmv)a(aysyxxmv))')
+VARIANT_TYPE = GLib.VariantType('(xxsa{ss}ya(aysxmv)a(aysxxmv))')
 
 SINGULAR_EVENT_MODELS: Dict[str, Type['SingularEvent']] = {}
 AGGREGATE_EVENT_MODELS: Dict[str, Type['AggregateEvent']] = {}
@@ -79,8 +80,14 @@ class Channel(Base):
     site = Column(JSONB, nullable=False)
     #: dual boot computer
     dual_boot = Column(Boolean, nullable=False)
-    #: live USB stick
-    live_usb = Column(Boolean, nullable=False)
+    #: live sessions
+    live = Column(Boolean, nullable=False)
+
+
+class Request(Base):
+    __tablename__ = 'request_v3'
+
+    sha512 = Column(Unicode, nullable=False, unique=True, primary_key=True)
 
 
 class EmptyPayloadError(Exception):
@@ -139,8 +146,8 @@ class MetricEvent(Base, metaclass=MetricMeta):
     def __init__(self, payload: GLib.Variant, **kwargs: Dict[str, Any]) -> None:
         payload_fields = self._parse_payload(payload)
         fields = kwargs.copy()
-        del fields['singulars']
-        del fields['aggregates']
+        fields.pop('singulars', None)
+        fields.pop('aggregates', None)
         fields.update(payload_fields)
 
         super().__init__(**fields)
@@ -180,7 +187,7 @@ class UnknownEvent(MetricEvent):
     payload_data = Column(LargeBinary, nullable=False)
 
     def _parse_payload(self, maybe_payload: GLib.Variant) -> Dict[str, Any]:
-        return {'payload_data': maybe_payload.get_data_as_bytes()}
+        return {'payload_data': maybe_payload.get_data_as_bytes().get_data()}
 
 
 class InvalidEvent(UnknownEvent):
@@ -206,7 +213,6 @@ class UnknownSingularEvent(SingularEvent, UnknownEvent):
 class AggregateEvent(MetricEvent):
     __abstract__ = True
 
-    period = Column(Unicode(length=1), nullable=False)
     period_start = Column(DateTime(timezone=False), nullable=False, index=True)
     count = Column(BigInteger, nullable=False)
 
@@ -224,18 +230,27 @@ class RequestChannel:
     image_id: str
     site: Dict[str, str]
     dual_boot: bool
-    live_usb: bool
+    live: bool
 
 
 @dataclass
-class Request:
+class RequestData:
     relative_timestamp: int
     absolute_timestamp: int
-    singulars: Generator[GLib.Variant, None, None]
-    aggregates: Generator[GLib.Variant, None, None]
+    singulars: Tuple[GLib.Variant, ...]
+    aggregates: Tuple[GLib.Variant, ...]
+    sha512: str
+
+    def asdict(self) -> Dict[str, Any]:
+        return {
+            'relative_timestamp': self.relative_timestamp,
+            'absolute_timestamp': self.absolute_timestamp,
+            'singulars': self.singulars,
+            'aggregates': self.aggregates,
+        }
 
 
-def parse_record(record: bytes) -> Tuple[Request, RequestChannel]:
+def parse_record(record: bytes) -> Tuple[RequestData, RequestChannel]:
     # record is an array of bytes, the concatenation of:
     # - a datetime encoded on 8 bytes (a 64 bits integer timestamp in microseconds)
     # - the metrics request (a serialized GVariant)
@@ -257,33 +272,40 @@ def parse_record(record: bytes) -> Tuple[Request, RequestChannel]:
     image_id = payload.get_child_value(2).get_string()
     site = {key: value for (key, value) in payload.get_child_value(3).unpack().items() if value}
     flags = payload.get_child_value(4).get_byte()
-    dual_boot, live_usb = bool(flags & 1), bool(flags & 2)
+    dual_boot, live = bool(flags & 1), bool(flags & 2)
 
     singulars = get_child_values(payload.get_child_value(5))
     aggregates = get_child_values(payload.get_child_value(6))
 
-    channel = RequestChannel(image_id=image_id, site=site, dual_boot=dual_boot, live_usb=live_usb)
-    request = Request(relative_timestamp, absolute_timestamp, singulars, aggregates)
+    sha512_request = sha512(payload.get_data_as_bytes().get_data()).hexdigest()
+
+    channel = RequestChannel(image_id=image_id, site=site, dual_boot=dual_boot, live=live)
+    request = RequestData(
+        relative_timestamp, absolute_timestamp, singulars, aggregates, sha512_request
+    )
     return request, channel
 
 
-def new_singular_event(request: Request, channel: Channel, event_id: str,
+def new_singular_event(request: RequestData, channel: Channel, event_id: str,
                        event_variant: GLib.Variant, dbsession: DbSession
                        ) -> Optional[SingularEvent]:
     os_version = event_variant.get_child_value(1).get_string()
     event_relative_timestamp = event_variant.get_child_value(2).get_int64()
     payload = event_variant.get_child_value(3)
 
+    event_date = get_event_datetime(
+        request.absolute_timestamp, request.relative_timestamp, event_relative_timestamp
+    )
     if event_id in SINGULAR_EVENT_MODELS:
         event_model = SINGULAR_EVENT_MODELS[event_id]
-        event_date = get_event_datetime(
-            request.absolute_timestamp, request.relative_timestamp, event_relative_timestamp)
         try:
             # Mypy complains here, even though this should be fine:
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
             event = event_model(
                 payload=payload,  # type: ignore
-                occured_at=event_date, channel=channel, **asdict(request))
+                os_version=os_version,
+                occured_at=event_date, channel=channel, **request.asdict()
+            )
         except Exception as e:
             if isinstance(e, EmptyPayloadError) and event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
                 return None
@@ -292,27 +314,35 @@ def new_singular_event(request: Request, channel: Channel, event_id: str,
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
             event = InvalidSingularEvent(
                 payload=payload,  # type: ignore
-                event_id=event_id, os_version=os_version, occured_at=event_date, error=str(e),
-                **asdict(request))
+                event_id=event_id,
+                os_version=os_version,
+                occured_at=event_date,
+                channel=channel,
+                error=str(e),
+                **request.asdict()
+            )
     else:
         # Mypy complains here, even though this should be fine:
         # https://github.com/dropbox/sqlalchemy-stubs/issues/97
         event = UnknownSingularEvent(
             payload=payload,  # type: ignore
-            event_id=event_id, os_version=os_version, occured_at=event_date, **asdict(request))
-
+            event_id=event_id,
+            os_version=os_version,
+            occured_at=event_date,
+            channel=channel,
+            **request.asdict()
+        )
     return event
 
 
-def new_aggregate_event(request: Request, channel: Channel, event_id: str,
+def new_aggregate_event(request: RequestData, channel: Channel, event_id: str,
                         event_variant: GLib.Variant, dbsession: DbSession
                         ) -> Optional[AggregateEvent]:
     os_version = event_variant.get_child_value(1).get_string()
-    period = chr(event_variant.get_child_value(2).get_byte())
     period_start = datetime.fromtimestamp(
-        event_variant.get_child_value(3).get_int64(), tz=timezone.utc)
-    count = event_variant.get_child_value(4).get_int64()
-    payload = event_variant.get_child_value(5)
+        event_variant.get_child_value(2).get_int64(), tz=timezone.utc)
+    count = event_variant.get_child_value(3).get_int64()
+    payload = event_variant.get_child_value(4)
 
     if event_id in AGGREGATE_EVENT_MODELS:
         event_model = AGGREGATE_EVENT_MODELS[event_id]
@@ -321,7 +351,12 @@ def new_aggregate_event(request: Request, channel: Channel, event_id: str,
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
             event = event_model(
                 payload=payload,  # type: ignore
-                **asdict(request))
+                os_version=os_version,
+                period_start=period_start,
+                count=count,
+                channel=channel,
+                **request.asdict()
+            )
         except Exception as e:
             if isinstance(e, EmptyPayloadError) and event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
                 return None
@@ -330,15 +365,18 @@ def new_aggregate_event(request: Request, channel: Channel, event_id: str,
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
             event = InvalidAggregateEvent(
                 payload=payload,  # type: ignore
-                event_id=event_id, os_version=os_version, period=period, period_start=period_start,
-                count=count, error=str(e), channel=channel, **asdict(request))
+                event_id=event_id, os_version=os_version, period_start=period_start,
+                count=count, error=str(e), channel=channel, **request.asdict())
     else:
         # Mypy complains here, even though this should be fine:
         # https://github.com/dropbox/sqlalchemy-stubs/issues/97
         event = UnknownAggregateEvent(
             payload=payload,  # type: ignore
-            event_id=event_id, os_version=os_version, period=period, period_start=period_start,
-            count=count, **asdict(request))
+            event_id=event_id,
+            os_version=os_version,
+            period_start=period_start,
+            channel=channel,
+            count=count, **request.asdict())
 
     return event
 
@@ -362,9 +400,15 @@ def replay_invalid_singular_events(invalid_events: Query) -> None:
             # This event UUID is now unknown
             # Mypy complains here, even though this should be fine:
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            event = UnknownSingularEvent(channel=invalid.channel,  # type: ignore
-                                         user_id=invalid.user_id, occured_at=invalid.occured_at,
-                                         event_id=event_id, payload=payload)
+            event = UnknownSingularEvent(
+                channel=invalid.channel,  # type: ignore
+                occured_at=invalid.occured_at,
+                absolute_timestamp=invalid.absolute_timestamp,
+                relative_timestamp=invalid.relative_timestamp,
+                event_id=event_id,
+                payload=payload,
+                os_version=invalid.os_version,
+            )
             invalid_events.session.add(event)
             invalid_events.session.delete(invalid)
             continue
@@ -374,9 +418,14 @@ def replay_invalid_singular_events(invalid_events: Query) -> None:
         try:
             # Mypy complains here, even though this should be fine:
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            event = event_model(channel_id=invalid.channel_id,  # type: ignore
-                                user_id=invalid.user_id, occured_at=invalid.occured_at,
-                                payload=payload)
+            event = event_model(
+                channel_id=invalid.channel_id,  # type: ignore
+                occured_at=invalid.occured_at,
+                absolute_timestamp=invalid.absolute_timestamp,
+                relative_timestamp=invalid.relative_timestamp,
+                os_version=invalid.os_version,
+                payload=payload,
+            )
 
         except Exception as e:
             if isinstance(e, EmptyPayloadError) and event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
@@ -418,9 +467,14 @@ def replay_unknown_singular_events(unknown_events: Query) -> None:
         try:
             # Mypy complains here, even though this should be fine:
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            event = event_model(channel_id=unknown.channel_id,  # type: ignore
-                                user_id=unknown.user_id, occured_at=unknown.occured_at,
-                                payload=payload)
+            event = event_model(
+                channel_id=unknown.channel_id,  # type: ignore
+                occured_at=unknown.occured_at,
+                absolute_timestamp=unknown.absolute_timestamp,
+                relative_timestamp=unknown.relative_timestamp,
+                os_version=unknown.os_version,
+                payload=payload
+            )
 
         except Exception as e:
             if isinstance(e, EmptyPayloadError) and event_id in IGNORED_EMPTY_PAYLOAD_ERRORS:
@@ -432,9 +486,16 @@ def replay_unknown_singular_events(unknown_events: Query) -> None:
 
             # Mypy complains here, even though this should be fine:
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
-            event = InvalidSingularEvent(channel_id=unknown.channel_id,  # type: ignore
-                                         user_id=unknown.user_id, occured_at=unknown.occured_at,
-                                         event_id=event_id, payload=payload, error=str(e))
+            event = InvalidSingularEvent(
+                channel_id=unknown.channel_id,  # type: ignore
+                occured_at=unknown.occured_at,
+                absolute_timestamp=unknown.absolute_timestamp,
+                relative_timestamp=unknown.relative_timestamp,
+                os_version=unknown.os_version,
+                event_id=event_id,
+                payload=payload,
+                error=str(e)
+            )
 
         unknown_events.session.add(event)
         unknown_events.session.delete(unknown)

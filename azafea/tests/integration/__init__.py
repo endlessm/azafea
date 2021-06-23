@@ -100,7 +100,6 @@ class IntegrationTest:
         Base._decl_class_registry.clear()
         Base.metadata.clear()
         Base.metadata.dispatch._clear()
-
         # Deregister the handler modules so the next tests reimport them completely; not doing so
         # confuses SQLAlchemy, leading to the tables only being created for the first test. :(
         modules_to_deregister = []
@@ -118,6 +117,8 @@ class IntegrationTest:
         # Ensure we finish with clean a Redis
         self.clear_queues()
         self.ensure_no_queues()
+
+        self.db._engine.dispose()
 
         # And remove the configuration file
         os.unlink(self.config_file)
