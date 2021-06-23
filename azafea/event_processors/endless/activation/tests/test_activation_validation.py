@@ -33,3 +33,21 @@ def test_invalid_country(country):
         Activation(country=country)
 
     assert f'country has wrong length: {country}' in str(excinfo.value)
+
+
+def test_invalid_latitude():
+    from azafea.event_processors.endless.activation.v1.handler import Activation
+    latitude = 18.7
+    with pytest.raises(ValueError) as excinfo:
+        Activation(latitude=latitude)
+
+    assert f'latitude is not an integer + 0.5: {latitude}' in str(excinfo.value)
+
+
+def test_invalid_longitude():
+    from azafea.event_processors.endless.activation.v1.handler import Activation
+    longitude = 18.7
+    with pytest.raises(ValueError) as excinfo:
+        Activation(longitude=longitude)
+
+    assert f'longitude is not an integer + 0.5: {longitude}' in str(excinfo.value)
