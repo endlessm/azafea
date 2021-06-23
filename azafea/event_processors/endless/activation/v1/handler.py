@@ -9,6 +9,7 @@
 
 import json
 import logging
+import math
 from typing import Optional
 
 from sqlalchemy.orm import validates
@@ -36,8 +37,6 @@ class Activation(Base):
     live = Column(Boolean)
 
     country = Column(Unicode(length=3))
-    region = Column(Unicode)
-    city = Column(Unicode)
     latitude = Column(Numeric)
     longitude = Column(Numeric)
 
@@ -52,6 +51,8 @@ class Activation(Base):
 
     __table_args__ = (
         CheckConstraint('char_length(country) = 2', name='country_code_2_chars'),
+        CheckConstraint('latitude = floor(latitude) +0.5', name='latitude_precision_reduced'),
+        CheckConstraint('longitude = floor(longitude) +0.5', name='longitude_precision_reduced'),
     )
 
     @validates('country')
@@ -64,6 +65,28 @@ class Activation(Base):
             raise ValueError(f'country has wrong length: {country}')
 
         return country
+
+    @validates('latitude')
+    def validate_latitude(self, key: str, latitude: Optional[int]) -> Optional[int]:
+        # Catch both None and the empty string
+        if not latitude:
+            return None
+
+        if math.floor(latitude) + 0.5 != latitude:
+            raise ValueError(f'latitude is not an integer + 0.5: {latitude}')
+
+        return latitude
+
+    @validates('longitude')
+    def validate_longitude(self, key: str, longitude: Optional[int]) -> Optional[int]:
+        # Catch both None and the empty string
+        if not longitude:
+            return None
+
+        if math.floor(longitude) + 0.5 != longitude:
+            raise ValueError(f'longitude is not an integer + 0.5: {longitude}')
+
+        return longitude
 
     @classmethod
     def from_serialized(cls, serialized: bytes) -> 'Activation':
