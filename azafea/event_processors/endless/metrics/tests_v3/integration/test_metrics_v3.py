@@ -160,8 +160,10 @@ class TestMetrics(IntegrationTest):
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened,
             ParentalControlsBlockedFlatpakInstall, ParentalControlsBlockedFlatpakRun,
             ProgramDumpedCore, UpdaterFailure, ParentalControlsEnabled,
-            ParentalControlsChanged, WindowsAppOpened,
+            ParentalControlsChanged, WindowsAppOpened
         )
+        from azafea.event_processors.endless.metrics.v3.model import _base
+        _base.IGNORED_EMPTY_PAYLOAD_ERRORS = ['9d03daad-f1ed-41a8-bc5a-6b532c075832']
 
         # Create the table
         self.run_subcommand('initdb')
@@ -171,7 +173,7 @@ class TestMetrics(IntegrationTest):
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened,
             ParentalControlsBlockedFlatpakInstall, ParentalControlsBlockedFlatpakRun,
             ProgramDumpedCore, UpdaterFailure, ParentalControlsEnabled,
-            ParentalControlsChanged, WindowsAppOpened,
+            ParentalControlsChanged, WindowsAppOpened
         )
 
         # Build a request as it would have been sent to us
@@ -247,6 +249,13 @@ class TestMetrics(IntegrationTest):
                         GLib.Variant(
                             's', 'app'
                         )
+                    ),
+                    # Test not register it if empty payload
+                    (
+                        UUID('9d03daad-f1ed-41a8-bc5a-6b532c075832').bytes,
+                        'os_version',
+                        100,
+                        None
                     ),
                     (
                         UUID('afca2515-e9ce-43aa-b355-7663c770b4b6').bytes,
@@ -624,6 +633,104 @@ class TestMetrics(IntegrationTest):
             assert monthly_session_time.period_start == datetime.fromtimestamp(
                 int(now.timestamp()) - 100000
             )
+
+    def test_ignored_event(self):
+        from azafea.event_processors.endless.metrics.v3.model import (
+            Request, Channel, InvalidSingularEvent, UnknownSingularEvent,
+            InvalidAggregateEvent, UnknownAggregateEvent, StartupFinished,
+            LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
+            LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened,
+            ParentalControlsBlockedFlatpakInstall, ParentalControlsBlockedFlatpakRun,
+            ProgramDumpedCore, UpdaterFailure, ParentalControlsEnabled,
+            ParentalControlsChanged, WindowsAppOpened, DailyAppUsage, MonthlyAppUsage,
+            DailyUsers, MonthlyUsers, DailySessionTime, MonthlySessionTime
+        )
+        self.run_subcommand('initdb')
+        self.ensure_tables(
+            Request, Channel, InvalidSingularEvent, UnknownSingularEvent,
+            InvalidAggregateEvent, UnknownAggregateEvent, StartupFinished,
+            LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
+            LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened,
+            ParentalControlsBlockedFlatpakInstall, ParentalControlsBlockedFlatpakRun,
+            ProgramDumpedCore, UpdaterFailure, ParentalControlsEnabled,
+            ParentalControlsChanged, WindowsAppOpened, DailyAppUsage, MonthlyAppUsage,
+            DailyUsers, MonthlyUsers, DailySessionTime, MonthlySessionTime
+        )
+        now = datetime.now(tz=timezone.utc)
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
+
+        request = GLib.Variant(
+            '(xxsa{ss}ya(aysxmv)a(aysxxmv))',
+            (
+                2000000,   # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),  # Absolute timestamp
+                image_id,
+                {},
+                2,
+                [                           # singular events
+                    (
+                        UUID('005096c4-9444-48c6-844b-6cb693c15235').bytes,
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            '(sas)',
+                            ('replacement_app_id', ['argv1', 'argv2'])
+                        )
+                    ),
+                ],
+                [                           # aggregate events
+                    (
+                        UUID('337fa66d-5163-46ae-ab20-dc605b5d7307').bytes,
+                        'os_version',
+                        int(now.timestamp()) - 100000,
+                        1000,
+                        GLib.Variant('s', 'app_id')
+                    ),
+                ],
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        self.redis.lpush('test_ignored_event', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        with self.db as dbsession:
+            assert dbsession.query(Channel).count() == 1
+            assert dbsession.query(Request).count() == 1
+
+            assert dbsession.query(InvalidSingularEvent).count() == 0
+            assert dbsession.query(UnknownSingularEvent).count() == 0
+            assert dbsession.query(InvalidAggregateEvent).count() == 0
+            assert dbsession.query(UnknownAggregateEvent).count() == 0
+            assert dbsession.query(StartupFinished).count() == 0
+            assert dbsession.query(InvalidSingularEvent).count() == 0
+            assert dbsession.query(LaunchedEquivalentExistingFlatpak).count() == 0
+            assert dbsession.query(LaunchedEquivalentInstallerForFlatpak).count() == 0
+            assert dbsession.query(LaunchedExistingFlatpak).count() == 0
+            assert dbsession.query(LaunchedInstallerForFlatpak).count() == 0
+            assert dbsession.query(LinuxPackageOpened).count() == 0
+            assert dbsession.query(ParentalControlsBlockedFlatpakInstall).count() == 0
+            assert dbsession.query(ParentalControlsBlockedFlatpakRun).count() == 0
+            assert dbsession.query(ProgramDumpedCore).count() == 0
+            assert dbsession.query(UpdaterFailure).count() == 0
+            assert dbsession.query(ParentalControlsEnabled).count() == 0
+            assert dbsession.query(ParentalControlsChanged).count() == 0
+            assert dbsession.query(WindowsAppOpened).count() == 0
+            assert dbsession.query(DailyAppUsage).count() == 0
+            assert dbsession.query(MonthlyAppUsage).count() == 0
+            assert dbsession.query(DailyUsers).count() == 0
+            assert dbsession.query(MonthlyUsers).count() == 0
+            assert dbsession.query(DailySessionTime).count() == 0
+            assert dbsession.query(MonthlySessionTime).count() == 0
 
     def test_unknown_singular_events(self):
         from azafea.event_processors.endless.metrics.v3.model import (
