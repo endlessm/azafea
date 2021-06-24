@@ -27,6 +27,7 @@ Relative Timestamp
 
 - 64 bit signed integer
 - GVariant symbol: ``x``
+- Nanoseconds elapsed since the OS booted up
 - See: http://linux.die.net/man/3/clock_gettime
 
 Absolute Timestamp
@@ -41,25 +42,25 @@ Image
 +++++
 
 - String
+- ``<product>-<branch>-<arch>-<platform>.<date>-<time>.<personality>``
+  (for example ``eos-3.7-amd64-amd64.190419-225606.base``)
 - GVariant symbol: ``s``
 
 Site
 ++++
 
 - String
+- Optional human-readable label for the location of the system, which can be
+  used when preparing reports or visualisations of the metrics data
 - GVariant symbol: ``a{ss}``
 
-Dualboot
-++++++++
+Flags
++++++
 
-- Boolean
-- GVariant symbol: ``b``
-
-Live
-++++
-
-- Boolean
-- GVariant symbol: ``b``
+- Byte:
+  - bit 0 (least-significant bit) is set to 1 for dual-boot
+  - bit 1 is set to 1 for live
+- GVariant symbol: ``y``
 
 Singular Metrics
 ++++++++++++++++
@@ -73,12 +74,12 @@ Aggregate Metrics
 
 - Array of aggregate metrics
 - See `Aggregate Metric`_
-- GVariant symbol: ``a(uayxxmv)``
+- GVariant symbol: ``a(ayssumv)``
 
 Total GVariant Format String
 ++++++++++++++++++++++++++++
 
-All together it should look like: ``(isa{ss}bba(aysxmv)a(aysyxxmv))``.
+All together it should look like: ``(xxsa{ss}ya(aysxmv)a(ayssumv))``.
 
 Singular Metric
 ~~~~~~~~~~~~~~~
@@ -118,19 +119,15 @@ Auxiliary Payload
 - See: https://developer.gnome.org/glib/stable/gvariant-format-strings.html#gvariant-format-strings-maybe-types
 - Details for each event ID listed in :ref:`events page`
 
-Total Format
-++++++++++++
-
-In total should look like ``(aysxmv)``.
-
 Aggregate Metric
 ~~~~~~~~~~~~~~~~
 
 Aggregate metrics indicate counts that summarize a value of interest (e.g., a
 very common event happening n times in a particular time interval or
-fluctuations in heap size over time). Counts are always strictly positive. They
-are identical to the singular metrics but have an added counter field in the
-wire format.
+fluctuations in heap size over time). Counts are always strictly positive.
+
+Contrary to the singular metrics, aggregate metrics include a counter field in
+the wire format, and have a naive interval start date instead of timestamps.
 
 Aggregates can be used to record noisy events such as cache hit ratios, heap
 usage, or any number items that would be impractical to send a `singular
@@ -152,27 +149,19 @@ OS Version
 - String
 - GVariant symbol: ``s``
 
-Period
-++++++
+Period Start
+++++++++++++
 
-- Unsigned byte
-- GVariant symbol: ``y``
-- Aggregation period (``h`` for hour, ``d`` for day, ``w`` for week, ``m`` for
-  month)
-
-Timestamp
-+++++++++
-
-- 64-bit signed integer
-- GVariant symbol: ``x``
-- Nanoseconds since the Unix epoch
+- String
+- GVariant symbol: ``s``
+- Date string format: ``YYYY-MM-DD``
 - Beginning of the period, with aggregation done using user’s computer time
 
 Count
 +++++
 
-- 64-bit signed integer
-- GVariant symbol: ``x``
+- 32-bit unsigned integer
+- GVariant symbol: ``u``
 
 Auxiliary Payload
 +++++++++++++++++
@@ -184,10 +173,6 @@ Auxiliary Payload
 - See: https://developer.gnome.org/glib/stable/gvariant-format-strings.html#gvariant-format-strings-maybe-types
 - Details for each event ID listed in :ref:`events page`
 
-Total Format
-++++++++++++
-
-In total should look like ``(aysyxxmv)``.
 
 Version History
 ---------------
@@ -252,20 +237,17 @@ Contents:
 Version 3
 ~~~~~~~~~
 
-- Endless X.X.X
+- Endless 4.0.0
 - URI Format: ``https://production.metrics.endlessm.com/3/<SHA-512-Hash>``
 - No compression
 - Little Endian
-- GVariant Payload Format: ``(xxsa{ss}ya(aysxmv)a(aysyxxmv))``
+- GVariant Payload Format: ``(xxsa{ss}ya(aysxmv)a(ayssumv))``
 - Removed "network send number".
 
 Contents:
 
-- Network Send Number
 - Relative Timestamp
 - Absolute Timestamp
-- Channel (image, site, dualboot, live)
-- Singular Events (Event ID, OS Version, Relative Timestamp, Absolute
-  Timestamp, Auxiliary Payload)
-- Aggregate Events (Event ID, OS Version, Period, Relative Timestamp, Count,
-  Auxiliary Payload)
+- Channel (Image, Site, Dualboot, Live)
+- Singular Events (Event ID, OS Version, Relative Timestamp, Absolute Timestamp, Auxiliary Payload)
+- Aggregate Events (Event ID, OS Version, Period, Relative Timestamp, Count, Auxiliary Payload)

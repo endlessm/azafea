@@ -279,7 +279,7 @@ See `the comprehensive list of status codes
 Social Bar Is Visible
 ~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 3.2.0.
 
 We record when the social bar is made visible to the user and when it is no
 longer visible. Basically, it corresponds to the user clicking on the social
@@ -292,7 +292,7 @@ bar icon.
 Desktop Searches
 ~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in OS 4.0.0.
 
 We record searches made from the desktop search bar.
 
@@ -315,7 +315,7 @@ We record searches made from the desktop search bar.
 Knowledge App Search
 ~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not stored since Endless OS 4.0.0.
 
 We record the search terms used for searching within the knowledge apps along
 with the app ID of the knowledge app. (We also record the search term used when
@@ -332,7 +332,7 @@ a user performed a desktop search and clicked through to a knowledge app.)
 Link Shared from Knowledge App
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not stored since Endless OS 4.0.0.
 
 Reported when a user shares a link from one of our content apps on a social network.
 
@@ -359,7 +359,7 @@ See `T18524 <https://phabricator.endlessm.com/T18524>`_.
 Knowledge App – Article Open/Close
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not stored since Endless OS 4.0.0.
 
 We record when an article is opened or closed in a knowledge app. We record the
 ID of the content, the entry point (whether the article was accessed via
@@ -383,7 +383,7 @@ See `T18516 <https://phabricator.endlessm.com/T18516>`_.
 Hack Toolbox - Code View Error - Hack Episode 1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not reported since Hack was moved to Flathub in Endless OS 3.9.1.
 
 - Since: 3.5.3
 - UUID: ``e98aa2b8-3f11-4a25-b8e9-b10a635df121``
@@ -412,7 +412,7 @@ See `T24429 <https://phabricator.endlessm.com/T24429>`_.
 Hack Clubhouse - Quest
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not reported since Hack was moved to Flathub in Endless OS 3.9.1.
 
 - Since: 3.7.4
 - UUID: ``50aebb1b-7a93-4caf-8698-3a601a0fc0f6``
@@ -435,7 +435,7 @@ See `T28004 <https://phabricator.endlessm.com/T28004>`_.
 Uptime
 ~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 Total length of time the computer has been powered on and total number of boots.
 
@@ -459,7 +459,7 @@ UUID was ``005096c4-9444-48c6-844b-6cb693c15235`` before 2.5.2.
 Shell App Is Open
 ~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 An application opens and closes.
 
@@ -474,7 +474,7 @@ of interest to non-developers.
 User Is Logged In
 ~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 A user logs in and logs out to Endless OS.
 
@@ -498,7 +498,7 @@ UUID was called ``EMTR_EVENT_USER_IS_LOGGED_IN``
 Network ID
 ~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 A change in the default route happens after the network connectivity has changed.
 
@@ -515,7 +515,7 @@ See `T16934 <https://phabricator.endlessm.com/T16934>`_.
 Cache Is Corrupt
 ~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 Cache has been found to be corrupt and was reset.
 
@@ -536,7 +536,7 @@ afterwards.
 Cache Metadata Is Corrupt
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 Cache metadata is corrupt and was reset, any cached metrics were discarded.
 
@@ -559,7 +559,7 @@ See `T19953 <https://phabricator.endlessm.com/T19953>`_.
 Cache Has Invalid Elements
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 Some invalid cache elements were found.
 
@@ -580,7 +580,7 @@ afterwards.
 Discovery Feed Clicked
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not reported since 3.9.0 when the Discovery Feed was removed from Endless OS.
 
 Something is clicked on the Discovery Feed, including content which is not "clickable".
 
@@ -604,7 +604,7 @@ one of:
 Discovery Feed Closed
 ~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not reported since 3.9.0 when the Discovery Feed was removed from Endless OS.
 
 Something is clicked on the Discovery Feed, including content which is not "clickable".
 
@@ -628,7 +628,7 @@ one of:
 Discovery Feed Opened
 ~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not reported since 3.9.0 when the Discovery Feed was removed from Endless OS.
 
 The Discovery Feed is open.
 
@@ -644,7 +644,7 @@ popular in and how users generally open the feed.
 Disk Space Extra
 ~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0, along with split-disk support in general.
 
 Total, used and free disk space for ``/var/endless-extra``.
 
@@ -659,7 +659,7 @@ See `T18445 <https://phabricator.endlessm.com/T18445>`_.
 Entered Demo Mode
 ~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not reported since demo mode was removed in Endless OS 3.9.0.
 
 The systems enters demo mode.
 
@@ -679,7 +679,7 @@ See `T18983 <https://phabricator.endlessm.com/T18983>`_.
 Endless Application Unmaximized
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not stored since Endless OS 4.0.0.
 
 An in-house application is unmaximized for the first time in each run.
 
@@ -692,7 +692,7 @@ We record a metric with the application ID.
 Hack Clubhouse Achievement
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not reported since Hack was moved to Flathub in Endless OS 3.9.1.
 
 Achievement reached in the Hack Clubhouse.
 
@@ -705,7 +705,7 @@ See `T28004 <https://phabricator.endlessm.com/T28004>`_.
 Hack Clubhouse Achievement Points
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not reported since Hack was moved to Flathub in Endless OS 3.9.1.
 
 Points earned in the Hack Clubhouse.
 
@@ -718,7 +718,7 @@ See `T28004 <https://phabricator.endlessm.com/T28004>`_.
 Hack Clubhouse Change Page
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not reported since Hack was moved to Flathub in Endless OS 3.9.1.
 
 Page changed in the Hack Clubhouse.
 
@@ -731,7 +731,7 @@ See `T28004 <https://phabricator.endlessm.com/T28004>`_.
 Hack Clubhouse Enter Pathway
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not reported since Hack was moved to Flathub in Endless OS 3.9.1.
 
 Pathway entered in the Hack Clubhouse.
 
@@ -744,7 +744,7 @@ See `T28004 <https://phabricator.endlessm.com/T28004>`_.
 Hack Clubhouse Mode
 ~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not reported since Hack was moved to Flathub in Endless OS 3.9.1.
 
 Hack mode changed in the Hack Clubhouse.
 
@@ -757,7 +757,7 @@ See `T28501 <https://phabricator.endlessm.com/T28501>`_.
 Hack Clubhouse News Quest Link
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not reported since Hack was moved to Flathub in Endless OS 3.9.1.
 
 Quest link clicked in the Hack Clubhouse news.
 
@@ -770,7 +770,7 @@ See `T29192 <https://phabricator.endlessm.com/T29192>`_.
 Hack Clubhouse Progress
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Not reported since Hack was moved to Flathub in Endless OS 3.9.1.
 
 Progress updated in the Hack Clubhouse.
 
@@ -783,7 +783,7 @@ See `T28004 <https://phabricator.endlessm.com/T28004>`_.
 Location
 ~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 The user’s location at city-level granularity.
 
@@ -807,7 +807,7 @@ longitude, altitude if known, and accuracy of the location estimate.
 Missing Codec
 ~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 A GStreamer-based application tries to install a missing codec.
 
@@ -818,7 +818,7 @@ A GStreamer-based application tries to install a missing codec.
 Monitor Connected
 ~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 A display is connected (e.g. computer monitor, television) to the machine.
 
@@ -833,7 +833,7 @@ UUID was ``566adb36-7701-4067-a971-a398312c2874`` before 2.1.7.
 Monitor Disconnected
 ~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 A display is disconnected (e.g. computer monitor, television) from the machine.
 
@@ -845,10 +845,10 @@ UUID was ``ce179909-dacb-4b7e-83a5-690480bf21eb`` before 2.1.7.
 
 .. versionadded:: 2.1.4
 
-ShellAppAddedToDesktop
-~~~~~~~~~~~~~~~~~~~~~~
+Shell App Added To Desktop
+~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in OS 3.9.0.
 
 Shell application is added to desktop.
 
@@ -864,7 +864,7 @@ Shell application is added to desktop.
 Shell App Removed From Desktop
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 3.9.0.
 
 Shell application is removed from desktop.
 
@@ -880,7 +880,7 @@ Shell application is removed from desktop.
 Underscan Enabled
 ~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 3.9.0.
 
 Underscan is enabled on a monitor.
 
@@ -891,7 +891,7 @@ Underscan is enabled on a monitor.
 Windows License Tables
 ~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 ACPI tables are present on the system, at startup.
 
@@ -916,7 +916,7 @@ See `T18296 <https://phabricator.endlessm.com/T18296>`_.
 Updater Branch Selected
 ~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 An eos-updater branch has been selected.
 
@@ -927,7 +927,7 @@ An eos-updater branch has been selected.
 Control Center Panel Opened
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 A panel is open in the control center.
 
@@ -938,7 +938,7 @@ A panel is open in the control center.
 Control Center Automatic Updates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Removed in TODO.
+Removed in 4.0.0.
 
 Automatic updates settings have changed.
 
@@ -995,7 +995,7 @@ as done in `this example <https://github.com/endlessm/malcontent/pull/17>`_. At
 its core, this will be a call to ``emtr_event_recorder_get_default()`` and then
 a call to ``emtr_event_recorder_record_event()``. You will probably need to
 `add a dependency on eos-metrics-0-dev
-<https://github.com/endlessm/malcontent/pull/18>` to the Debian packaging. The
+<https://github.com/endlessm/malcontent/pull/18>`_ to the Debian packaging. The
 code to submit new metrics can be shipped before the server is ready to process
 them, as unknown metrics are stored and re-parsed when Azafea is updated.
 

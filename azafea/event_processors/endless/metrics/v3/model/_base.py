@@ -30,7 +30,7 @@ from ..utils import get_child_values, get_event_datetime, get_variant
 
 log = logging.getLogger(__name__)
 
-VARIANT_TYPE = GLib.VariantType('(xxsa{ss}ya(aysxmv)a(ayssxmv))')
+VARIANT_TYPE = GLib.VariantType('(xxsa{ss}ya(aysxmv)a(ayssumv))')
 
 SINGULAR_EVENT_MODELS: Dict[str, Type['SingularEvent']] = {}
 AGGREGATE_EVENT_MODELS: Dict[str, Type['AggregateEvent']] = {}
@@ -335,7 +335,7 @@ def new_aggregate_event(request: RequestData, channel: Channel, event_id: str,
                         ) -> Optional[AggregateEvent]:
     os_version = event_variant.get_child_value(1).get_string()
     period_start_str = event_variant.get_child_value(2).get_string()
-    count = event_variant.get_child_value(3).get_int64()
+    count = event_variant.get_child_value(3).get_uint32()
     payload = event_variant.get_child_value(4)
 
     if event_id in AGGREGATE_EVENT_MODELS:
