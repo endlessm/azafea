@@ -11,143 +11,8 @@ versions of Endless OS which are not recorded by current versions.
 Stored Events
 -------------
 
-.. automodule:: azafea.event_processors.endless.metrics.v2.model
+.. automodule:: azafea.event_processors.endless.metrics.v3.model
    :members:
-
-
-Unknown Events
---------------
-
-Desktop Searches
-~~~~~~~~~~~~~~~~
-
-We record searches made from the desktop search bar.
-
-- Since: 2.1.2
-- UUID: ``b02266bc-b010-44b2-ae0f-8f116ffa50eb``
-- UUID name: ``EVENT_DESKTOP_SEARCH`` in gnome-shell
-- Payload: type ``(us)``
-
-  - search provider
-
-    - local: 0
-    - Google: 1
-
-  - query string (what the user searched for)
-
-.. note::
-
-   Since the 2.1.6. release, Google searches have no longer been recorded.
-
-Knowledge App Search
-~~~~~~~~~~~~~~~~~~~~
-
-We record the search terms used for searching within the knowledge apps along
-with the app ID of the knowledge app. (We also record the search term used when
-a user performed a desktop search and clicked through to a knowledge app.)
-
-- Since: 2.3.0
-- UUID: ``a628c936-5d87-434a-a57a-015a0f223838``
-- UUID name: ``SEARCH_METRIC_EVENT_ID`` in eos-knowledge-lib
-- Payload: type ``(ss)``
-
-  - search terms
-  - application ID
-
-Link Shared from Knowledge App
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Reported when a user shares a link from one of our content apps on a social network.
-
-- Since: SDK 2
-- UUID: ``6775771a-afe7-4158-b7bb-6296fcc7b70d``
-- UUID name: ``SHARE_METRIC_EVENT_ID`` in eos-knowledge-lib
-- Payload: type ``(sayssu)``
-
-  - Application ID (e.g. ``com.endlessm.animals.en``)
-  - ID of content record as a byte array of length 20
-    (``ekn://043fd69fe153ac69a05000b60bfea9cff110f14c`` becomes ``[0x04, 0x3f,
-    0xd6, 0x9f, 0xe1, 0x53, 0xac, 0x69, 0xa0, 0x50, 0x00, 0xb6, 0x0b, 0xfe,
-    0xa9, 0xcf, 0xf1, 0x10, 0xf1, 0x4c]``)
-  - Content title
-  - The exact URL of the content online, as it was shared to the social network
-  - A numerical code indicating which social network the content was shared to
-
-    - Facebook: 0
-    - Twitter: 1
-    - Whatsapp: 2
-
-See `T18524 <https://phabricator.endlessm.com/T18524>`_.
-
-Knowledge App – Article Open/Close
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-We record when an article is opened or closed in a knowledge app. We record the
-ID of the content, the entry point (whether the article was accessed via
-article link, desktop search, app link click, or a nav button), the app ID, the
-article title, and the content type.
-
-- Since: SDK 2
-- UUID: ``fae00ef3-aad7-44ca-aff2-16555e45f0d9``
-- UUID name: ``CONTENT_ACCESS_METRIC_EVENT_ID`` in eos-knowledge-lib
-- Payload of start event: type ``(ssss)``
-
-  - Entry point
-  - Application ID
-  - Title
-  - Content type
-
-- Payload of stop event: ``NULL``
-
-See `T18516 <https://phabricator.endlessm.com/T18516>`_.
-
-Hack Toolbox - Code View Error - Hack Episode 1
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-- Since: 3.5.3
-- UUID: ``e98aa2b8-3f11-4a25-b8e9-b10a635df121``
-- UUID name: ``CODEVIEW_ERROR_EVENT``
-- Payload of start event: type ``sssa(suquq)``
-
-  - Application ID that this toolbox belongs to (string)
-  - ID of function that was being edited in the toolbox (string) (currently always blank)
-  - Contents of code view (string)
-  - List of the error messages that are displayed, each containing:
-  - Text of error message (string)
-  - Start line number where error is shown, 1-based (32-bit unsigned)
-  - Start column number where error is shown, 0-based (16-bit unsigned)
-  - End line number where error is shown, 1-based (32-bit unsigned)
-  - End column number where error is shown, 0-based (16-bit unsigned)
-
-- Payload of progress and stop events: type ``s``
-
-  - Diff of the contents of the code view to the state from the previous event,
-    in the form of an `ed script
-    <https://www.gnu.org/software/diffutils/manual/html_node/ed-Scripts.html>`_,
-    chosen because it's the shortest form that the ``diff`` utility can output
-
-See `T24429 <https://phabricator.endlessm.com/T24429>`_.
-
-Hack Clubhouse - Quest
-~~~~~~~~~~~~~~~~~~~~~~
-
-- Since: 3.7.4
-- UUID: ``50aebb1b-7a93-4caf-8698-3a601a0fc0f6``
-- UUID name: ``QUEST_EVENT``
-- Key: The quest name
-- Payload of start event: type ``(bsas)``
-
-  - ``True`` if the quest is completed
-  - The quest ID
-  - The list of pathway names of this quest
-
-- Payload of stop event: type ``(bsas)``
-
-  - ``True`` if the quest is completed
-  - The quest ID
-  - The list of pathway names of this quest
-
-See `T28004 <https://phabricator.endlessm.com/T28004>`_.
 
 
 Deprecated Events
@@ -414,6 +279,8 @@ See `the comprehensive list of status codes
 Social Bar Is Visible
 ~~~~~~~~~~~~~~~~~~~~~
 
+Removed in TODO.
+
 We record when the social bar is made visible to the user and when it is no
 longer visible. Basically, it corresponds to the user clicking on the social
 bar icon.
@@ -421,6 +288,663 @@ bar icon.
 - UUID from 2.10: ``EMTR_EVENT_SOCIAL_BAR_IS_VISIBLE`` − ``9c33a734-7ed8-4348-9e39-3c27f4dc2e62`` - eos-social
 - Payload of start event: ``NULL``
 - Payload of stop event: ``NULL``
+
+Desktop Searches
+~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+We record searches made from the desktop search bar.
+
+- Since: 2.1.2
+- UUID: ``b02266bc-b010-44b2-ae0f-8f116ffa50eb``
+- UUID name: ``EVENT_DESKTOP_SEARCH`` in gnome-shell
+- Payload: type ``(us)``
+
+  - search provider
+
+    - local: 0
+    - Google: 1
+
+  - query string (what the user searched for)
+
+.. note::
+
+   Since the 2.1.6. release, Google searches have no longer been recorded.
+
+Knowledge App Search
+~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+We record the search terms used for searching within the knowledge apps along
+with the app ID of the knowledge app. (We also record the search term used when
+a user performed a desktop search and clicked through to a knowledge app.)
+
+- Since: 2.3.0
+- UUID: ``a628c936-5d87-434a-a57a-015a0f223838``
+- UUID name: ``SEARCH_METRIC_EVENT_ID`` in eos-knowledge-lib
+- Payload: type ``(ss)``
+
+  - search terms
+  - application ID
+
+Link Shared from Knowledge App
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Reported when a user shares a link from one of our content apps on a social network.
+
+- Since: SDK 2
+- UUID: ``6775771a-afe7-4158-b7bb-6296fcc7b70d``
+- UUID name: ``SHARE_METRIC_EVENT_ID`` in eos-knowledge-lib
+- Payload: type ``(sayssu)``
+
+  - Application ID (e.g. ``com.endlessm.animals.en``)
+  - ID of content record as a byte array of length 20
+    (``ekn://043fd69fe153ac69a05000b60bfea9cff110f14c`` becomes ``[0x04, 0x3f,
+    0xd6, 0x9f, 0xe1, 0x53, 0xac, 0x69, 0xa0, 0x50, 0x00, 0xb6, 0x0b, 0xfe,
+    0xa9, 0xcf, 0xf1, 0x10, 0xf1, 0x4c]``)
+  - Content title
+  - The exact URL of the content online, as it was shared to the social network
+  - A numerical code indicating which social network the content was shared to
+
+    - Facebook: 0
+    - Twitter: 1
+    - Whatsapp: 2
+
+See `T18524 <https://phabricator.endlessm.com/T18524>`_.
+
+Knowledge App – Article Open/Close
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+We record when an article is opened or closed in a knowledge app. We record the
+ID of the content, the entry point (whether the article was accessed via
+article link, desktop search, app link click, or a nav button), the app ID, the
+article title, and the content type.
+
+- Since: SDK 2
+- UUID: ``fae00ef3-aad7-44ca-aff2-16555e45f0d9``
+- UUID name: ``CONTENT_ACCESS_METRIC_EVENT_ID`` in eos-knowledge-lib
+- Payload of start event: type ``(ssss)``
+
+  - Entry point
+  - Application ID
+  - Title
+  - Content type
+
+- Payload of stop event: ``NULL``
+
+See `T18516 <https://phabricator.endlessm.com/T18516>`_.
+
+Hack Toolbox - Code View Error - Hack Episode 1
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+- Since: 3.5.3
+- UUID: ``e98aa2b8-3f11-4a25-b8e9-b10a635df121``
+- UUID name: ``CODEVIEW_ERROR_EVENT``
+- Payload of start event: type ``sssa(suquq)``
+
+  - Application ID that this toolbox belongs to (string)
+  - ID of function that was being edited in the toolbox (string) (currently always blank)
+  - Contents of code view (string)
+  - List of the error messages that are displayed, each containing:
+  - Text of error message (string)
+  - Start line number where error is shown, 1-based (32-bit unsigned)
+  - Start column number where error is shown, 0-based (16-bit unsigned)
+  - End line number where error is shown, 1-based (32-bit unsigned)
+  - End column number where error is shown, 0-based (16-bit unsigned)
+
+- Payload of progress and stop events: type ``s``
+
+  - Diff of the contents of the code view to the state from the previous event,
+    in the form of an `ed script
+    <https://www.gnu.org/software/diffutils/manual/html_node/ed-Scripts.html>`_,
+    chosen because it's the shortest form that the ``diff`` utility can output
+
+See `T24429 <https://phabricator.endlessm.com/T24429>`_.
+
+Hack Clubhouse - Quest
+~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+- Since: 3.7.4
+- UUID: ``50aebb1b-7a93-4caf-8698-3a601a0fc0f6``
+- UUID name: ``QUEST_EVENT``
+- Key: The quest name
+- Payload of start event: type ``(bsas)``
+
+  - ``True`` if the quest is completed
+  - The quest ID
+  - The list of pathway names of this quest
+
+- Payload of stop event: type ``(bsas)``
+
+  - ``True`` if the quest is completed
+  - The quest ID
+  - The list of pathway names of this quest
+
+See `T28004 <https://phabricator.endlessm.com/T28004>`_.
+
+Uptime
+~~~~~~
+
+Removed in TODO.
+
+Total length of time the computer has been powered on and total number of boots.
+
+The difference with the system shutdown event is that this is sent
+periodically while the computer is up, not just at shutdown. This allows
+catching "dirty" shutdowns and makes it easier to estimate connectivity.
+
+See https://github.com/endlessm/eos-metrics-instrumentation/commit/8dfd1e5b9.
+
+:UUID name: ``UPTIME_EVENT`` in eos-metrics-instrumentation
+
+UUID was ``005096c4-9444-48c6-844b-6cb693c15235`` before 2.5.2.
+
+.. note::
+
+    A serious bug that often prevented the boot count from being
+    incremented was fixed in the 2.5.2 release.
+
+.. versionadded:: 2.5.0
+
+Shell App Is Open
+~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+An application opens and closes.
+
+By subtracting the time of closing from time of opening, we can tell how
+long an application has been open. This basically includes all applications
+of interest to non-developers.
+
+:UUID name: ``SHELL_APP_IS_OPEN_EVENT`` in gnome-shell
+
+.. versionadded:: 2.1.0
+
+User Is Logged In
+~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+A user logs in and logs out to Endless OS.
+
+As of 2.1.2 we also records which user logged in. This is still anonymous
+data, so we only record an arbitrary number (the user ID), but we can
+discover (among other things) how many different users use the computer
+that way.
+
+:UUID name: ``USER_IS_LOGGED_IN`` in eos-metrics-instrumentation (since 2.1.2)
+
+UUID was called ``EMTR_EVENT_USER_IS_LOGGED_IN``
+(``ab839fd2-a927-456c-8c18-f1136722666b``) before 2.1.2.
+
+.. note::
+
+    A serious bug that often prevented this event from being recorded was
+    introduced in 2.4.0 and fixed in 2.5.1.
+
+.. versionadded:: 2.1.0
+
+Network ID
+~~~~~~~~~~
+
+Removed in TODO.
+
+A change in the default route happens after the network connectivity has changed.
+
+The intention behind the payload is to provide a value which is opaque and
+stable which is the same for every system located on the same physical
+network (also visible from the ``eos-network-id`` command).
+
+See `T16934 <https://phabricator.endlessm.com/T16934>`_.
+
+:UUID name: ``NETWORK_ID_EVENT`` in eos-metrics-instrumentation
+
+.. versionadded:: 3.1.2
+
+Cache Is Corrupt
+~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Cache has been found to be corrupt and was reset.
+
+We've observed that in some situations the metrics recorder daemon's cached
+data contains only a few valid items and then corrupt data, and that some
+other times the whole thing becomes corrupt and completely unusable,
+bringing down the whole metrics recorder daemon and effectively killing
+metrics reporting forever for that machine.
+
+As it's still unclear why that happens, we now detect those situations and
+correct them when they happen, so that the metrics system can still be used
+afterwards.
+
+:UUID name: ``CACHE_IS_CORRUPT_EVENT_ID`` in eos-event-recorder-daemon
+
+.. versionadded:: 3.0.9
+
+Cache Metadata Is Corrupt
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Cache metadata is corrupt and was reset, any cached metrics were discarded.
+
+We've observed that in some situations the metrics recorder daemon's cached
+data contains only a few valid items and then corrupt data, and that some
+other times the whole thing becomes corrupt and completely unusable,
+bringing down the whole metrics recorder daemon and effectively killing
+metrics reporting forever for that machine.
+
+As it's still unclear why that happens, we now detect those situations and
+correct them when they happen, so that the metrics system can still be used
+afterwards.
+
+See `T19953 <https://phabricator.endlessm.com/T19953>`_.
+
+:UUID name: ``CACHE_METADATA_IS_CORRUPT_EVENT_ID`` in eos-event-recorder-daemon
+
+.. versionadded:: 3.3.5
+
+Cache Has Invalid Elements
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Some invalid cache elements were found.
+
+We've observed that in some situations the metrics recorder daemon's cached
+data contains only a few valid items and then corrupt data, and that some
+other times the whole thing becomes corrupt and completely unusable,
+bringing down the whole metrics recorder daemon and effectively killing
+metrics reporting forever for that machine.
+
+As it's still unclear why that happens, we now detect those situations and
+correct them when they happen, so that the metrics system can still be used
+afterwards.
+
+:UUID name: ``CACHE_HAS_INVALID_ELEMENTS_EVENT_ID`` in eos-event-recorder-daemon
+
+.. versionadded:: 3.0.9
+
+Discovery Feed Clicked
+~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Something is clicked on the Discovery Feed, including content which is not "clickable".
+
+The payload tells us about what users are clicking on generally and whether
+they are clicking on things that we don't expect to be clicked. The
+intention is to allow the operator to determine what content should be made
+clickable and what kinds of content are being opened.
+
+The ``content_type`` field that can be included in the payload is currently
+one of:
+
+- ``knowledge_content``: text-based article in a knowledge-app
+- ``knowledge_video``: video based article in a knowledge-app
+- ``knowledge_artwork``: "artwork" card (larger images in a "Gallery" style format)
+- ``undefined``: user clicked on a non-clickable area
+
+:UUID name: ``EVENT_DISCOVERY_FEED_CLICK`` in eos-discovery-feed
+
+.. versionadded:: 3.2.0
+
+Discovery Feed Closed
+~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Something is clicked on the Discovery Feed, including content which is not "clickable".
+
+The payload tells us about what users are clicking on generally and whether
+they are clicking on things that we don't expect to be clicked. The
+intention is to allow the operator to determine what content should be made
+clickable and what kinds of content are being opened.
+
+The ``content_type`` field that can be included in the payload is currently
+one of:
+
+- ``knowledge_content``: text-based article in a knowledge-app
+- ``knowledge_video``: video based article in a knowledge-app
+- ``knowledge_artwork``: "artwork" card (larger images in a "Gallery" style format)
+- ``undefined``: user clicked on a non-clickable area
+
+:UUID name: ``EVENT_DISCOVERY_FEED_CLICK`` in eos-discovery-feed
+
+.. versionadded:: 3.2.0
+
+Discovery Feed Opened
+~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+The Discovery Feed is open.
+
+The payload tells us about the language the user is using when interacting
+with the discovery feed and how they opened it. The intention is to allow
+the operator to determine which languages the discovery feed is most
+popular in and how users generally open the feed.
+
+:UUID name: ``EVENT_DISCOVERY_FEED_OPEN`` in eos-discovery-feed
+
+.. versionadded:: 3.2.0
+
+Disk Space Extra
+~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Total, used and free disk space for ``/var/endless-extra``.
+
+Sent on startup, and every 24 hours.
+
+See `T18445 <https://phabricator.endlessm.com/T18445>`_.
+
+:UUID name: ``EXTRA_DISK_SPACE_EVENT`` in eos-metrics-instrumentation
+
+.. versionadded:: 3.4.3
+
+Entered Demo Mode
+~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+The systems enters demo mode.
+
+Note that the machine ID will be reset just before the system enters demo
+mode, so any metrics collected for this machine ID after this event has
+been fired are metrics for a system that is in demo mode.
+
+Demo mode was removed in EOS 3.9, so this metric will not be seen for
+systems on 3.9.0 or later.
+
+See `T18983 <https://phabricator.endlessm.com/T18983>`_.
+
+:UUID name: ``DEMO_MODE_ENTERED_METRIC`` in gnome-initial-setup
+
+.. versionadded:: 3.2.5
+
+Endless Application Unmaximized
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+An in-house application is unmaximized for the first time in each run.
+
+We record a metric with the application ID.
+
+:UUID name: ``UNMAXIMIZE_EVENT`` in eos-sdk
+
+.. versionadded:: 3.0.0
+
+Hack Clubhouse Achievement
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Achievement reached in the Hack Clubhouse.
+
+See `T28004 <https://phabricator.endlessm.com/T28004>`_.
+
+:UUID name: ``ACHIEVEMENT_EVENT``
+
+.. versionadded:: 3.7.4
+
+Hack Clubhouse Achievement Points
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Points earned in the Hack Clubhouse.
+
+See `T28004 <https://phabricator.endlessm.com/T28004>`_.
+
+:UUID name: ``ACHIEVEMENT_POINTS_EVENT``
+
+.. versionadded:: 3.7.4
+
+Hack Clubhouse Change Page
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Page changed in the Hack Clubhouse.
+
+See `T28004 <https://phabricator.endlessm.com/T28004>`_.
+
+:UUID name: ``CLUBHOUSE_SET_PAGE_EVENT``
+
+.. versionadded:: 3.7.4
+
+Hack Clubhouse Enter Pathway
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Pathway entered in the Hack Clubhouse.
+
+See `T28004 <https://phabricator.endlessm.com/T28004>`_.
+
+:UUID name: ``CLUBHOUSE_PATHWAY_ENTER_EVENT``
+
+.. versionadded:: 3.7.4
+
+Hack Clubhouse Mode
+~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Hack mode changed in the Hack Clubhouse.
+
+See `T28501 <https://phabricator.endlessm.com/T28501>`_.
+
+:UUID name: ``HACK_MODE_EVENT``
+
+.. versionadded:: 3.7.4
+
+Hack Clubhouse News Quest Link
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Quest link clicked in the Hack Clubhouse news.
+
+See `T29192 <https://phabricator.endlessm.com/T29192>`_.
+
+:UUID name: ``CLUBHOUSE_NEWS_QUEST_LINK_EVENT``
+
+.. versionadded:: 3.7.4
+
+Hack Clubhouse Progress
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Progress updated in the Hack Clubhouse.
+
+See `T28004 <https://phabricator.endlessm.com/T28004>`_.
+
+:UUID name: ``PROGRESS_UPDATE_EVENT``
+
+.. versionadded:: 3.7.4
+
+Location
+~~~~~~~~
+
+Removed in TODO.
+
+The user’s location at city-level granularity.
+
+An event is sent once per boot and subsequently every time it changes by a
+distance of 15 km or more during the same boot. We include latitude,
+longitude, altitude if known, and accuracy of the location estimate.
+
+.. note::
+
+    Since around 3.7.0, for privacy reasons this is only recorded on a
+    `small set of products <https://github.com/endlessm/\
+    eos-metrics-instrumentation/blob/master/src/eins-location.c#L192-L196>`_
+    − at the time of writing this is fnde, impact, payg, solutions, and
+    spark. See `T27743 <https://phabricator.endlessm.com/T27743>`_ and
+    `T27655 <https://phabricator.endlessm.com/T27655>`_ for more details.
+
+:UUID name: ``USER_LOCATION`` in eos-metrics-instrumentation
+
+.. versionadded:: 2.1.5
+
+Missing Codec
+~~~~~~~~~~~~~
+
+Removed in TODO.
+
+A GStreamer-based application tries to install a missing codec.
+
+:UUID name: ``EOS_CODECS_MANAGER_MISSING_CODEC`` in eos-codecs-manager
+
+.. versionadded:: 2.6.0
+
+Monitor Connected
+~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+A display is connected (e.g. computer monitor, television) to the machine.
+
+We include any information about the display (e.g. with, height).
+
+:UUID name: ``MONITOR_CONNECTED`` in mutter
+
+UUID was ``566adb36-7701-4067-a971-a398312c2874`` before 2.1.7.
+
+.. versionadded:: 2.1.4
+
+Monitor Disconnected
+~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+A display is disconnected (e.g. computer monitor, television) from the machine.
+
+We include any information about the display (e.g. with, height).
+
+:UUID name: ``MONITOR_DISCONNECTED`` in mutter
+
+UUID was ``ce179909-dacb-4b7e-83a5-690480bf21eb`` before 2.1.7.
+
+.. versionadded:: 2.1.4
+
+ShellAppAddedToDesktop
+~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Shell application is added to desktop.
+
+:UUID name: ``SHELL_APP_ADDED_EVENT`` in gnome-shell
+
+.. note::
+
+    Since 3.9.0 this metric is no longer recorded.
+    See `T30661 <https://phabricator.endlessm.com/T30661>`_.
+
+.. versionadded:: 2.1.0
+
+Shell App Removed From Desktop
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Shell application is removed from desktop.
+
+:UUID name: ``SHELL_APP_REMOVED_EVENT`` in gnome-shell
+
+.. note::
+
+    Since 3.9.0 this metric is no longer recorded.
+    See `T30661 <https://phabricator.endlessm.com/T30661>`_.
+
+.. versionadded:: 2.1.0
+
+Underscan Enabled
+~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Underscan is enabled on a monitor.
+
+:UUID name: ``UNDERSCAN_ENABLED`` in mutter
+
+.. versionadded:: 3.8.7
+
+Windows License Tables
+~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+ACPI tables are present on the system, at startup.
+
+The tables we check for are MSDM and SLIC, which hold OEM Windows license
+information on newer and older systems respectively.
+
+We have not seen systems which have both tables, but they might exist in
+the wild and would appear with a value of 3. With this information,
+assuming Metrics Events is not sent, then we can distinguish:
+
+- SLIC/MSDM > 0 and no dual boot: Endless OS is the sole OS, PC came with Windows
+- SLIC/MSDM > 0 and dual boot: Endless OS installed alongside OEM Windows
+- SLIC/MSDM = 0 and no dual boot: Endless OS is the sole OS, PC came without Windows
+- SLIC/MSDM = 0 and dual boot: Dual-booting with a retail Windows
+
+See `T18296 <https://phabricator.endlessm.com/T18296>`_.
+
+:UUID name: ``WINDOWS_LICENSE_TABLES_EVENT`` in eos-metrics-instrumentation
+
+.. versionadded:: 3.2.0
+
+Updater Branch Selected
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+An eos-updater branch has been selected.
+
+:UUID name: ``EOS_UPDATER_METRIC_BRANCH_SELECTED`` in eos-updater
+
+.. versionadded:: 2.6.0
+
+Control Center Panel Opened
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+A panel is open in the control center.
+
+:UUID name: ``PANEL_OPENED_EVENT_ID`` in gnome-control-center
+
+.. versionadded:: 3.2.5
+
+Control Center Automatic Updates
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Removed in TODO.
+
+Automatic updates settings have changed.
+
+:UUID name: ``CC_METRIC_AUTOMATIC_UPDATES`` in gnome-control-center
+
+.. versionadded:: 3.9.1
 
 
 Test Events
