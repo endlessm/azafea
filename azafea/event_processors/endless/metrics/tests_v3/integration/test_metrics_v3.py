@@ -28,7 +28,7 @@ class TestMetrics(IntegrationTest):
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
         request = GLib.Variant(
-            '(xxsa{ss}ya(aysxmv)a(ayssxmv))',
+            '(xxsa{ss}ya(aysxmv)a(ayssumv))',
             (
                 2000000,   # request relative timestamp (2 secs)
                 int(now.timestamp() * 1000000000),  # Absolute timestamp
@@ -105,7 +105,7 @@ class TestMetrics(IntegrationTest):
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
         request = GLib.Variant(
-            '(xxsa{ss}ya(aysxmv)a(ayssxmv))',
+            '(xxsa{ss}ya(aysxmv)a(ayssumv))',
             (
                 2000000,   # request relative timestamp (2 secs)
                 int(now.timestamp() * 1000000000),  # Absolute timestamp
@@ -164,7 +164,7 @@ class TestMetrics(IntegrationTest):
         now = datetime.now(tz=timezone.utc)
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
         request = GLib.Variant(
-            '(xxsa{ss}ya(aysxmv)a(ayssxmv))',
+            '(xxsa{ss}ya(aysxmv)a(ayssumv))',
             (
                 2000000,   # request relative timestamp (2 secs)
                 int(now.timestamp() * 1000000000),  # Absolute timestamp
@@ -477,7 +477,7 @@ class TestMetrics(IntegrationTest):
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
 
         request = GLib.Variant(
-            '(xxsa{ss}ya(aysxmv)a(ayssxmv))',
+            '(xxsa{ss}ya(aysxmv)a(ayssumv))',
             (
                 2000000,   # request relative timestamp (2 secs)
                 int(now.timestamp() * 1000000000),  # Absolute timestamp
@@ -617,7 +617,7 @@ class TestMetrics(IntegrationTest):
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
 
         request = GLib.Variant(
-            '(xxsa{ss}ya(aysxmv)a(ayssxmv))',
+            '(xxsa{ss}ya(aysxmv)a(ayssumv))',
             (
                 2000000,   # request relative timestamp (2 secs)
                 int(now.timestamp() * 1000000000),  # Absolute timestamp
@@ -702,7 +702,7 @@ class TestMetrics(IntegrationTest):
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
         event_id = UUID('d3863909-8eff-43b6-9a33-ef7eda266195')
         request = GLib.Variant(
-            '(xxsa{ss}ya(aysxmv)a(ayssxmv))',
+            '(xxsa{ss}ya(aysxmv)a(ayssumv))',
             (
                 2000000,   # request relative timestamp (2 secs)
                 int(now.timestamp() * 1000000000),  # Absolute timestamp
@@ -775,7 +775,7 @@ class TestMetrics(IntegrationTest):
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
         event_id = UUID('00d7bc1e-ec93-4c53-ae78-a6b40450be4a')
         request = GLib.Variant(
-            '(xxsa{ss}ya(aysxmv)a(ayssxmv))',
+            '(xxsa{ss}ya(aysxmv)a(ayssumv))',
             (
                 2000000,   # request relative timestamp (2 secs)
                 int(now.timestamp() * 1000000000),  # Absolute timestamp
@@ -861,7 +861,7 @@ class TestMetrics(IntegrationTest):
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
         event_id = UUID('49d0451a-f706-4f50-81d2-70cc0ec923a4')
         request = GLib.Variant(
-            '(xxsa{ss}ya(aysxmv)a(ayssxmv))',
+            '(xxsa{ss}ya(aysxmv)a(ayssumv))',
             (
                 2000000,   # request relative timestamp (2 secs)
                 int(now.timestamp() * 1000000000),  # Absolute timestamp
@@ -957,7 +957,7 @@ class TestMetrics(IntegrationTest):
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
         event_id = UUID('d3863909-8eff-43b6-9a33-ef7eda266195')
         request = GLib.Variant(
-            '(xxsa{ss}ya(aysxmv)a(ayssxmv))',
+            '(xxsa{ss}ya(aysxmv)a(ayssumv))',
             (
                 2000000,   # request relative timestamp (2 secs)
                 int(now.timestamp() * 1000000000),  # Absolute timestamp
