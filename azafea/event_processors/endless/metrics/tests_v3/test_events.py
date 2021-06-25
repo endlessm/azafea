@@ -320,6 +320,29 @@ def test_new_unknown_event():
             'total': GLib.MAXINT64,
         },
     ),
+    (
+        'ComputerInformation',
+        GLib.Variant(
+            '(uuuua(sqd))',
+            (
+                40000,
+                50000000,
+                300000,
+                49700000,
+                [('model_1', 8, 14.5), ('model_2', 8, 14.5)]
+            )
+        ),
+        {
+            'total_ram': 40000,
+            'total_disk': 50000000,
+            'used_disk': 300000,
+            'free_disk': 49700000,
+            'info': [
+                {'model': 'model_1', 'cores': 8, 'max_frequency': 14.5},
+                {'model': 'model_2', 'cores': 8, 'max_frequency': 14.5}
+            ],
+        },
+    ),
 ])
 def test_singular_event(event_model_name, payload, expected_attrs):
     from azafea.event_processors.endless.metrics.v3 import model

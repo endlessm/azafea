@@ -19,14 +19,14 @@ def test_request_builder():
 
     now = datetime.now(tz=timezone.utc)
     request = GLib.Variant(
-        '(xxsa{ss}ya(aysxmv)a(aysxxmv))',
+        '(xxsa{ss}ya(aysxmv)a(ayssxmv))',
         (
             2000000,   # request relative timestamp (2 secs)
             int(now.timestamp() * 1000000000),  # Absolute timestamp
             'image_id',
             {},
-            2,                                    # singular events
-            [],                                    # aggregate events
+            2,
+            [],                                    # singular events
             []                                     # sequence events
         )
     )
@@ -68,4 +68,4 @@ def test_request_builder_invalid():
         parse_record(record)
 
     assert ('Metric request is not in the expected format: '
-            '(xxsa{ss}ya(aysxmv)a(aysxxmv))') in str(excinfo.value)
+            '(xxsa{ss}ya(aysxmv)a(ayssxmv))') in str(excinfo.value)

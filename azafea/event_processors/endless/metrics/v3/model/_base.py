@@ -9,8 +9,7 @@
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from hashlib import sha512
+from datetime import date
 from typing import Any, Dict, Optional, Set, Tuple, Type, cast
 
 from gi.repository import GLib
@@ -22,7 +21,7 @@ from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.query import Query
 from sqlalchemy.schema import Column, ForeignKey
-from sqlalchemy.types import BigInteger, Boolean, DateTime, Integer, LargeBinary, Unicode
+from sqlalchemy.types import BigInteger, Boolean, Date, DateTime, Integer, LargeBinary, Unicode
 
 from azafea.model import Base, DbSession
 
@@ -31,7 +30,7 @@ from ..utils import get_child_values, get_event_datetime, get_variant
 
 log = logging.getLogger(__name__)
 
-VARIANT_TYPE = GLib.VariantType('(xxsa{ss}ya(aysxmv)a(aysxxmv))')
+VARIANT_TYPE = GLib.VariantType('(xxsa{ss}ya(aysxmv)a(ayssxmv))')
 
 SINGULAR_EVENT_MODELS: Dict[str, Type['SingularEvent']] = {}
 AGGREGATE_EVENT_MODELS: Dict[str, Type['AggregateEvent']] = {}
@@ -84,12 +83,6 @@ class Channel(Base):
     live = Column(Boolean, nullable=False)
 
 
-class Request(Base):
-    __tablename__ = 'request_v3'
-
-    sha512 = Column(Unicode, nullable=False, unique=True, primary_key=True)
-
-
 class EmptyPayloadError(Exception):
     pass
 
@@ -130,9 +123,6 @@ class MetricEvent(Base, metaclass=MetricMeta):
     __ignore_empty_payload__ = False
 
     id = Column(Integer, primary_key=True)
-
-    absolute_timestamp = Column(BigInteger, nullable=False)
-    relative_timestamp = Column(BigInteger, nullable=False)
     os_version = Column(Unicode, nullable=False)
 
     @declared_attr
@@ -213,16 +203,20 @@ class UnknownSingularEvent(SingularEvent, UnknownEvent):
 class AggregateEvent(MetricEvent):
     __abstract__ = True
 
-    period_start = Column(DateTime(timezone=False), nullable=False, index=True)
+    period_start = Column(Date, nullable=False, index=True)
     count = Column(BigInteger, nullable=False)
 
 
 class InvalidAggregateEvent(AggregateEvent, InvalidEvent):
     __tablename__ = 'invalid_aggregate_event_v3'
 
+    receveid_period_start = Column(Unicode)
+
 
 class UnknownAggregateEvent(AggregateEvent, UnknownEvent):
     __tablename__ = 'unknown_aggregate_event_v3'
+
+    receveid_period_start = Column(Unicode)
 
 
 @dataclass
@@ -239,7 +233,6 @@ class RequestData:
     absolute_timestamp: int
     singulars: Tuple[GLib.Variant, ...]
     aggregates: Tuple[GLib.Variant, ...]
-    sha512: str
 
     def asdict(self) -> Dict[str, Any]:
         return {
@@ -277,11 +270,9 @@ def parse_record(record: bytes) -> Tuple[RequestData, RequestChannel]:
     singulars = get_child_values(payload.get_child_value(5))
     aggregates = get_child_values(payload.get_child_value(6))
 
-    sha512_request = sha512(payload.get_data_as_bytes().get_data()).hexdigest()
-
     channel = RequestChannel(image_id=image_id, site=site, dual_boot=dual_boot, live=live)
     request = RequestData(
-        relative_timestamp, absolute_timestamp, singulars, aggregates, sha512_request
+        relative_timestamp, absolute_timestamp, singulars, aggregates
     )
     return request, channel
 
@@ -339,8 +330,7 @@ def new_aggregate_event(request: RequestData, channel: Channel, event_id: str,
                         event_variant: GLib.Variant, dbsession: DbSession
                         ) -> Optional[AggregateEvent]:
     os_version = event_variant.get_child_value(1).get_string()
-    period_start = datetime.fromtimestamp(
-        event_variant.get_child_value(2).get_int64(), tz=timezone.utc)
+    period_start_str = event_variant.get_child_value(2).get_string()
     count = event_variant.get_child_value(3).get_int64()
     payload = event_variant.get_child_value(4)
 
@@ -352,7 +342,7 @@ def new_aggregate_event(request: RequestData, channel: Channel, event_id: str,
             event = event_model(
                 payload=payload,  # type: ignore
                 os_version=os_version,
-                period_start=period_start,
+                period_start=date.fromisoformat(period_start_str),
                 count=count,
                 channel=channel,
                 **request.asdict()
@@ -365,8 +355,15 @@ def new_aggregate_event(request: RequestData, channel: Channel, event_id: str,
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
             event = InvalidAggregateEvent(
                 payload=payload,  # type: ignore
-                event_id=event_id, os_version=os_version, period_start=period_start,
-                count=count, error=str(e), channel=channel, **request.asdict())
+                event_id=event_id,
+                os_version=os_version,
+                period_start=date(1970, 1, 1),
+                receveid_period_start=period_start_str,
+                count=count,
+                error=str(e),
+                channel=channel,
+                **request.asdict()
+            )
     else:
         # Mypy complains here, even though this should be fine:
         # https://github.com/dropbox/sqlalchemy-stubs/issues/97
@@ -374,7 +371,8 @@ def new_aggregate_event(request: RequestData, channel: Channel, event_id: str,
             payload=payload,  # type: ignore
             event_id=event_id,
             os_version=os_version,
-            period_start=period_start,
+            period_start=date(1970, 1, 1),
+            receveid_period_start=period_start_str,
             channel=channel,
             count=count, **request.asdict())
 
@@ -403,8 +401,6 @@ def replay_invalid_singular_events(invalid_events: Query) -> None:
             event = UnknownSingularEvent(
                 channel=invalid.channel,  # type: ignore
                 occured_at=invalid.occured_at,
-                absolute_timestamp=invalid.absolute_timestamp,
-                relative_timestamp=invalid.relative_timestamp,
                 event_id=event_id,
                 payload=payload,
                 os_version=invalid.os_version,
@@ -421,8 +417,6 @@ def replay_invalid_singular_events(invalid_events: Query) -> None:
             event = event_model(
                 channel_id=invalid.channel_id,  # type: ignore
                 occured_at=invalid.occured_at,
-                absolute_timestamp=invalid.absolute_timestamp,
-                relative_timestamp=invalid.relative_timestamp,
                 os_version=invalid.os_version,
                 payload=payload,
             )
@@ -470,8 +464,6 @@ def replay_unknown_singular_events(unknown_events: Query) -> None:
             event = event_model(
                 channel_id=unknown.channel_id,  # type: ignore
                 occured_at=unknown.occured_at,
-                absolute_timestamp=unknown.absolute_timestamp,
-                relative_timestamp=unknown.relative_timestamp,
                 os_version=unknown.os_version,
                 payload=payload
             )
@@ -489,8 +481,6 @@ def replay_unknown_singular_events(unknown_events: Query) -> None:
             event = InvalidSingularEvent(
                 channel_id=unknown.channel_id,  # type: ignore
                 occured_at=unknown.occured_at,
-                absolute_timestamp=unknown.absolute_timestamp,
-                relative_timestamp=unknown.relative_timestamp,
                 os_version=unknown.os_version,
                 event_id=event_id,
                 payload=payload,

@@ -23,7 +23,6 @@ from ._base import (  # noqa: F401
     SINGULAR_EVENT_MODELS,
     AggregateEvent,
     Channel,
-    Request,
     EmptyPayloadError,
     InvalidAggregateEvent,
     InvalidSingularEvent,
@@ -555,19 +554,18 @@ class ComputerInformation(SingularEvent):
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         cpu_info = []
-        for i in range(payload.get_child_value(4).n_children()):
-            item = payload.get_child_value(i)
+        for item in payload.get_child_value(4).unpack():
             cpu_info.append({
-                'model': item.get_child_value(0).get_string(),
-                'cores': item.get_child_value(1).get_uint16(),
-                'max_frequency': item.get_child_value(2).get_double(),
+                'model': item[0],
+                'cores': item[1],
+                'max_frequency': item[2],
             })
         return {
             'total_ram': payload.get_child_value(0).get_uint32(),
             'total_disk': payload.get_child_value(1).get_uint32(),
             'used_disk': payload.get_child_value(2).get_uint32(),
             'free_disk': payload.get_child_value(3).get_uint32(),
-            'cpu_info': cpu_info,
+            'info': cpu_info,
         }
 
 
