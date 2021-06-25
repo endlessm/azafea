@@ -16,7 +16,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.exc import NoResultFound
 
 from .model import (
-    IGNORED_EVENTS, Channel, Request, new_aggregate_event, new_singular_event, parse_record
+    IGNORED_EVENTS, Channel, new_aggregate_event, new_singular_event, parse_record
 )
 from .utils import get_bytes
 
@@ -32,12 +32,7 @@ def process(dbsession: DbSession, record: bytes) -> None:
         (request.singulars, new_singular_event),
         (request.aggregates, new_aggregate_event))
     channel_dict = asdict(request_channel)
-    try:
-        dbsession.add(Request(sha512=request.sha512))
-        dbsession.commit()
-    except IntegrityError:
-        log.debug('Request had already been processed in the past')
-        return
+
     try:
         channel = dbsession.query(Channel).filter_by(**channel_dict).one()
     except NoResultFound:

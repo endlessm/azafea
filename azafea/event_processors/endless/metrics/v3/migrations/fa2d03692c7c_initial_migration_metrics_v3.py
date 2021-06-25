@@ -1,10 +1,10 @@
 # type: ignore
 
-"""Initial migration metrics V3
+"""Initial migrations for metrics v3
 
-Revision ID: c50d23f55698
+Revision ID: fa2d03692c7c
 Revises:
-Create Date: 2021-06-23 16:54:03.335799
+Create Date: 2021-06-28 10:12:39.992983
 
 """
 from alembic import op
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "c50d23f55698"
+revision = "fa2d03692c7c"
 down_revision = None
 branch_labels = ("metrics-3",)
 depends_on = None
@@ -29,16 +29,8 @@ def upgrade():
         sa.PrimaryKeyConstraint("id", name=op.f("pk_channel_v3")),
     )
     op.create_table(
-        "request_v3",
-        sa.Column("sha512", sa.Unicode(), nullable=False),
-        sa.PrimaryKeyConstraint("sha512", name=op.f("pk_request_v3")),
-        sa.UniqueConstraint("sha512", name=op.f("uq_request_v3_sha512")),
-    )
-    op.create_table(
         "computer_information_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("total_ram", sa.BigInteger(), nullable=False),
@@ -69,10 +61,8 @@ def upgrade():
     op.create_table(
         "daily_app_usage_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
-        sa.Column("period_start", sa.DateTime(), nullable=False),
+        sa.Column("period_start", sa.Date(), nullable=False),
         sa.Column("count", sa.BigInteger(), nullable=False),
         sa.Column("app_id", sa.Unicode(), nullable=False),
         sa.Column("channel_id", sa.Integer(), nullable=True),
@@ -98,10 +88,8 @@ def upgrade():
     op.create_table(
         "daily_session_time_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
-        sa.Column("period_start", sa.DateTime(), nullable=False),
+        sa.Column("period_start", sa.Date(), nullable=False),
         sa.Column("count", sa.BigInteger(), nullable=False),
         sa.Column("channel_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
@@ -126,10 +114,8 @@ def upgrade():
     op.create_table(
         "daily_users_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
-        sa.Column("period_start", sa.DateTime(), nullable=False),
+        sa.Column("period_start", sa.Date(), nullable=False),
         sa.Column("count", sa.BigInteger(), nullable=False),
         sa.Column("channel_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
@@ -154,14 +140,13 @@ def upgrade():
     op.create_table(
         "invalid_aggregate_event_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("event_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("payload_data", sa.LargeBinary(), nullable=False),
         sa.Column("error", sa.Unicode(), nullable=False),
-        sa.Column("period_start", sa.DateTime(), nullable=False),
+        sa.Column("period_start", sa.Date(), nullable=False),
         sa.Column("count", sa.BigInteger(), nullable=False),
+        sa.Column("receveid_period_start", sa.Unicode(), nullable=True),
         sa.Column("channel_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
             ["channel_id"],
@@ -185,8 +170,6 @@ def upgrade():
     op.create_table(
         "invalid_singular_event_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("event_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("payload_data", sa.LargeBinary(), nullable=False),
@@ -215,8 +198,6 @@ def upgrade():
     op.create_table(
         "launched_equivalent_existing_flatpak_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("replacement_app_id", sa.Unicode(), nullable=False),
@@ -248,8 +229,6 @@ def upgrade():
     op.create_table(
         "launched_equivalent_installer_for_flatpak_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("replacement_app_id", sa.Unicode(), nullable=False),
@@ -281,8 +260,6 @@ def upgrade():
     op.create_table(
         "launched_existing_flatpak_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("replacement_app_id", sa.Unicode(), nullable=False),
@@ -310,8 +287,6 @@ def upgrade():
     op.create_table(
         "launched_installer_for_flatpak_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("replacement_app_id", sa.Unicode(), nullable=False),
@@ -341,8 +316,6 @@ def upgrade():
     op.create_table(
         "linux_package_opened_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("argv", sa.ARRAY(sa.Unicode(), dimensions=1), nullable=False),
@@ -369,10 +342,8 @@ def upgrade():
     op.create_table(
         "monthly_app_usage_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
-        sa.Column("period_start", sa.DateTime(), nullable=False),
+        sa.Column("period_start", sa.Date(), nullable=False),
         sa.Column("count", sa.BigInteger(), nullable=False),
         sa.Column("app_id", sa.Unicode(), nullable=False),
         sa.Column("channel_id", sa.Integer(), nullable=True),
@@ -398,10 +369,8 @@ def upgrade():
     op.create_table(
         "monthly_session_time_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
-        sa.Column("period_start", sa.DateTime(), nullable=False),
+        sa.Column("period_start", sa.Date(), nullable=False),
         sa.Column("count", sa.BigInteger(), nullable=False),
         sa.Column("channel_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
@@ -426,10 +395,8 @@ def upgrade():
     op.create_table(
         "monthly_users_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
-        sa.Column("period_start", sa.DateTime(), nullable=False),
+        sa.Column("period_start", sa.Date(), nullable=False),
         sa.Column("count", sa.BigInteger(), nullable=False),
         sa.Column("channel_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
@@ -454,8 +421,6 @@ def upgrade():
     op.create_table(
         "parental_controls_blocked_flatpak_install_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("app", sa.Unicode(), nullable=False),
@@ -486,8 +451,6 @@ def upgrade():
     op.create_table(
         "parental_controls_blocked_flatpak_run_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("app", sa.Unicode(), nullable=False),
@@ -518,8 +481,6 @@ def upgrade():
     op.create_table(
         "parental_controls_changed_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("app_filter_is_whitelist", sa.Boolean(), nullable=False),
@@ -554,8 +515,6 @@ def upgrade():
     op.create_table(
         "parental_controls_enabled_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("enabled", sa.Boolean(), nullable=False),
@@ -582,8 +541,6 @@ def upgrade():
     op.create_table(
         "program_dumped_core_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("info", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
@@ -610,8 +567,6 @@ def upgrade():
     op.create_table(
         "startup_finished_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("firmware", sa.BigInteger(), nullable=False),
@@ -643,13 +598,12 @@ def upgrade():
     op.create_table(
         "unknown_aggregate_event_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("event_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("payload_data", sa.LargeBinary(), nullable=False),
-        sa.Column("period_start", sa.DateTime(), nullable=False),
+        sa.Column("period_start", sa.Date(), nullable=False),
         sa.Column("count", sa.BigInteger(), nullable=False),
+        sa.Column("receveid_period_start", sa.Unicode(), nullable=True),
         sa.Column("channel_id", sa.Integer(), nullable=True),
         sa.ForeignKeyConstraint(
             ["channel_id"],
@@ -673,8 +627,6 @@ def upgrade():
     op.create_table(
         "unknown_singular_event_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("event_id", postgresql.UUID(as_uuid=True), nullable=False),
         sa.Column("payload_data", sa.LargeBinary(), nullable=False),
@@ -702,8 +654,6 @@ def upgrade():
     op.create_table(
         "updater_failure_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("component", sa.Unicode(), nullable=False),
@@ -731,8 +681,6 @@ def upgrade():
     op.create_table(
         "windows_app_opened_v3",
         sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("absolute_timestamp", sa.BigInteger(), nullable=False),
-        sa.Column("relative_timestamp", sa.BigInteger(), nullable=False),
         sa.Column("os_version", sa.Unicode(), nullable=False),
         sa.Column("occured_at", sa.DateTime(timezone=True), nullable=False),
         sa.Column("argv", sa.ARRAY(sa.Unicode(), dimensions=1), nullable=False),
@@ -954,5 +902,4 @@ def downgrade():
         table_name="computer_information_v3",
     )
     op.drop_table("computer_information_v3")
-    op.drop_table("request_v3")
     op.drop_table("channel_v3")

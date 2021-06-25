@@ -7,7 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 
 from gi.repository import GLib
 
@@ -56,8 +56,6 @@ class TestMetrics(IntegrationTest):
                     ('replacement_app_id', ['argv1', 'argv2'])
                 )),
                 error='discard',
-                absolute_timestamp=1,
-                relative_timestamp=2,
                 os_version='os_version',
             ))
 
@@ -69,8 +67,6 @@ class TestMetrics(IntegrationTest):
                 occured_at=occured_at,
                 payload=unknown_singular,
                 error='unknown',
-                absolute_timestamp=1,
-                relative_timestamp=2,
                 os_version='os_version',
             ))
 
@@ -85,8 +81,6 @@ class TestMetrics(IntegrationTest):
                 occured_at=occured_at,
                 payload=invalid_singular,
                 error='invalid',
-                absolute_timestamp=1,
-                relative_timestamp=2,
                 os_version='os_version',
             ))
 
@@ -101,8 +95,6 @@ class TestMetrics(IntegrationTest):
                 occured_at=occured_at,
                 payload=invalid_singular_2,
                 error='invalid',
-                absolute_timestamp=1,
-                relative_timestamp=2,
                 os_version='os_version',
             ))
 
@@ -114,8 +106,6 @@ class TestMetrics(IntegrationTest):
                 occured_at=occured_at,
                 payload=GLib.Variant('mv', None),
                 error='discard',
-                absolute_timestamp=1,
-                relative_timestamp=2,
                 os_version='os_version',
             ))
 
@@ -169,23 +159,28 @@ class TestMetrics(IntegrationTest):
 
             # Add an unknown singular event which will be ignored after the replay
             dbsession.add(UnknownSingularEvent(
-                channel=channel, event_id='7be59566-2b23-408a-acf6-91490fc1df1c',
-                absolute_timestamp=1, relative_timestamp=2, occured_at=occured_at,
-                payload=GLib.Variant('mv', GLib.Variant('s', 'discard')), os_version='os_version'
+                channel=channel,
+                event_id='7be59566-2b23-408a-acf6-91490fc1df1c',
+                occured_at=occured_at,
+                payload=GLib.Variant('mv', GLib.Variant('s', 'discard')),
+                os_version='os_version'
             ))
 
             # Add an unknown singular event which will be replay as ParentalControlsEnabled
             dbsession.add(UnknownSingularEvent(
-                channel=channel, event_id='c227a817-808c-4fcb-b797-21002d17b69a',
-                absolute_timestamp=1, relative_timestamp=2, occured_at=occured_at,
-                payload=GLib.Variant('mv', GLib.Variant('b', True)), os_version='os_version'
+                channel=channel,
+                event_id='c227a817-808c-4fcb-b797-21002d17b69a',
+                occured_at=occured_at,
+                payload=GLib.Variant('mv', GLib.Variant('b', True)),
+                os_version='os_version'
             ))
 
             # Add an unknown singular event which will be replay as ParentalControlsEnabled
             # Will fail and add as InvalidSingularEvent
             dbsession.add(UnknownSingularEvent(
-                channel=channel, event_id='c227a817-808c-4fcb-b797-21002d17b69a',
-                absolute_timestamp=1, relative_timestamp=2, occured_at=occured_at,
+                channel=channel,
+                event_id='c227a817-808c-4fcb-b797-21002d17b69a',
+                occured_at=occured_at,
                 payload=GLib.Variant('mv', GLib.Variant('(sb)', ('should be invalid', True))),
                 os_version='os_version'
             ))
@@ -198,8 +193,6 @@ class TestMetrics(IntegrationTest):
                 event_id='9d03daad-f1ed-41a8-bc5a-6b532c075832',
                 occured_at=occured_at,
                 payload=GLib.Variant('mv', None),
-                absolute_timestamp=1,
-                relative_timestamp=2,
                 os_version='os_version',
             ))
 
@@ -216,3 +209,62 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(UnknownSingularEvent).count() == 0
             assert dbsession.query(InvalidSingularEvent).count() == 1
             assert dbsession.query(ParentalControlsEnabled).count() == 1
+
+    def test_replay_unknown_aggregate(self):
+        from azafea.event_processors.endless.metrics.v3.model import (
+            Channel, UnknownAggregateEvent
+        )
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Channel, UnknownAggregateEvent)
+
+        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
+
+        with self.db as dbsession:
+            channel = Channel(
+                received_at=occured_at,
+                absolute_timestamp=1,
+                relative_timestamp=2,
+                image_id=image_id,
+                site={},
+                dual_boot=False,
+                live=False,
+                send_number=0
+            )
+            dbsession.add(channel)
+            # -- Unknown aggregate events -------
+
+            # Add an unknown singular event which will be ignored after the replay
+            dbsession.add(UnknownAggregateEvent(
+                channel=channel,
+                event_id='91de63ea-c7b7-412c-93f3-6f3d9b2f864c',
+                period_start=date(1970, 1, 1),
+                period_start_str='2020-08-15',
+                count=15,
+                payload=GLib.Variant('mv', None),
+                os_version='os_version'
+            ))
+
+            # Add an unknown singular event
+            dbsession.add(UnknownAggregateEvent(
+                channel=channel,
+                event_id='a3826320-9192-446a-8886-e2129c0ce302',
+                period_start=date(1970, 1, 1),
+                count=15,
+                period_start_str='2020-08-15',
+                payload=GLib.Variant('mv', None),
+                os_version='os_version'
+            ))
+
+        with self.db as dbsession:
+            assert dbsession.query(Channel).count() == 1
+            assert dbsession.query(UnknownAggregateEvent).count() == 2
+
+        # Replay the unknown events
+        self.run_subcommand('test_replay_unknown_aggregate', 'replay-unknown')
+
+        with self.db as dbsession:
+            channel = dbsession.query(Channel).one()
+            assert dbsession.query(UnknownAggregateEvent).count() == 1
