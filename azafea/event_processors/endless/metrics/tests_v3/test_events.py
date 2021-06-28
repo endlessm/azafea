@@ -356,6 +356,30 @@ def test_singular_event(event_model_name, payload, expected_attrs):
         assert getattr(event, attr_name) == attr_value
 
 
+@pytest.mark.parametrize('event_model_name, payload, expected_attrs', [
+    (
+        'DailyAppUsage',
+        GLib.Variant('s', 'app_id'),
+        {'app_id': 'app_id'}
+    ),
+    (
+        'MonthlyAppUsage',
+        GLib.Variant('s', 'app_id'),
+        {'app_id': 'app_id'}
+    ),
+])
+def test_aggregate_event(event_model_name, payload, expected_attrs):
+    from azafea.event_processors.endless.metrics.v3 import model
+
+    event_model = getattr(model, event_model_name)
+    maybe_payload = GLib.Variant('mv', payload)
+
+    event = event_model(payload=maybe_payload)
+
+    for attr_name, attr_value in expected_attrs.items():
+        assert getattr(event, attr_name) == attr_value
+
+
 def test_invalid_parental_controls_changed_event():
     from azafea.event_processors.endless.metrics.v3.model import ParentalControlsChanged
 

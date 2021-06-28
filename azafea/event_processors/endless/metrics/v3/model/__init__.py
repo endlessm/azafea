@@ -529,7 +529,7 @@ class ComputerInformation(SingularEvent):
 
     Sent at most once a day.
 
-    :UUID name: TODO
+    :UUID name: ``COMPUTER_INFORMATION``
 
     .. versionadded:: 4.0.0
 
@@ -576,7 +576,7 @@ class DailyAppUsage(AggregateEvent):
 
     Aggregation is done by day.
 
-    :UUID name: TODO
+    :UUID name: ``DAILY_APP_USAGE``
 
     .. versionadded:: 4.0.0
 
@@ -598,7 +598,7 @@ class MonthlyAppUsage(AggregateEvent):
 
     Aggregation is done by month.
 
-    :UUID name: TODO
+    :UUID name: ``MONTHLY_APP_USAGE``
 
     .. versionadded:: 4.0.0
 
@@ -620,7 +620,7 @@ class DailyUsers(AggregateEvent):
 
     Aggregation is done by day.
 
-    :UUID name: TODO
+    :UUID name: ``DAILY_USERS``
 
     .. versionadded:: 4.0.0
 
@@ -635,7 +635,7 @@ class MonthlyUsers(AggregateEvent):
 
     Aggregation is done by month.
 
-    :UUID name: TODO
+    :UUID name: ``MONTHLY_USERS``
 
     .. versionadded:: 4.0.0
 
@@ -650,7 +650,7 @@ class DailySessionTime(AggregateEvent):
 
     Aggregation is done by day.
 
-    :UUID name: TODO
+    :UUID name: ``DAILY_SESSION_TIME``
 
     .. versionadded:: 4.0.0
 
@@ -665,7 +665,7 @@ class MonthlySessionTime(AggregateEvent):
 
     Aggregation is done by month.
 
-    :UUID name: TODO
+    :UUID name: ``MONTHLY_SESSION_TIME``
 
     .. versionadded:: 4.0.0
 
