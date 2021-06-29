@@ -51,6 +51,21 @@ def test_new_event_no_payload():
     TestEventNoPayload(payload=payload)
 
 
+def test_new_event_allow_empty_payload():
+    from azafea.event_processors.endless.metrics.v3.model import SingularEvent
+
+    class TestEventIgnoreEmptyPayload(SingularEvent):
+        __tablename__ = 'test_singular_ignore_empty_payload'
+        __event_uuid__ = '00000000-0000-0000-0000-000000000000'
+        __ignore_empty_payload__ = True
+        __payload_type__ = None
+
+    payload = GLib.Variant('mv', None)
+    TestEventIgnoreEmptyPayload(payload=payload)
+    from azafea.event_processors.endless.metrics.v3.model._base import IGNORED_EMPTY_PAYLOAD_ERRORS
+    assert '00000000-0000-0000-0000-000000000000' in IGNORED_EMPTY_PAYLOAD_ERRORS
+
+
 def test_new_event_with_payload():
     from azafea.event_processors.endless.metrics.v3.model import SingularEvent
 

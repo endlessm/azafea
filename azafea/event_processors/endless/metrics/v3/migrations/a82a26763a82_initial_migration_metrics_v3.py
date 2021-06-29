@@ -2,9 +2,9 @@
 
 """Initial migrations for metrics v3
 
-Revision ID: fa2d03692c7c
+Revision ID: a82a26763a82
 Revises:
-Create Date: 2021-06-28 10:12:39.992983
+Create Date: 2021-06-29 11:48:06.708222
 
 """
 from alembic import op
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = "fa2d03692c7c"
+revision = "a82a26763a82"
 down_revision = None
 branch_labels = ("metrics-3",)
 depends_on = None
@@ -27,6 +27,9 @@ def upgrade():
         sa.Column("dual_boot", sa.Boolean(), nullable=False),
         sa.Column("live", sa.Boolean(), nullable=False),
         sa.PrimaryKeyConstraint("id", name=op.f("pk_channel_v3")),
+        sa.UniqueConstraint(
+            "image_id", "site", "dual_boot", "live", name=op.f("uq_channel_v3_image_id")
+        ),
     )
     op.create_table(
         "computer_information_v3",

@@ -20,7 +20,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.query import Query
-from sqlalchemy.schema import Column, ForeignKey
+from sqlalchemy.schema import Column, ForeignKey, UniqueConstraint
 from sqlalchemy.types import BigInteger, Boolean, Date, DateTime, Integer, LargeBinary, Unicode
 
 from azafea.model import Base, DbSession
@@ -68,6 +68,10 @@ IGNORED_EMPTY_PAYLOAD_ERRORS: Set[str] = set()
 
 class Channel(Base):
     __tablename__ = 'channel_v3'
+
+    __table_args__ = (
+        UniqueConstraint('image_id', 'site', 'dual_boot', 'live'),
+    )
 
     id = Column(Integer, primary_key=True)
 

@@ -13,7 +13,6 @@ from uuid import UUID
 
 from azafea.model import DbSession
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm.exc import NoResultFound
 
 from .model import (
     IGNORED_EVENTS, Channel, new_aggregate_event, new_singular_event, parse_record
@@ -34,14 +33,11 @@ def process(dbsession: DbSession, record: bytes) -> None:
     channel_dict = asdict(request_channel)
 
     try:
+        with dbsession.begin_nested():
+            channel = Channel(**channel_dict)
+            dbsession.add(channel)
+    except IntegrityError:
         channel = dbsession.query(Channel).filter_by(**channel_dict).one()
-    except NoResultFound:
-        try:
-            with dbsession.begin_nested():
-                channel = Channel(**channel_dict)
-                dbsession.add(channel)
-        except IntegrityError:
-            channel = dbsession.query(Channel).filter_by(**channel_dict).one()
 
     for events, new_event in events_and_functions:
         for event_variant in events:
