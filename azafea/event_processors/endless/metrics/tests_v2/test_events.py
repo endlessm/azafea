@@ -650,6 +650,50 @@ def test_hack_clubhouse_progress_event_with_unknown_key():
     assert not hasattr(event, 'unknown')
 
 
+def test_valid_linux_package_opened_single_string():
+    from azafea.event_processors.endless.metrics.v2.model import LinuxPackageOpened
+
+    payload = GLib.Variant('mv', GLib.Variant('s', 'gnome-calendar.deb'))
+    lpo = LinuxPackageOpened(payload)
+    assert lpo.argv == ['gnome-calendar.deb']
+
+
+def test_valid_linux_package_opened_array_string():
+    from azafea.event_processors.endless.metrics.v2.model import LinuxPackageOpened
+
+    payload = GLib.Variant('mv', GLib.Variant('as', ['gnome-calendar.deb']))
+    lpo = LinuxPackageOpened(payload)
+    assert lpo.argv == ['gnome-calendar.deb']
+
+
+def test_empty_payload_linux_package_opened():
+    from azafea.event_processors.endless.metrics.v2.model import (
+        EmptyPayloadError, LinuxPackageOpened
+    )
+
+    payload = GLib.Variant('mv', None)
+
+    with pytest.raises(EmptyPayloadError) as excinfo:
+        LinuxPackageOpened(payload)
+
+    assert ('Metric event 0bba3340-52e3-41a2-854f-e6ed36621379 needs a as payload, '
+            'but got none') in str(excinfo.value)
+
+
+def test_invalid_payload_linux_package_opened():
+    from azafea.event_processors.endless.metrics.v2.model import (
+        WrongPayloadError, LinuxPackageOpened
+    )
+
+    payload = GLib.Variant('mv', GLib.Variant('x', 100000))
+
+    with pytest.raises(WrongPayloadError) as excinfo:
+        LinuxPackageOpened(payload)
+
+    assert ('Metric event 0bba3340-52e3-41a2-854f-e6ed36621379 needs a as payload, '
+            "but got int64 100000 (x)") in str(excinfo.value)
+
+
 def test_invalid_parental_controls_changed_event():
     from azafea.event_processors.endless.metrics.v2.model import ParentalControlsChanged
 
