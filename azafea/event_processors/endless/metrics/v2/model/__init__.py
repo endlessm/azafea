@@ -29,7 +29,7 @@ from sqlalchemy.types import (
 
 from azafea.model import Base, DbSession
 from azafea.vendors import normalize_vendor
-from ..utils import clamp_to_int64, get_bytes, get_child_values
+from ..utils import clamp_to_int64, get_bytes, get_child_values, get_variant
 from ._base import (  # noqa: F401
     AGGREGATE_EVENT_MODELS,
     SEQUENCE_EVENT_MODELS,
@@ -58,6 +58,7 @@ from ._base import (  # noqa: F401
     aggregate_event_is_known,
     sequence_is_known,
     singular_event_is_known,
+    log,
 )
 from ._machine import (  # noqa: F401
     Machine,
@@ -775,10 +776,30 @@ class LinuxPackageOpened(SingularEvent):
     #: argv of the launched Windows application
     argv = Column(ARRAY(Unicode, dimensions=1), nullable=False)
 
+    def _parse_payload(self, maybe_payload: GLib.Variant) -> Dict[str, Any]:
+        payload = maybe_payload.get_maybe()
+
+        if payload is None:
+            raise EmptyPayloadError(f'Metric event {self.__event_uuid__} needs a '
+                                    f'{self.__payload_type__} payload, but got none')
+
+        payload = get_variant(payload)
+        payload_type = payload.get_type_string()
+
+        # A version of eos-gate send payload as a string and we want to handle that
+        if payload_type != self.__payload_type__ and payload_type != 's':
+            raise WrongPayloadError(f'Metric event {self.__event_uuid__} needs a '
+                                    f'{self.__payload_type__} payload, but got '
+                                    f'{payload} ({payload_type})')
+        return self._get_fields_from_payload(payload)
+
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        value = payload.unpack()
+        if isinstance(value, str):
+            value = [value]
         return {
-            'argv': payload.unpack(),
+            'argv': value,
         }
 
 
