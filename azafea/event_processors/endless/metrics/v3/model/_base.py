@@ -214,13 +214,9 @@ class AggregateEvent(MetricEvent):
 class InvalidAggregateEvent(AggregateEvent, InvalidEvent):
     __tablename__ = 'invalid_aggregate_event_v3'
 
-    receveid_period_start = Column(Unicode)
-
 
 class UnknownAggregateEvent(AggregateEvent, UnknownEvent):
     __tablename__ = 'unknown_aggregate_event_v3'
-
-    receveid_period_start = Column(Unicode)
 
 
 @dataclass
@@ -358,11 +354,10 @@ def new_aggregate_event(request: RequestData, channel: Channel, event_id: str,
             # Mypy complains here, even though this should be fine:
             # https://github.com/dropbox/sqlalchemy-stubs/issues/97
             event = InvalidAggregateEvent(
-                payload=payload,  # type: ignore
+                payload=event_variant,  # type: ignore
                 event_id=event_id,
                 os_version=os_version,
                 period_start=date(1970, 1, 1),
-                receveid_period_start=period_start_str,
                 count=count,
                 error=str(e),
                 channel=channel,
@@ -372,7 +367,7 @@ def new_aggregate_event(request: RequestData, channel: Channel, event_id: str,
         # Mypy complains here, even though this should be fine:
         # https://github.com/dropbox/sqlalchemy-stubs/issues/97
         event = UnknownAggregateEvent(
-            payload=payload,  # type: ignore
+            payload=event_variant,  # type: ignore
             event_id=event_id,
             os_version=os_version,
             period_start=date(1970, 1, 1),

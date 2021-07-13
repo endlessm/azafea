@@ -916,10 +916,9 @@ class TestMetrics(IntegrationTest):
             event = events[0]
             assert event.channel_id == channel.id
             assert event.event_id == event_id
-            assert GLib.Variant.new_from_bytes(GLib.VariantType('mv'),
-                                               GLib.Bytes.new(event.payload_data),
-                                               False).unpack() == ('str_1', 'str_2')
-            assert event.receveid_period_start == '2020-06-15'
+            assert GLib.Variant.new_from_bytes(
+                GLib.VariantType('(ayssumv)'), GLib.Bytes.new(event.payload_data), False
+            ).get_child_value(4).unpack() == ('str_1', 'str_2')
             assert event.period_start == date(1970, 1, 1)
             assert event.error == (
                 'Metric event 49d0451a-f706-4f50-81d2-70cc0ec923a4 needs a s payload, '
@@ -929,8 +928,9 @@ class TestMetrics(IntegrationTest):
             event = events[1]
             assert event.channel_id == channel.id
             assert event.event_id == event_id
-            assert event.payload_data == b''
-            assert event.receveid_period_start == '2020-06-15'
+            assert GLib.Variant.new_from_bytes(
+                GLib.VariantType('(ayssumv)'), GLib.Bytes.new(event.payload_data), False
+            ).get_child_value(4).unpack() is None
             assert event.period_start == date(1970, 1, 1)
             assert event.error == (
                 'Metric event 49d0451a-f706-4f50-81d2-70cc0ec923a4 needs a s payload, '
@@ -1012,16 +1012,16 @@ class TestMetrics(IntegrationTest):
             assert event.channel_id == channel.id
             assert event.count == 2
             assert event.event_id == event_id
-            assert event.receveid_period_start == '2020-06-15'
+            assert GLib.Variant.new_from_bytes(
+                GLib.VariantType('(ayssumv)'), GLib.Bytes.new(event.payload_data), False
+            ).get_child_value(4).unpack() is None
             assert event.period_start == date(1970, 1, 1)
-            assert event.payload_data == b''
 
             event = events[1]
             assert event.channel_id == channel.id
             assert event.count == 10
             assert event.event_id == event_id
-            assert event.receveid_period_start == '2020-06-15'
             assert event.period_start == date(1970, 1, 1)
-            assert GLib.Variant.new_from_bytes(GLib.VariantType('mv'),
-                                               GLib.Bytes.new(event.payload_data),
-                                               False).unpack() == (1, 2)
+            assert GLib.Variant.new_from_bytes(
+                GLib.VariantType('(ayssumv)'), GLib.Bytes.new(event.payload_data), False
+            ).get_child_value(4).unpack() == (1, 2)
