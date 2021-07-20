@@ -114,6 +114,7 @@ class MetabaseBuilder(DummyBuilder):
         # Tables and database ID
         logger.info('\nUpdating tables\n')
         tables = [table for table in self._get('table') if table['db']['name'] == 'Azafea']
+        db_id = None
         for i, table in enumerate(tables, start=1):
             progress = f'({i}/{len(tables)})'
 
@@ -131,6 +132,10 @@ class MetabaseBuilder(DummyBuilder):
                 self.tables[table['name']]['lines'])
             self._put(f'table/{table["id"]}', json={
                 'description': description, 'points_of_interest': points_of_interest})
+
+        # Quit early if no table has been found
+        if db_id is None:
+            return
 
         # Fields
         logger.info('\nUpdating fields\n')
