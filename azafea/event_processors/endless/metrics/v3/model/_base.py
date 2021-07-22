@@ -269,6 +269,8 @@ def parse_record(record: bytes) -> Tuple[RequestData, RequestChannel]:
     # - the metrics request (a serialized GVariant)
     timestamp_bytes, request_bytes = record[:8], record[8:]
 
+    received_at_timestamp = int.from_bytes(timestamp_bytes, 'little') * 1000  # in nanoseconds
+
     payload = GLib.Variant.new_from_bytes(VARIANT_TYPE, GLib.Bytes.new(request_bytes), False)
 
     if not payload.is_normal_form():
@@ -276,7 +278,23 @@ def parse_record(record: bytes) -> Tuple[RequestData, RequestChannel]:
             f'Metric request is not in the expected format: {VARIANT_TYPE.dup_string()}')
 
     relative_timestamp = payload.get_child_value(0).get_int64()
-    absolute_timestamp = payload.get_child_value(1).get_int64()
+
+    # Take care of the gap between the client’s clock and the server’s clock.
+    # We assume that the difference between the time the request is sent and
+    # the time it is received is less than 10 minutes. If the request is
+    # received before it is sent (we ignore a 1 second gap), there’s also a
+    # problem for sure. In these two cases, using the server time is probably
+    # better than using the client one.
+    # See docs/source/timestamp-algorithm.rst in this repository for details.
+    client_absolute_timestamp = payload.get_child_value(1).get_int64()
+    gap = received_at_timestamp - client_absolute_timestamp
+    if -1 <= gap / 1_000_000_000 <= 600:
+        # Small difference, keep the client timestamp
+        absolute_timestamp = client_absolute_timestamp
+    else:
+        # Big difference, use the server timestamp instead
+        absolute_timestamp = received_at_timestamp
+
     image_id = payload.get_child_value(2).get_string()
     site = {key: value for (key, value) in payload.get_child_value(3).unpack().items() if value}
     flags = payload.get_child_value(4).get_byte()
