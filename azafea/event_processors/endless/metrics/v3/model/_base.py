@@ -10,6 +10,7 @@
 import logging
 from dataclasses import dataclass
 from datetime import date
+from hashlib import sha512
 from typing import Any, Dict, Optional, Set, Tuple, Type, cast
 
 from gi.repository import GLib
@@ -87,6 +88,24 @@ class Channel(Base):
     live = Column(Boolean, nullable=False)
 
 
+class Request(Base):
+    __tablename__ = 'metrics_request_v3'
+
+    id = Column(Integer, primary_key=True)
+    sha512 = Column(Unicode, nullable=False, unique=True)
+    received_at = Column(DateTime(timezone=True), nullable=False)
+    absolute_timestamp = Column(BigInteger, nullable=False)
+    relative_timestamp = Column(BigInteger, nullable=False)
+
+    @declared_attr
+    def channel_id(cls) -> Column:
+        return Column(Integer, ForeignKey(Channel.id), index=True)
+
+    @declared_attr
+    def channel(cls) -> relationship:
+        return relationship(Channel)
+
+
 class EmptyPayloadError(Exception):
     pass
 
@@ -115,8 +134,7 @@ class MetricMeta(DeclarativeMeta):
             if cls.__ignore_empty_payload__:  # type: ignore
                 IGNORED_EMPTY_PAYLOAD_ERRORS.add(event_uuid)
 
-        # FIXME: Do we have to cast? https://github.com/python/typeshed/issues/3386
-        return cast(MetricMeta, cls)
+        return cls
 
 
 class MetricEvent(Base, metaclass=MetricMeta):
@@ -233,6 +251,8 @@ class RequestData:
     absolute_timestamp: int
     singulars: Tuple[GLib.Variant, ...]
     aggregates: Tuple[GLib.Variant, ...]
+    received_at: int
+    sha512: str
 
     def asdict(self) -> Dict[str, Any]:
         return {
@@ -247,12 +267,7 @@ def parse_record(record: bytes) -> Tuple[RequestData, RequestChannel]:
     # record is an array of bytes, the concatenation of:
     # - a datetime encoded on 8 bytes (a 64 bits integer timestamp in microseconds)
     # - the metrics request (a serialized GVariant)
-    # timestamp_bytes, request_bytes = record[:8], record[8:]
-    request_bytes = record[8:]
-
-    # TODO: is this useful?
-    # received_at_timestamp = int.from_bytes(timestamp_bytes, 'little')
-    # received_at = datetime.fromtimestamp(received_at_timestamp / 1000000, tz=timezone.utc)
+    timestamp_bytes, request_bytes = record[:8], record[8:]
 
     payload = GLib.Variant.new_from_bytes(VARIANT_TYPE, GLib.Bytes.new(request_bytes), False)
 
@@ -272,7 +287,11 @@ def parse_record(record: bytes) -> Tuple[RequestData, RequestChannel]:
 
     channel = RequestChannel(image_id=image_id, site=site, dual_boot=dual_boot, live=live)
     request = RequestData(
-        relative_timestamp, absolute_timestamp, singulars, aggregates
+        relative_timestamp,
+        absolute_timestamp,
+        singulars, aggregates,
+        int.from_bytes(timestamp_bytes, 'little'),
+        sha512(request_bytes).hexdigest()
     )
     return request, channel
 

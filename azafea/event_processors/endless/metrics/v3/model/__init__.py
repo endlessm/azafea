@@ -26,6 +26,7 @@ from ._base import (  # noqa: F401
     EmptyPayloadError,
     InvalidAggregateEvent,
     InvalidSingularEvent,
+    Request,
     SingularEvent,
     UnknownAggregateEvent,
     UnknownEvent,
