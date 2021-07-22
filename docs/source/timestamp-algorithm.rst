@@ -66,15 +66,13 @@ Naive Attempt
 
 Well, this should be simple, right? We will just use an **absolute timestamp**,
 package it with the event, and pat ourselves on the back! Let's see what
-happens in this case:
+happens in this case::
 
-```
-User boots up system at Noon (Day X).
-User plays Akintu for 1 hour. It is now 1:00 PM (Day X).
-User sets the system clock forward one day, tricking the metrics system. It is now 1:00 PM (Day X + 1).
-Any events recorded now will appear to have occurred in the future.
-(The previous Akintu event would still be correct as it was recorded before the clock change)
-```
+  User boots up system at Noon (Day X).
+  User plays Akintu for 1 hour. It is now 1:00 PM (Day X).
+  User sets the system clock forward one day, tricking the metrics system. It is now 1:00 PM (Day X + 1).
+  Any events recorded now will appear to have occurred in the future.
+  (The previous Akintu event would still be correct as it was recorded before the clock change)
 
 This problem also exists without setting the system clock to a bogus time. If
 the user's computer is offline for a long time, his or her system clock will
@@ -191,4 +189,4 @@ does the following::
   … Assuming we've passed the sanity check …
   Origin Boot Absolute Time = Network Request Absolute Time - Network Request Relative Time
   For each metric in request:
-      Metric Corrected Relative Timestamp = Origin Boot Absolute Time + Metric Corrected Relative Timestamp
+      Metric Corrected Absolute Timestamp = Origin Boot Absolute Time + Metric Corrected Relative Timestamp
