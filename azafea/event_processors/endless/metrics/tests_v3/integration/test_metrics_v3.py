@@ -8,6 +8,7 @@
 
 
 from datetime import datetime, timedelta, timezone, date
+from hashlib import sha512
 from uuid import UUID
 
 from gi.repository import GLib
@@ -19,19 +20,20 @@ class TestMetrics(IntegrationTest):
     handler_module = 'azafea.event_processors.endless.metrics.v3'
 
     def test_request(self):
-        from azafea.event_processors.endless.metrics.v3.model import Channel
+        from azafea.event_processors.endless.metrics.v3.model import Channel, Request
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(Channel)
+        self.ensure_tables(Channel, Request)
 
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
+        absolute_timestamp = int(now.timestamp() * 1000000000)
         request = GLib.Variant(
             '(xxsa{ss}ya(aysxmv)a(ayssumv))',
             (
                 2000000,   # request relative timestamp (2 secs)
-                int(now.timestamp() * 1000000000),  # Absolute timestamp
+                absolute_timestamp,  # Absolute timestamp
                 'image_id',
                 {},
                 2,
@@ -58,6 +60,13 @@ class TestMetrics(IntegrationTest):
         with self.db as dbsession:
             channel = dbsession.query(Channel).one()
             assert channel.image_id == 'image_id'
+
+            request = dbsession.query(Request).one()
+            assert request.channel_id == channel.id
+            assert request.received_at == received_at
+            assert request.sha512 == sha512(request_body).hexdigest()
+            assert request.relative_timestamp == 2000000
+            assert request.absolute_timestamp == absolute_timestamp
 
     def test_invalid_request(self):
         from azafea.event_processors.endless.metrics.v3.model import Channel
@@ -116,18 +125,32 @@ class TestMetrics(IntegrationTest):
                 []                                     # aggregate events
             )
         )
+        request_2 = GLib.Variant(
+            '(xxsa{ss}ya(aysxmv)a(ayssumv))',
+            (
+                2000300,   # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),  # Absolute timestamp
+                'image_id',
+                {},
+                2,
+                [],                                    # singular events
+                []                                     # aggregate events
+            )
+        )
         assert request.is_normal_form()
         request_body = request.get_data_as_bytes().get_data()
+        request_body_2 = request_2.get_data_as_bytes().get_data()
 
         received_at = now + timedelta(minutes=2)
         received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
         received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
 
         record = received_at_timestamp_bytes + request_body
+        record_2 = received_at_timestamp_bytes + request_body_2
 
         # Send the event request to the Redis queue
         self.redis.lpush('test_channel_not_duplicate', record)
-        self.redis.lpush('test_channel_not_duplicate', record)
+        self.redis.lpush('test_channel_not_duplicate', record_2)
 
         # Run Azafea so it processes the event
         self.run_azafea()
