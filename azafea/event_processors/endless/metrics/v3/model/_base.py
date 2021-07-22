@@ -21,13 +21,13 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.declarative.api import DeclarativeMeta
 from sqlalchemy.orm import relationship
 from sqlalchemy.orm.query import Query
-from sqlalchemy.schema import Column, ForeignKey, UniqueConstraint
+from sqlalchemy.schema import Column, ForeignKey, UniqueConstraint, Index
 from sqlalchemy.types import BigInteger, Boolean, Date, DateTime, Integer, LargeBinary, Unicode
 
 from azafea.model import Base, DbSession
 
 from ..utils import get_child_values, get_event_datetime, get_variant
-
+from ....image import parse_endless_os_image
 
 log = logging.getLogger(__name__)
 
@@ -70,22 +70,62 @@ IGNORED_EMPTY_PAYLOAD_ERRORS: Set[str] = set()
 class Channel(Base):
     __tablename__ = 'channel_v3'
 
-    __table_args__ = (
-        UniqueConstraint('image_id', 'site', 'dual_boot', 'live'),
-    )
-
     id = Column(Integer, primary_key=True)
 
     #: image ID (e.g. ``eos-eos3.1-amd64-amd64.170115-071322.base``)
     image_id = Column(Unicode, nullable=False)
+    image_product = Column(Unicode, index=True)
+    image_branch = Column(Unicode, index=True)
+    image_arch = Column(Unicode, index=True)
+    image_platform = Column(Unicode, index=True)
+    image_timestamp = Column(DateTime, index=True)
+    image_personality = Column(Unicode, index=True)
     #: dictionary of string keys (such as ``facility``, ``city`` and
     #: ``state``) to the values provided in the location.conf file (written by
     #: the ``eos-label-location`` utility)
     site = Column(JSONB, nullable=False)
+    site_id = Column(Unicode)
+    site_city = Column(Unicode)
+    site_state = Column(Unicode)
+    site_street = Column(Unicode)
+    site_country = Column(Unicode)
+    site_facility = Column(Unicode)
     #: dual boot computer
     dual_boot = Column(Boolean, nullable=False)
     #: live sessions
     live = Column(Boolean, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint('image_id', 'site', 'dual_boot', 'live'),
+        Index('ix_channel_v3_site_id', site_id,
+              postgresql_where=(site_id.isnot(None))),
+        Index('ix_channel_v3_site_city', site_city,
+              postgresql_where=(site_city.isnot(None))),
+        Index('ix_channel_v3_site_state', site_state,
+              postgresql_where=(site_state.isnot(None))),
+        Index('ix_channel_v3_site_street', site_street,
+              postgresql_where=(site_street.isnot(None))),
+        Index('ix_channel_v3_site_country', site_country,
+              postgresql_where=(site_country.isnot(None))),
+        Index('ix_channel_v3_site_facility', site_facility,
+              postgresql_where=(site_facility.isnot(None))),
+    )
+
+    def __init__(self, image_id: str, site: Dict[str, Any], **kwargs: Dict[str, Any]) -> None:
+        images_values: Dict[str, Any] = {
+            'image_id': image_id,
+            **parse_endless_os_image(image_id, tzinfo=False)
+        }
+
+        site_columns = [
+            'site_id', 'site_city', 'site_state', 'site_street', 'site_country', 'site_facility'
+        ]
+        site_values = {
+            f'site_{key}': value for key, value in site.items()
+            if f'site_{key}' in site_columns
+        }
+        fields = {**kwargs, **images_values, **site_values, **{'site': site}}
+        super().__init__(**fields)
 
 
 class Request(Base):
