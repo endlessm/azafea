@@ -134,8 +134,7 @@ class MetricMeta(DeclarativeMeta):
             if cls.__ignore_empty_payload__:  # type: ignore
                 IGNORED_EMPTY_PAYLOAD_ERRORS.add(event_uuid)
 
-        # FIXME: Do we have to cast? https://github.com/python/typeshed/issues/3386
-        return cast(MetricMeta, cls)
+        return cls
 
 
 class MetricEvent(Base, metaclass=MetricMeta):

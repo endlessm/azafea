@@ -10,7 +10,7 @@
 import copy
 from operator import attrgetter
 from types import TracebackType
-from typing import Any, Dict, Iterator, Optional, Tuple, Type, cast
+from typing import Any, Dict, Iterator, Optional, Tuple, Type
 
 from sqlalchemy.dialects.postgresql.base import PGDDLCompiler
 from sqlalchemy.engine import create_engine
@@ -254,8 +254,7 @@ views = {}
 
 class ViewMeta(DeclarativeMeta):
     def __new__(mcl, name: str, bases: Tuple[type, ...], attrs: Dict[str, Any]) -> 'ViewMeta':
-        # FIXME: Do we have to cast? https://github.com/python/typeshed/issues/3386
-        cls = cast(ViewMeta, super().__new__(mcl, name, bases, attrs))
+        cls = super().__new__(mcl, name, bases, attrs)
 
         tablename, query = attrs.get('__tablename__'), attrs.get('__query__')
         if not tablename or not query:
