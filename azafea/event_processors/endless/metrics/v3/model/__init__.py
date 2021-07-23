@@ -12,7 +12,7 @@ from typing import Any, Dict
 from gi.repository import GLib
 
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.schema import Column
+from sqlalchemy.schema import Column, Index
 from sqlalchemy.types import ARRAY, BigInteger, Boolean, Unicode
 
 from ..utils import clamp_to_int64, get_child_values
@@ -589,6 +589,11 @@ class DailyAppUsage(AggregateEvent):
     #: application ID
     app_id = Column(Unicode, nullable=False)
 
+    __table_args__ = (
+        Index('ix_daily_app_usage_app_id_started_at', 'app_id', 'period_start',
+              postgresql_ops={'app_id': 'varchar_pattern_ops'}),
+    )
+
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         return {'app_id': payload.get_string()}
@@ -610,6 +615,11 @@ class MonthlyAppUsage(AggregateEvent):
 
     #: application ID
     app_id = Column(Unicode, nullable=False)
+
+    __table_args__ = (
+        Index('ix_monthly_app_usage_app_id_started_at', 'app_id', 'period_start',
+              postgresql_ops={'app_id': 'varchar_pattern_ops'}),
+    )
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
