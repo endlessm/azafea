@@ -29,13 +29,21 @@ class TestMetrics(IntegrationTest):
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
         absolute_timestamp = int(now.timestamp() * 1000000000)
+        site = {
+            'id': 'id',
+            'city': 'city',
+            'state': 'state',
+            'street': 'street',
+            'country': 'country',
+            'facility': 'facility'
+        }
         request = GLib.Variant(
             '(xxsa{ss}ya(aysxmv)a(ayssumv))',
             (
                 2000000,   # request relative timestamp (2 secs)
                 absolute_timestamp,  # Absolute timestamp
-                'image_id',
-                {},
+                'eos-eos3.7-amd64-amd64.190419-225606.base',
+                site,
                 2,
                 [],                                    # singular events
                 []                                     # aggregate events
@@ -59,7 +67,19 @@ class TestMetrics(IntegrationTest):
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
             channel = dbsession.query(Channel).one()
-            assert channel.image_id == 'image_id'
+            assert channel.image_id == 'eos-eos3.7-amd64-amd64.190419-225606.base'
+            assert channel.image_product == 'eos'
+            assert channel.image_arch == 'amd64'
+            assert channel.image_branch == 'eos3.7'
+            assert channel.image_platform == 'amd64'
+            assert channel.image_timestamp == datetime(2019, 4, 19, 22, 56, 6)
+            assert channel.image_personality == 'base'
+            assert channel.site_id == 'id'
+            assert channel.site_city == 'city'
+            assert channel.site_state == 'state'
+            assert channel.site_street == 'street'
+            assert channel.site_country == 'country'
+            assert channel.site_facility == 'facility'
 
             request = dbsession.query(Request).one()
             assert request.channel_id == channel.id
@@ -118,7 +138,7 @@ class TestMetrics(IntegrationTest):
             (
                 2000000,   # request relative timestamp (2 secs)
                 int(now.timestamp() * 1000000000),  # Absolute timestamp
-                'image_id',
+                'eos-eos3.7-amd64-amd64.190419-225606.base',
                 {},
                 2,
                 [],                                    # singular events
@@ -130,7 +150,7 @@ class TestMetrics(IntegrationTest):
             (
                 2000300,   # request relative timestamp (2 secs)
                 int(now.timestamp() * 1000000000),  # Absolute timestamp
-                'image_id',
+                'eos-eos3.7-amd64-amd64.190419-225606.base',
                 {},
                 2,
                 [],                                    # singular events
@@ -158,7 +178,7 @@ class TestMetrics(IntegrationTest):
         # Ensure the record was inserted into the DB
         with self.db as dbsession:
             channel = dbsession.query(Channel).one()
-            assert channel.image_id == 'image_id'
+            assert channel.image_id == 'eos-eos3.7-amd64-amd64.190419-225606.base'
 
     def test_singular_events(self):
         from azafea.event_processors.endless.metrics.v3.model import (

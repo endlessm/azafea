@@ -13,7 +13,9 @@ from azafea.config import Config
 from azafea.model import Db
 from azafea.utils import progress
 
+from ...image import parse_endless_os_image
 from .model import (
+    Channel,
     InvalidAggregateEvent,
     InvalidSingularEvent,
     UnknownAggregateEvent,
@@ -42,6 +44,13 @@ def register_commands(subs: argparse._SubParsersAction) -> None:
     replay_unknown.add_argument('--chunk-size', type=int, default=5000,
                                 help='The size of the chunks to operate on')
     replay_unknown.set_defaults(subcommand=do_replay_unknown)
+
+    parse_images = subs.add_parser('parse-old-images',
+                                   help='Parse image IDs in existing channel records',
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parse_images.add_argument('--chunk-size', type=int, default=5000,
+                              help='The size of the chunks to operate on')
+    parse_images.set_defaults(subcommand=do_parse_images)
 
 
 def do_replay_invalid(config: Config, args: argparse.Namespace) -> None:
@@ -118,3 +127,31 @@ def do_replay_unknown(config: Config, args: argparse.Namespace) -> None:
             progress(chunk_number * args.chunk_size, total)
 
     progress(total, total, end='\n')
+
+
+def do_parse_images(config: Config, args: argparse.Namespace) -> None:
+    db = Db(config.postgresql)
+    log.info('Parsing image IDs for existing channel records')
+
+    with db as dbsession:
+        query = dbsession.chunked_query(Channel, chunk_size=args.chunk_size)
+        query = query.filter(Channel.image_product.is_(None))
+        query = query.reverse_chunks()
+        num_records = query.count()
+
+        if num_records == 0:
+            log.info('-> No Channel records with unparsed image IDs')
+            return None
+
+        for chunk_number, chunk in enumerate(query, start=1):
+            for channel in chunk:
+                parsed_image = parse_endless_os_image(channel.image_id, tzinfo=False)
+                for k, v in parsed_image.items():
+                    setattr(channel, k, v)
+
+            dbsession.commit()
+            progress(chunk_number * args.chunk_size, num_records)
+
+    progress(num_records, num_records, end='\n')
+
+    log.info('All done!')

@@ -268,3 +268,85 @@ class TestMetrics(IntegrationTest):
         with self.db as dbsession:
             channel = dbsession.query(Channel).one()
             assert dbsession.query(UnknownAggregateEvent).count() == 1
+
+    def test_parse_old_images(self):
+        from azafea.event_processors.endless.metrics.v3.model import Channel
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Channel)
+
+        # Insert a channel without parsed image components
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
+
+        with self.db as dbsession:
+            channel = Channel(image_id=image_id, site={}, dual_boot=False, live=False)
+            channel.image_product = None
+            channel.image_branch = None
+            channel.image_arch = None
+            channel.image_platform = None
+            channel.image_timestamp = None
+            channel.image_personality = None
+            dbsession.add(channel)
+
+        with self.db as dbsession:
+            channel = dbsession.query(Channel).one()
+            assert channel.image_id == image_id
+            assert channel.image_product is None
+            assert channel.image_branch is None
+            assert channel.image_arch is None
+            assert channel.image_platform is None
+            assert channel.image_timestamp is None
+            assert channel.image_personality is None
+
+        # Parse the image for old channel records
+        self.run_subcommand('test_parse_old_images', 'parse-old-images')
+
+        with self.db as dbsession:
+            machine = dbsession.query(Channel).one()
+            assert machine.image_id == image_id
+            assert machine.image_product == 'eos'
+            assert machine.image_branch == 'eos3.7'
+            assert machine.image_arch == 'amd64'
+            assert machine.image_platform == 'amd64'
+            assert machine.image_timestamp == datetime(2019, 4, 19, 22, 56, 6)
+            assert machine.image_personality == 'base'
+
+    def test_parse_old_images_skips_already_done(self, capfd):
+        from azafea.event_processors.endless.metrics.v3.model import Channel
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Channel)
+
+        # Insert a channel without parsed image components
+        image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
+
+        with self.db as dbsession:
+            dbsession.add(Channel(image_id=image_id, site={}, dual_boot=False, live=False))
+
+        with self.db as dbsession:
+            machine = dbsession.query(Channel).one()
+            assert machine.image_id == image_id
+            assert machine.image_product == 'eos'
+            assert machine.image_branch == 'eos3.7'
+            assert machine.image_arch == 'amd64'
+            assert machine.image_platform == 'amd64'
+            assert machine.image_timestamp == datetime(2019, 4, 19, 22, 56, 6)
+            assert machine.image_personality == 'base'
+
+        # Parse the image for old channel records
+        self.run_subcommand('test_parse_old_images_skips_already_done', 'parse-old-images')
+
+        with self.db as dbsession:
+            machine = dbsession.query(Channel).one()
+            assert machine.image_id == image_id
+            assert machine.image_product == 'eos'
+            assert machine.image_branch == 'eos3.7'
+            assert machine.image_arch == 'amd64'
+            assert machine.image_platform == 'amd64'
+            assert machine.image_timestamp == datetime(2019, 4, 19, 22, 56, 6)
+            assert machine.image_personality == 'base'
+
+        capture = capfd.readouterr()
+        assert 'No Channel records with unparsed image IDs' in capture.out

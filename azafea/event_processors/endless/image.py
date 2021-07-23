@@ -54,7 +54,7 @@ class ImageParsingError(Exception):
     pass
 
 
-def parse_endless_os_image(image_id: str) -> ParsedImage:
+def parse_endless_os_image(image_id: str, tzinfo: bool = True) -> ParsedImage:
     if image_id == 'unknown':
         # In case of errors, the activation and pings come with an "unknown" image id which we must
         # treat as valid
@@ -99,6 +99,6 @@ def parse_endless_os_image(image_id: str) -> ParsedImage:
         'image_platform': match.group('platform'),
         'image_timestamp': datetime(date.year, date.month, date.day,
                                     time.hour, time.minute, time.second,
-                                    tzinfo=timezone.utc),
+                                    tzinfo=timezone.utc if tzinfo else None),
         'image_personality': match.group('personality'),
     }
