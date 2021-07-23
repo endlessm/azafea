@@ -36,7 +36,7 @@ def get_variant(value: GLib.Variant) -> GLib.Variant:
     return value
 
 
-# See the timestamp-algorithm.rst file in this directory for details
+# See docs/source/timestamp-algorithm.rst in this repository for details
 def get_event_datetime(request_absolute_timestamp: int, request_relative_timestamp: int,
                        event_relative_timestamp: int) -> datetime:
     origin_boot_absolute_timestamp = request_absolute_timestamp - request_relative_timestamp
