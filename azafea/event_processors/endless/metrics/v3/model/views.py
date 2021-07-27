@@ -21,6 +21,7 @@ from azafea.event_processors.endless.metrics.v2.model import (
 
 class LaunchedEquivalentExistingFlatpakViewV2(View):
     __tablename__ = 'launched_equivalent_existing_flatpak_view_v2'
+    __materialized__ = True
 
     __query__ = DbSession().query(
         LaunchedEquivalentExistingFlatpakV2.occured_at,
@@ -48,6 +49,7 @@ class LaunchedEquivalentExistingFlatpakViewV2(View):
 
 class LaunchedEquivalentInstallerForFlatpakViewV2(View):
     __tablename__ = 'launched_equivalent_installer_for_flatpak_view_v2'
+    __materialized__ = True
 
     __query__ = DbSession().query(
         LaunchedEquivalentInstallerForFlatpakV2.occured_at,
@@ -75,6 +77,7 @@ class LaunchedEquivalentInstallerForFlatpakViewV2(View):
 
 class LaunchedExistingFlatpakViewV2(View):
     __tablename__ = 'launched_existing_flatpak_view_v2'
+    __materialized__ = True
 
     __query__ = DbSession().query(
         LaunchedExistingFlatpakV2.occured_at,
@@ -102,6 +105,7 @@ class LaunchedExistingFlatpakViewV2(View):
 
 class LaunchedInstallerForFlatpakViewV2(View):
     __tablename__ = 'launched_installer_for_flatpak_view_v2'
+    __materialized__ = True
 
     __query__ = DbSession().query(
         LaunchedInstallerForFlatpakV2.occured_at,
@@ -129,6 +133,7 @@ class LaunchedInstallerForFlatpakViewV2(View):
 
 class LinuxPackageOpenedViewV2(View):
     __tablename__ = 'linux_package_opened_view_v2'
+    __materialized__ = True
 
     __query__ = DbSession().query(
         LinuxPackageOpenedV2.occured_at,
@@ -155,6 +160,7 @@ class LinuxPackageOpenedViewV2(View):
 
 class ParentalControlsBlockedFlatpakInstallViewV2(View):
     __tablename__ = 'parental_controls_blocked_flatpak_install_view_v2'
+    __materialized__ = True
 
     __query__ = DbSession().query(
         ParentalControlsBlockedFlatpakInstallV2.occured_at,
@@ -181,6 +187,7 @@ class ParentalControlsBlockedFlatpakInstallViewV2(View):
 
 class ParentalControlsBlockedFlatpakRunViewV2(View):
     __tablename__ = 'parental_controls_blocked_flatpak_run_view_v2'
+    __materialized__ = True
 
     __query__ = DbSession().query(
         ParentalControlsBlockedFlatpakRunV2.occured_at,
@@ -207,6 +214,7 @@ class ParentalControlsBlockedFlatpakRunViewV2(View):
 
 class ParentalControlsChangedViewV2(View):
     __tablename__ = 'parental_controls_changed_view_v2'
+    __materialized__ = True
 
     __query__ = DbSession().query(
         ParentalControlsChangedV2.occured_at,
@@ -239,6 +247,7 @@ class ParentalControlsChangedViewV2(View):
 
 class ParentalControlsEnabledViewV2(View):
     __tablename__ = 'parental_controls_enabled_view_v2'
+    __materialized__ = True
 
     __query__ = DbSession().query(
         ParentalControlsEnabledV2.occured_at,
@@ -265,6 +274,7 @@ class ParentalControlsEnabledViewV2(View):
 
 class ProgramDumpedCoreViewV2(View):
     __tablename__ = 'program_dumped_core_view_v2'
+    __materialized__ = True
 
     __query__ = DbSession().query(
         ProgramDumpedCoreV2.occured_at,
@@ -291,6 +301,7 @@ class ProgramDumpedCoreViewV2(View):
 
 class UpdaterFailureViewV2(View):
     __tablename__ = 'updater_failure_view_v2'
+    __materialized__ = True
 
     __query__ = DbSession().query(
         UpdaterFailureV2.occured_at,
@@ -318,6 +329,7 @@ class UpdaterFailureViewV2(View):
 
 class WindowsAppOpenedViewV2(View):
     __tablename__ = 'windows_app_opened_view_v2'
+    __materialized__ = True
 
     __query__ = DbSession().query(
         WindowsAppOpenedV2.occured_at,
@@ -344,6 +356,7 @@ class WindowsAppOpenedViewV2(View):
 
 class StartupFinishedViewV2(View):
     __tablename__ = 'startup_finished_view_v2'
+    __materialized__ = True
 
     __query__ = DbSession().query(
         StartupFinishedV2.occured_at,

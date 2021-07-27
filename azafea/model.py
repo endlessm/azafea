@@ -267,9 +267,14 @@ class ViewMeta(DeclarativeMeta):
             table.append_column(Column(column['name'], column['type'], primary_key=True))
         for from_table in query.selectable.locate_all_froms():
             table.add_is_dependent_on(from_table)
-        listen(Base.metadata, 'after_create', DDL(
-            f'CREATE MATERIALIZED VIEW IF NOT EXISTS "{tablename}" AS {query}'))
-        listen(Base.metadata, 'before_drop', DDL(f'DROP MATERIALIZED VIEW IF EXISTS "{tablename}"'))
+        if cls.__materialized__:
+            listen(Base.metadata, 'after_create', DDL(
+                f'CREATE MATERIALIZED VIEW IF NOT EXISTS "{tablename}" AS {query}'))
+            listen(Base.metadata, 'before_drop', DDL(
+                f'DROP MATERIALIZED VIEW IF EXISTS "{tablename}"'))
+        else:
+            listen(Base.metadata, 'after_create', DDL(f'CREATE VIEW "{tablename}" AS {query}'))
+            listen(Base.metadata, 'before_drop', DDL(f'DROP VIEW "{tablename}"'))
 
         return cls
 
@@ -278,6 +283,7 @@ class View(Base, metaclass=ViewMeta):
     """Declarative class for PostgreSQL materialized views."""
     __abstract__ = True
 
+    __materialized__ = False
     __query__: Query
 
 
