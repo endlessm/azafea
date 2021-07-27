@@ -262,6 +262,9 @@ class ViewMeta(DeclarativeMeta):
             return cls
 
         table = cls.__table__ = views[tablename] = Table(tablename, MetaData())
+        # Add properties needed to reference views in other views
+        cls.c, cls.self_group = table.c, table.self_group
+
         for column in query.column_descriptions:
             # FIXME: Always set all columns as primary keys, may need to be changed for other tables
             table.append_column(Column(column['name'], column['type'], primary_key=True))
