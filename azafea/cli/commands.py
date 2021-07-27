@@ -201,16 +201,15 @@ def do_refresh_views(config: Config, args: argparse.Namespace) -> None:
     db = Db(config.postgresql)
     total_nb_views = nb_views = len(views)
     log.info(f'Refreshing {nb_views} materialized views')
-
-    with db as dbsession:
-        for i, view in enumerate(views):
-            progress(i, nb_views)
-            try:
+    for i, view in enumerate(views):
+        progress(i, nb_views)
+        try:
+            with db as dbsession:
                 dbsession.connection().execute(f'REFRESH MATERIALIZED VIEW "{view}"')
-            except ProgrammingError as e:
-                assert 'UndefinedTable' in str(e)
-                log.debug(f'View {view} has not been created')
-                total_nb_views -= 1
+        except ProgrammingError as e:
+            assert 'UndefinedTable' in str(e)
+            log.debug(f'View {view} has not been created')
+            total_nb_views -= 1
 
     progress(total_nb_views, total_nb_views, end='\n')
     log.info(f'Successfully refreshed {total_nb_views} materialized views')
