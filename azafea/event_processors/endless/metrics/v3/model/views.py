@@ -1,3 +1,5 @@
+# type: ignore
+
 from . import events as v3
 from ._base import Channel
 from azafea.model import DbSession, View
