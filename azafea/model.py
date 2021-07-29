@@ -253,6 +253,8 @@ views = {}
 
 
 class ViewMeta(DeclarativeMeta):
+    __materialized__ = False
+
     def __new__(mcl, name: str, bases: Tuple[type, ...], attrs: Dict[str, Any]) -> 'ViewMeta':
         cls = super().__new__(mcl, name, bases, attrs)
 
@@ -270,6 +272,8 @@ class ViewMeta(DeclarativeMeta):
             table.append_column(Column(column['name'], column['type'], primary_key=True))
         for from_table in query.selectable.locate_all_froms():
             table.add_is_dependent_on(from_table)
+
+        # Creating materialized views allows "IF [NOT] EXISTS]" but creating normal views doesn’t
         if cls.__materialized__:
             listen(Base.metadata, 'after_create', DDL(
                 f'CREATE MATERIALIZED VIEW IF NOT EXISTS "{tablename}" AS {query}'))

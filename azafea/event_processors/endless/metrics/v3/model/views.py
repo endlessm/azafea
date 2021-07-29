@@ -1,38 +1,7 @@
-from .events import (
-    LaunchedEquivalentExistingFlatpak as LaunchedEquivalentExistingFlatpakV3,
-    LaunchedEquivalentInstallerForFlatpak as LaunchedEquivalentInstallerForFlatpakV3,
-    LaunchedExistingFlatpak as LaunchedExistingFlatpakV3,
-    LaunchedInstallerForFlatpak as LaunchedInstallerForFlatpakV3,
-    LinuxPackageOpened as LinuxPackageOpenedV3,
-    ParentalControlsBlockedFlatpakInstall as ParentalControlsBlockedFlatpakInstallV3,
-    ParentalControlsBlockedFlatpakRun as ParentalControlsBlockedFlatpakRunV3,
-    ParentalControlsChanged as ParentalControlsChangedV3,
-    ParentalControlsEnabled as ParentalControlsEnabledV3,
-    ProgramDumpedCore as ProgramDumpedCoreV3,
-    UpdaterFailure as UpdaterFailureV3,
-    WindowsAppOpened as WindowsAppOpenedV3,
-    StartupFinished as StartupFinishedV3
-)
+from . import events as v3
 from ._base import Channel
 from azafea.model import DbSession, View
-from azafea.event_processors.endless.metrics.v2.model import (
-    LaunchedEquivalentExistingFlatpak as LaunchedEquivalentExistingFlatpakV2,
-    LaunchedEquivalentInstallerForFlatpak as LaunchedEquivalentInstallerForFlatpakV2,
-    LaunchedExistingFlatpak as LaunchedExistingFlatpakV2,
-    LaunchedInstallerForFlatpak as LaunchedInstallerForFlatpakV2,
-    LinuxPackageOpened as LinuxPackageOpenedV2,
-    ParentalControlsBlockedFlatpakInstall as ParentalControlsBlockedFlatpakInstallV2,
-    ParentalControlsBlockedFlatpakRun as ParentalControlsBlockedFlatpakRunV2,
-    ParentalControlsChanged as ParentalControlsChangedV2,
-    ParentalControlsEnabled as ParentalControlsEnabledV2,
-    ProgramDumpedCore as ProgramDumpedCoreV2,
-    UpdaterFailure as UpdaterFailureV2,
-    WindowsAppOpened as WindowsAppOpenedV2,
-    StartupFinished as StartupFinishedV2,
-    Request,
-    Machine,
-    OSVersion
-)
+from azafea.event_processors.endless.metrics.v2 import model as v2
 
 
 class LaunchedEquivalentExistingFlatpakViewV2(View):
@@ -40,26 +9,26 @@ class LaunchedEquivalentExistingFlatpakViewV2(View):
     __materialized__ = True
 
     __query__ = DbSession().query(
-        LaunchedEquivalentExistingFlatpakV2.occured_at,
-        OSVersion.version.label('os_version'),
-        LaunchedEquivalentExistingFlatpakV2.replacement_app_id,
-        LaunchedEquivalentExistingFlatpakV2.argv,
-        Machine.image_id,
-        Machine.location.label('site'),
-        Machine.dualboot.label('dual_boot'),
-        Machine.live
+        v2.LaunchedEquivalentExistingFlatpak.occured_at,
+        v2.OSVersion.version.label('os_version'),
+        v2.LaunchedEquivalentExistingFlatpak.replacement_app_id,
+        v2.LaunchedEquivalentExistingFlatpak.argv,
+        v2.Machine.image_id,
+        v2.Machine.location.label('site'),
+        v2.Machine.dualboot.label('dual_boot'),
+        v2.Machine.live
     ).select_from(
-        LaunchedEquivalentExistingFlatpakV2
+        v2.LaunchedEquivalentExistingFlatpak
     ).outerjoin(
-        Request
+        v2.Request
     ).outerjoin(
-        Machine, Request.machine_id == Machine.machine_id
+        v2.Machine, v2.Request.machine_id == v2.Machine.machine_id
     ).outerjoin(
-        OSVersion
+        v2.OSVersion
     ).filter(
-        Machine.demo.is_(False)
+        v2.Machine.demo.is_(False)
     ).distinct(
-        LaunchedExistingFlatpakV2.id
+        v2.LaunchedExistingFlatpak.id
     )
 
 
@@ -68,26 +37,26 @@ class LaunchedEquivalentInstallerForFlatpakViewV2(View):
     __materialized__ = True
 
     __query__ = DbSession().query(
-        LaunchedEquivalentInstallerForFlatpakV2.occured_at,
-        OSVersion.version.label('os_version'),
-        LaunchedEquivalentInstallerForFlatpakV2.replacement_app_id,
-        LaunchedEquivalentInstallerForFlatpakV2.argv,
-        Machine.image_id,
-        Machine.location.label('site'),
-        Machine.dualboot.label('dual_boot'),
-        Machine.live
+        v2.LaunchedEquivalentInstallerForFlatpak.occured_at,
+        v2.OSVersion.version.label('os_version'),
+        v2.LaunchedEquivalentInstallerForFlatpak.replacement_app_id,
+        v2.LaunchedEquivalentInstallerForFlatpak.argv,
+        v2.Machine.image_id,
+        v2.Machine.location.label('site'),
+        v2.Machine.dualboot.label('dual_boot'),
+        v2.Machine.live
     ).select_from(
-        LaunchedEquivalentInstallerForFlatpakV2
+        v2.LaunchedEquivalentInstallerForFlatpak
     ).outerjoin(
-        Request
+        v2.Request
     ).outerjoin(
-        Machine, Request.machine_id == Machine.machine_id
+        v2.Machine, v2.Request.machine_id == v2.Machine.machine_id
     ).outerjoin(
-        OSVersion
+        v2.OSVersion
     ).filter(
-        Machine.demo.is_(False)
+        v2.Machine.demo.is_(False)
     ).distinct(
-        LaunchedEquivalentInstallerForFlatpakV2.id
+        v2.LaunchedEquivalentInstallerForFlatpak.id
     )
 
 
@@ -96,26 +65,26 @@ class LaunchedExistingFlatpakViewV2(View):
     __materialized__ = True
 
     __query__ = DbSession().query(
-        LaunchedExistingFlatpakV2.occured_at,
-        OSVersion.version.label('os_version'),
-        LaunchedExistingFlatpakV2.replacement_app_id,
-        LaunchedExistingFlatpakV2.argv,
-        Machine.image_id,
-        Machine.location.label('site'),
-        Machine.dualboot.label('dual_boot'),
-        Machine.live
+        v2.LaunchedExistingFlatpak.occured_at,
+        v2.OSVersion.version.label('os_version'),
+        v2.LaunchedExistingFlatpak.replacement_app_id,
+        v2.LaunchedExistingFlatpak.argv,
+        v2.Machine.image_id,
+        v2.Machine.location.label('site'),
+        v2.Machine.dualboot.label('dual_boot'),
+        v2.Machine.live
     ).select_from(
-        LaunchedExistingFlatpakV2
+        v2.LaunchedExistingFlatpak
     ).outerjoin(
-        Request
+        v2.Request
     ).outerjoin(
-        Machine, Request.machine_id == Machine.machine_id
+        v2.Machine, v2.Request.machine_id == v2.Machine.machine_id
     ).outerjoin(
-        OSVersion
+        v2.OSVersion
     ).filter(
-        Machine.demo.is_(False)
+        v2.Machine.demo.is_(False)
     ).distinct(
-        LaunchedExistingFlatpakV2.id
+        v2.LaunchedExistingFlatpak.id
     )
 
 
@@ -124,26 +93,26 @@ class LaunchedInstallerForFlatpakViewV2(View):
     __materialized__ = True
 
     __query__ = DbSession().query(
-        LaunchedInstallerForFlatpakV2.occured_at,
-        OSVersion.version.label('os_version'),
-        LaunchedInstallerForFlatpakV2.replacement_app_id,
-        LaunchedInstallerForFlatpakV2.argv,
-        Machine.image_id,
-        Machine.location.label('site'),
-        Machine.dualboot.label('dual_boot'),
-        Machine.live
+        v2.LaunchedInstallerForFlatpak.occured_at,
+        v2.OSVersion.version.label('os_version'),
+        v2.LaunchedInstallerForFlatpak.replacement_app_id,
+        v2.LaunchedInstallerForFlatpak.argv,
+        v2.Machine.image_id,
+        v2.Machine.location.label('site'),
+        v2.Machine.dualboot.label('dual_boot'),
+        v2.Machine.live
     ).select_from(
-        LaunchedInstallerForFlatpakV2
+        v2.LaunchedInstallerForFlatpak
     ).outerjoin(
-        Request
+        v2.Request
     ).outerjoin(
-        Machine, Request.machine_id == Machine.machine_id
+        v2.Machine, v2.Request.machine_id == v2.Machine.machine_id
     ).outerjoin(
-        OSVersion
+        v2.OSVersion
     ).filter(
-        Machine.demo.is_(False)
+        v2.Machine.demo.is_(False)
     ).distinct(
-        LaunchedInstallerForFlatpakV2.id
+        v2.LaunchedInstallerForFlatpak.id
     )
 
 
@@ -152,25 +121,25 @@ class LinuxPackageOpenedViewV2(View):
     __materialized__ = True
 
     __query__ = DbSession().query(
-        LinuxPackageOpenedV2.occured_at,
-        OSVersion.version.label('os_version'),
-        LinuxPackageOpenedV2.argv,
-        Machine.image_id,
-        Machine.location.label('site'),
-        Machine.dualboot.label('dual_boot'),
-        Machine.live
+        v2.LinuxPackageOpened.occured_at,
+        v2.OSVersion.version.label('os_version'),
+        v2.LinuxPackageOpened.argv,
+        v2.Machine.image_id,
+        v2.Machine.location.label('site'),
+        v2.Machine.dualboot.label('dual_boot'),
+        v2.Machine.live
     ).select_from(
-        LinuxPackageOpenedV2
+        v2.LinuxPackageOpened
     ).outerjoin(
-        Request
+        v2.Request
     ).outerjoin(
-        Machine, Request.machine_id == Machine.machine_id
+        v2.Machine, v2.Request.machine_id == v2.Machine.machine_id
     ).outerjoin(
-        OSVersion
+        v2.OSVersion
     ).filter(
-        Machine.demo.is_(False)
+        v2.Machine.demo.is_(False)
     ).distinct(
-        LinuxPackageOpenedV2.id
+        v2.LinuxPackageOpened.id
     )
 
 
@@ -179,25 +148,25 @@ class ParentalControlsBlockedFlatpakInstallViewV2(View):
     __materialized__ = True
 
     __query__ = DbSession().query(
-        ParentalControlsBlockedFlatpakInstallV2.occured_at,
-        OSVersion.version.label('os_version'),
-        ParentalControlsBlockedFlatpakInstallV2.app,
-        Machine.image_id,
-        Machine.location.label('site'),
-        Machine.dualboot.label('dual_boot'),
-        Machine.live
+        v2.ParentalControlsBlockedFlatpakInstall.occured_at,
+        v2.OSVersion.version.label('os_version'),
+        v2.ParentalControlsBlockedFlatpakInstall.app,
+        v2.Machine.image_id,
+        v2.Machine.location.label('site'),
+        v2.Machine.dualboot.label('dual_boot'),
+        v2.Machine.live
     ).select_from(
-        ParentalControlsBlockedFlatpakInstallV2
+        v2.ParentalControlsBlockedFlatpakInstall
     ).outerjoin(
-        Request
+        v2.Request
     ).outerjoin(
-        Machine, Request.machine_id == Machine.machine_id
+        v2.Machine, v2.Request.machine_id == v2.Machine.machine_id
     ).outerjoin(
-        OSVersion
+        v2.OSVersion
     ).filter(
-        Machine.demo.is_(False)
+        v2.Machine.demo.is_(False)
     ).distinct(
-        ParentalControlsBlockedFlatpakInstallV2.id
+        v2.ParentalControlsBlockedFlatpakInstall.id
     )
 
 
@@ -206,25 +175,25 @@ class ParentalControlsBlockedFlatpakRunViewV2(View):
     __materialized__ = True
 
     __query__ = DbSession().query(
-        ParentalControlsBlockedFlatpakRunV2.occured_at,
-        OSVersion.version.label('os_version'),
-        ParentalControlsBlockedFlatpakRunV2.app,
-        Machine.image_id,
-        Machine.location.label('site'),
-        Machine.dualboot.label('dual_boot'),
-        Machine.live
+        v2.ParentalControlsBlockedFlatpakRun.occured_at,
+        v2.OSVersion.version.label('os_version'),
+        v2.ParentalControlsBlockedFlatpakRun.app,
+        v2.Machine.image_id,
+        v2.Machine.location.label('site'),
+        v2.Machine.dualboot.label('dual_boot'),
+        v2.Machine.live
     ).select_from(
-        ParentalControlsBlockedFlatpakRunV2
+        v2.ParentalControlsBlockedFlatpakRun
     ).outerjoin(
-        Request
+        v2.Request
     ).outerjoin(
-        Machine, Request.machine_id == Machine.machine_id
+        v2.Machine, v2.Request.machine_id == v2.Machine.machine_id
     ).outerjoin(
-        OSVersion
+        v2.OSVersion
     ).filter(
-        Machine.demo.is_(False)
+        v2.Machine.demo.is_(False)
     ).distinct(
-        ParentalControlsBlockedFlatpakRunV2.id
+        v2.ParentalControlsBlockedFlatpakRun.id
     )
 
 
@@ -233,31 +202,31 @@ class ParentalControlsChangedViewV2(View):
     __materialized__ = True
 
     __query__ = DbSession().query(
-        ParentalControlsChangedV2.occured_at,
-        OSVersion.version.label('os_version'),
-        ParentalControlsChangedV2.app_filter_is_whitelist,
-        ParentalControlsChangedV2.app_filter,
-        ParentalControlsChangedV2.oars_filter,
-        ParentalControlsChangedV2.allow_user_installation,
-        ParentalControlsChangedV2.allow_system_installation,
-        ParentalControlsChangedV2.is_administrator,
-        ParentalControlsChangedV2.is_initial_setup,
-        Machine.image_id,
-        Machine.location.label('site'),
-        Machine.dualboot.label('dual_boot'),
-        Machine.live
+        v2.ParentalControlsChanged.occured_at,
+        v2.OSVersion.version.label('os_version'),
+        v2.ParentalControlsChanged.app_filter_is_whitelist,
+        v2.ParentalControlsChanged.app_filter,
+        v2.ParentalControlsChanged.oars_filter,
+        v2.ParentalControlsChanged.allow_user_installation,
+        v2.ParentalControlsChanged.allow_system_installation,
+        v2.ParentalControlsChanged.is_administrator,
+        v2.ParentalControlsChanged.is_initial_setup,
+        v2.Machine.image_id,
+        v2.Machine.location.label('site'),
+        v2.Machine.dualboot.label('dual_boot'),
+        v2.Machine.live
     ).select_from(
-        ParentalControlsChangedV2
+        v2.ParentalControlsChanged
     ).outerjoin(
-        Request
+        v2.Request
     ).outerjoin(
-        Machine, Request.machine_id == Machine.machine_id
+        v2.Machine, v2.Request.machine_id == v2.Machine.machine_id
     ).outerjoin(
-        OSVersion
+        v2.OSVersion
     ).filter(
-        Machine.demo.is_(False)
+        v2.Machine.demo.is_(False)
     ).distinct(
-        ParentalControlsChangedV2.id
+        v2.ParentalControlsChanged.id
     )
 
 
@@ -266,25 +235,25 @@ class ParentalControlsEnabledViewV2(View):
     __materialized__ = True
 
     __query__ = DbSession().query(
-        ParentalControlsEnabledV2.occured_at,
-        OSVersion.version.label('os_version'),
-        ParentalControlsEnabledV2.enabled,
-        Machine.image_id,
-        Machine.location.label('site'),
-        Machine.dualboot.label('dual_boot'),
-        Machine.live
+        v2.ParentalControlsEnabled.occured_at,
+        v2.OSVersion.version.label('os_version'),
+        v2.ParentalControlsEnabled.enabled,
+        v2.Machine.image_id,
+        v2.Machine.location.label('site'),
+        v2.Machine.dualboot.label('dual_boot'),
+        v2.Machine.live
     ).select_from(
-        ParentalControlsEnabledV2
+        v2.ParentalControlsEnabled
     ).outerjoin(
-        Request
+        v2.Request
     ).outerjoin(
-        Machine, Request.machine_id == Machine.machine_id
+        v2.Machine, v2.Request.machine_id == v2.Machine.machine_id
     ).outerjoin(
-        OSVersion
+        v2.OSVersion
     ).filter(
-        Machine.demo.is_(False)
+        v2.Machine.demo.is_(False)
     ).distinct(
-        ParentalControlsEnabledV2.id
+        v2.ParentalControlsEnabled.id
     )
 
 
@@ -293,25 +262,25 @@ class ProgramDumpedCoreViewV2(View):
     __materialized__ = True
 
     __query__ = DbSession().query(
-        ProgramDumpedCoreV2.occured_at,
-        OSVersion.version.label('os_version'),
-        ProgramDumpedCoreV2.info,
-        Machine.image_id,
-        Machine.location.label('site'),
-        Machine.dualboot.label('dual_boot'),
-        Machine.live
+        v2.ProgramDumpedCore.occured_at,
+        v2.OSVersion.version.label('os_version'),
+        v2.ProgramDumpedCore.info,
+        v2.Machine.image_id,
+        v2.Machine.location.label('site'),
+        v2.Machine.dualboot.label('dual_boot'),
+        v2.Machine.live
     ).select_from(
-        ProgramDumpedCoreV2
+        v2.ProgramDumpedCore
     ).outerjoin(
-        Request
+        v2.Request
     ).outerjoin(
-        Machine, Request.machine_id == Machine.machine_id
+        v2.Machine, v2.Request.machine_id == v2.Machine.machine_id
     ).outerjoin(
-        OSVersion
+        v2.OSVersion
     ).filter(
-        Machine.demo.is_(False)
+        v2.Machine.demo.is_(False)
     ).distinct(
-        ProgramDumpedCoreV2.id
+        v2.ProgramDumpedCore.id
     )
 
 
@@ -320,26 +289,26 @@ class UpdaterFailureViewV2(View):
     __materialized__ = True
 
     __query__ = DbSession().query(
-        UpdaterFailureV2.occured_at,
-        OSVersion.version.label('os_version'),
-        UpdaterFailureV2.component,
-        UpdaterFailureV2.error_message,
-        Machine.image_id,
-        Machine.location.label('site'),
-        Machine.dualboot.label('dual_boot'),
-        Machine.live
+        v2.UpdaterFailure.occured_at,
+        v2.OSVersion.version.label('os_version'),
+        v2.UpdaterFailure.component,
+        v2.UpdaterFailure.error_message,
+        v2.Machine.image_id,
+        v2.Machine.location.label('site'),
+        v2.Machine.dualboot.label('dual_boot'),
+        v2.Machine.live
     ).select_from(
-        UpdaterFailureV2
+        v2.UpdaterFailure
     ).outerjoin(
-        Request
+        v2.Request
     ).outerjoin(
-        Machine, Request.machine_id == Machine.machine_id
+        v2.Machine, v2.Request.machine_id == v2.Machine.machine_id
     ).outerjoin(
-        OSVersion
+        v2.OSVersion
     ).filter(
-        Machine.demo.is_(False)
+        v2.Machine.demo.is_(False)
     ).distinct(
-        UpdaterFailureV2.id
+        v2.UpdaterFailure.id
     )
 
 
@@ -348,25 +317,25 @@ class WindowsAppOpenedViewV2(View):
     __materialized__ = True
 
     __query__ = DbSession().query(
-        WindowsAppOpenedV2.occured_at,
-        OSVersion.version.label('os_version'),
-        WindowsAppOpenedV2.argv,
-        Machine.image_id,
-        Machine.location.label('site'),
-        Machine.dualboot.label('dual_boot'),
-        Machine.live
+        v2.WindowsAppOpened.occured_at,
+        v2.OSVersion.version.label('os_version'),
+        v2.WindowsAppOpened.argv,
+        v2.Machine.image_id,
+        v2.Machine.location.label('site'),
+        v2.Machine.dualboot.label('dual_boot'),
+        v2.Machine.live
     ).select_from(
-        WindowsAppOpenedV2
+        v2.WindowsAppOpened
     ).outerjoin(
-        Request
+        v2.Request
     ).outerjoin(
-        Machine, Request.machine_id == Machine.machine_id
+        v2.Machine, v2.Request.machine_id == v2.Machine.machine_id
     ).outerjoin(
-        OSVersion
+        v2.OSVersion
     ).filter(
-        Machine.demo.is_(False)
+        v2.Machine.demo.is_(False)
     ).distinct(
-        WindowsAppOpenedV2.id
+        v2.WindowsAppOpened.id
     )
 
 
@@ -375,30 +344,30 @@ class StartupFinishedViewV2(View):
     __materialized__ = True
 
     __query__ = DbSession().query(
-        StartupFinishedV2.occured_at,
-        OSVersion.version.label('os_version'),
-        StartupFinishedV2.firmware,
-        StartupFinishedV2.loader,
-        StartupFinishedV2.kernel,
-        StartupFinishedV2.initrd,
-        StartupFinishedV2.userspace,
-        StartupFinishedV2.total,
-        Machine.image_id,
-        Machine.location.label('site'),
-        Machine.dualboot.label('dual_boot'),
-        Machine.live
+        v2.StartupFinished.occured_at,
+        v2.OSVersion.version.label('os_version'),
+        v2.StartupFinished.firmware,
+        v2.StartupFinished.loader,
+        v2.StartupFinished.kernel,
+        v2.StartupFinished.initrd,
+        v2.StartupFinished.userspace,
+        v2.StartupFinished.total,
+        v2.Machine.image_id,
+        v2.Machine.location.label('site'),
+        v2.Machine.dualboot.label('dual_boot'),
+        v2.Machine.live
     ).select_from(
-        StartupFinishedV2
+        v2.StartupFinished
     ).outerjoin(
-        Request
+        v2.Request
     ).outerjoin(
-        Machine, Request.machine_id == Machine.machine_id
+        v2.Machine, v2.Request.machine_id == v2.Machine.machine_id
     ).outerjoin(
-        OSVersion
+        v2.OSVersion
     ).filter(
-        Machine.demo.is_(False)
+        v2.Machine.demo.is_(False)
     ).distinct(
-        StartupFinishedV2.id
+        v2.StartupFinished.id
     )
 
 
@@ -406,20 +375,29 @@ class LaunchedEquivalentExistingFlatpakView(View):
     __tablename__ = 'launched_equivalent_existing_flatpak_view'
 
     __query__ = DbSession().query(
-        LaunchedEquivalentExistingFlatpakV3.occured_at,
-        LaunchedEquivalentExistingFlatpakV3.os_version,
-        LaunchedEquivalentExistingFlatpakV3.replacement_app_id,
-        LaunchedEquivalentExistingFlatpakV3.argv,
+        v3.LaunchedEquivalentExistingFlatpak.occured_at,
+        v3.LaunchedEquivalentExistingFlatpak.os_version,
+        v3.LaunchedEquivalentExistingFlatpak.replacement_app_id,
+        v3.LaunchedEquivalentExistingFlatpak.argv,
         Channel.image_id,
         Channel.site,
         Channel.dual_boot,
         Channel.live
     ).select_from(
-        LaunchedEquivalentExistingFlatpakV3
+        v3.LaunchedEquivalentExistingFlatpak
     ).join(
         Channel
     ).union_all(
-        LaunchedEquivalentExistingFlatpakViewV2
+        DbSession().query(
+            LaunchedEquivalentExistingFlatpakViewV2.occured_at,
+            LaunchedEquivalentExistingFlatpakViewV2.os_version,
+            LaunchedEquivalentExistingFlatpakViewV2.replacement_app_id,
+            LaunchedEquivalentExistingFlatpakViewV2.argv,
+            LaunchedEquivalentExistingFlatpakViewV2.image_id,
+            LaunchedEquivalentExistingFlatpakViewV2.site,
+            LaunchedEquivalentExistingFlatpakViewV2.dual_boot,
+            LaunchedEquivalentExistingFlatpakViewV2.live
+        )
     )
 
 
@@ -427,20 +405,29 @@ class LaunchedEquivalentInstallerForFlatpakView(View):
     __tablename__ = 'launched_equivalent_installer_for_flatpak_view'
 
     __query__ = DbSession().query(
-        LaunchedEquivalentInstallerForFlatpakV3.occured_at,
-        LaunchedEquivalentInstallerForFlatpakV3.os_version,
-        LaunchedEquivalentInstallerForFlatpakV3.replacement_app_id,
-        LaunchedEquivalentInstallerForFlatpakV3.argv,
+        v3.LaunchedEquivalentInstallerForFlatpak.occured_at,
+        v3.LaunchedEquivalentInstallerForFlatpak.os_version,
+        v3.LaunchedEquivalentInstallerForFlatpak.replacement_app_id,
+        v3.LaunchedEquivalentInstallerForFlatpak.argv,
         Channel.image_id,
         Channel.site,
         Channel.dual_boot,
         Channel.live
     ).select_from(
-        LaunchedEquivalentInstallerForFlatpakV3
+        v3.LaunchedEquivalentInstallerForFlatpak
     ).join(
         Channel
     ).union_all(
-        LaunchedEquivalentInstallerForFlatpakViewV2
+        DbSession().query(
+            LaunchedEquivalentInstallerForFlatpakViewV2.occured_at,
+            LaunchedEquivalentInstallerForFlatpakViewV2.os_version,
+            LaunchedEquivalentInstallerForFlatpakViewV2.replacement_app_id,
+            LaunchedEquivalentInstallerForFlatpakViewV2.argv,
+            LaunchedEquivalentInstallerForFlatpakViewV2.image_id,
+            LaunchedEquivalentInstallerForFlatpakViewV2.site,
+            LaunchedEquivalentInstallerForFlatpakViewV2.dual_boot,
+            LaunchedEquivalentInstallerForFlatpakViewV2.live
+        )
     )
 
 
@@ -448,20 +435,29 @@ class LaunchedExistingFlatpakView(View):
     __tablename__ = 'launched_existing_flatpak_view'
 
     __query__ = DbSession().query(
-        LaunchedExistingFlatpakV3.occured_at,
-        LaunchedExistingFlatpakV3.os_version,
-        LaunchedExistingFlatpakV3.replacement_app_id,
-        LaunchedExistingFlatpakV3.argv,
+        v3.LaunchedExistingFlatpak.occured_at,
+        v3.LaunchedExistingFlatpak.os_version,
+        v3.LaunchedExistingFlatpak.replacement_app_id,
+        v3.LaunchedExistingFlatpak.argv,
         Channel.image_id,
         Channel.site,
         Channel.dual_boot,
         Channel.live
     ).select_from(
-        LaunchedExistingFlatpakV3
+        v3.LaunchedExistingFlatpak
     ).join(
         Channel
     ).union_all(
-        LaunchedExistingFlatpakViewV2
+        DbSession().query(
+            LaunchedExistingFlatpakViewV2.occured_at,
+            LaunchedExistingFlatpakViewV2.os_version,
+            LaunchedExistingFlatpakViewV2.replacement_app_id,
+            LaunchedExistingFlatpakViewV2.argv,
+            LaunchedExistingFlatpakViewV2.image_id,
+            LaunchedExistingFlatpakViewV2.site,
+            LaunchedExistingFlatpakViewV2.dual_boot,
+            LaunchedExistingFlatpakViewV2.live
+        )
     )
 
 
@@ -469,20 +465,29 @@ class LaunchedInstallerForFlatpakView(View):
     __tablename__ = 'launched_installer_for_flatpak_view'
 
     __query__ = DbSession().query(
-        LaunchedInstallerForFlatpakV3.occured_at,
-        LaunchedInstallerForFlatpakV3.os_version,
-        LaunchedInstallerForFlatpakV3.replacement_app_id,
-        LaunchedInstallerForFlatpakV3.argv,
+        v3.LaunchedInstallerForFlatpak.occured_at,
+        v3.LaunchedInstallerForFlatpak.os_version,
+        v3.LaunchedInstallerForFlatpak.replacement_app_id,
+        v3.LaunchedInstallerForFlatpak.argv,
         Channel.image_id,
         Channel.site,
         Channel.dual_boot,
         Channel.live
     ).select_from(
-        LaunchedInstallerForFlatpakV3
+        v3.LaunchedInstallerForFlatpak
     ).join(
         Channel
-    ).union(
-        LaunchedInstallerForFlatpakViewV2
+    ).union_all(
+        DbSession().query(
+            LaunchedInstallerForFlatpakViewV2.occured_at,
+            LaunchedInstallerForFlatpakViewV2.os_version,
+            LaunchedInstallerForFlatpakViewV2.replacement_app_id,
+            LaunchedInstallerForFlatpakViewV2.argv,
+            LaunchedInstallerForFlatpakViewV2.image_id,
+            LaunchedInstallerForFlatpakViewV2.site,
+            LaunchedInstallerForFlatpakViewV2.dual_boot,
+            LaunchedInstallerForFlatpakViewV2.live
+        )
     )
 
 
@@ -490,19 +495,27 @@ class LinuxPackageOpenedView(View):
     __tablename__ = 'linux_package_opened_view'
 
     __query__ = DbSession().query(
-        LinuxPackageOpenedV3.occured_at,
-        LinuxPackageOpenedV3.os_version,
-        LinuxPackageOpenedV3.argv,
+        v3.LinuxPackageOpened.occured_at,
+        v3.LinuxPackageOpened.os_version,
+        v3.LinuxPackageOpened.argv,
         Channel.image_id,
         Channel.site,
         Channel.dual_boot,
         Channel.live
     ).select_from(
-        LinuxPackageOpenedV3
+        v3.LinuxPackageOpened
     ).join(
         Channel
-    ).union(
-        LinuxPackageOpenedViewV2
+    ).union_all(
+        DbSession().query(
+            LinuxPackageOpenedViewV2.occured_at,
+            LinuxPackageOpenedViewV2.os_version,
+            LinuxPackageOpenedViewV2.argv,
+            LinuxPackageOpenedViewV2.image_id,
+            LinuxPackageOpenedViewV2.site,
+            LinuxPackageOpenedViewV2.dual_boot,
+            LinuxPackageOpenedViewV2.live
+        )
     )
 
 
@@ -510,19 +523,27 @@ class ParentalControlsBlockedFlatpakInstallView(View):
     __tablename__ = 'parental_controls_blocked_flatpak_install_view'
 
     __query__ = DbSession().query(
-        ParentalControlsBlockedFlatpakInstallV3.occured_at,
-        ParentalControlsBlockedFlatpakInstallV3.os_version,
-        ParentalControlsBlockedFlatpakInstallV3.app,
+        v3.ParentalControlsBlockedFlatpakInstall.occured_at,
+        v3.ParentalControlsBlockedFlatpakInstall.os_version,
+        v3.ParentalControlsBlockedFlatpakInstall.app,
         Channel.image_id,
         Channel.site,
         Channel.dual_boot,
         Channel.live
     ).select_from(
-        ParentalControlsBlockedFlatpakInstallV3
+        v3.ParentalControlsBlockedFlatpakInstall
     ).join(
         Channel
-    ).union(
-        ParentalControlsBlockedFlatpakInstallViewV2
+    ).union_all(
+        DbSession().query(
+            ParentalControlsBlockedFlatpakInstallViewV2.occured_at,
+            ParentalControlsBlockedFlatpakInstallViewV2.os_version,
+            ParentalControlsBlockedFlatpakInstallViewV2.app,
+            ParentalControlsBlockedFlatpakInstallViewV2.image_id,
+            ParentalControlsBlockedFlatpakInstallViewV2.site,
+            ParentalControlsBlockedFlatpakInstallViewV2.dual_boot,
+            ParentalControlsBlockedFlatpakInstallViewV2.live
+        )
     )
 
 
@@ -530,19 +551,27 @@ class ParentalControlsBlockedFlatpakRunView(View):
     __tablename__ = 'parental_controls_blocked_flatpak_run_view'
 
     __query__ = DbSession().query(
-        ParentalControlsBlockedFlatpakRunV3.occured_at,
-        ParentalControlsBlockedFlatpakRunV3.os_version,
-        ParentalControlsBlockedFlatpakRunV3.app,
+        v3.ParentalControlsBlockedFlatpakRun.occured_at,
+        v3.ParentalControlsBlockedFlatpakRun.os_version,
+        v3.ParentalControlsBlockedFlatpakRun.app,
         Channel.image_id,
         Channel.site,
         Channel.dual_boot,
         Channel.live
     ).select_from(
-        ParentalControlsBlockedFlatpakRunV3
+        v3.ParentalControlsBlockedFlatpakRun
     ).join(
         Channel
-    ).union(
-        ParentalControlsBlockedFlatpakRunViewV2
+    ).union_all(
+        DbSession().query(
+            ParentalControlsBlockedFlatpakRunViewV2.occured_at,
+            ParentalControlsBlockedFlatpakRunViewV2.os_version,
+            ParentalControlsBlockedFlatpakRunViewV2.app,
+            ParentalControlsBlockedFlatpakRunViewV2.image_id,
+            ParentalControlsBlockedFlatpakRunViewV2.site,
+            ParentalControlsBlockedFlatpakRunViewV2.dual_boot,
+            ParentalControlsBlockedFlatpakRunViewV2.live
+        )
     )
 
 
@@ -550,25 +579,39 @@ class ParentalControlsChangedView(View):
     __tablename__ = 'parental_controls_changed_view'
 
     __query__ = DbSession().query(
-        ParentalControlsChangedV3.occured_at,
-        ParentalControlsChangedV3.os_version,
-        ParentalControlsChangedV3.app_filter_is_whitelist,
-        ParentalControlsChangedV3.app_filter,
-        ParentalControlsChangedV3.oars_filter,
-        ParentalControlsChangedV3.allow_user_installation,
-        ParentalControlsChangedV3.allow_system_installation,
-        ParentalControlsChangedV3.is_administrator,
-        ParentalControlsChangedV3.is_initial_setup,
+        v3.ParentalControlsChanged.occured_at,
+        v3.ParentalControlsChanged.os_version,
+        v3.ParentalControlsChanged.app_filter_is_whitelist,
+        v3.ParentalControlsChanged.app_filter,
+        v3.ParentalControlsChanged.oars_filter,
+        v3.ParentalControlsChanged.allow_user_installation,
+        v3.ParentalControlsChanged.allow_system_installation,
+        v3.ParentalControlsChanged.is_administrator,
+        v3.ParentalControlsChanged.is_initial_setup,
         Channel.image_id,
         Channel.site,
         Channel.dual_boot,
         Channel.live
     ).select_from(
-        ParentalControlsChangedV3
+        v3.ParentalControlsChanged
     ).join(
         Channel
-    ).union(
-        ParentalControlsChangedViewV2
+    ).union_all(
+        DbSession().query(
+            ParentalControlsChangedViewV2.occured_at,
+            ParentalControlsChangedViewV2.os_version,
+            ParentalControlsChangedViewV2.app_filter_is_whitelist,
+            ParentalControlsChangedViewV2.app_filter,
+            ParentalControlsChangedViewV2.oars_filter,
+            ParentalControlsChangedViewV2.allow_user_installation,
+            ParentalControlsChangedViewV2.allow_system_installation,
+            ParentalControlsChangedViewV2.is_administrator,
+            ParentalControlsChangedViewV2.is_initial_setup,
+            ParentalControlsChangedViewV2.image_id,
+            ParentalControlsChangedViewV2.site,
+            ParentalControlsChangedViewV2.dual_boot,
+            ParentalControlsChangedViewV2.live
+        )
     )
 
 
@@ -576,19 +619,27 @@ class ParentalControlsEnabledView(View):
     __tablename__ = 'parental_controls_enabled_view'
 
     __query__ = DbSession().query(
-        ParentalControlsEnabledV3.occured_at,
-        ParentalControlsEnabledV3.os_version,
-        ParentalControlsEnabledV3.enabled,
+        v3.ParentalControlsEnabled.occured_at,
+        v3.ParentalControlsEnabled.os_version,
+        v3.ParentalControlsEnabled.enabled,
         Channel.image_id,
         Channel.site,
         Channel.dual_boot,
         Channel.live
     ).select_from(
-        ParentalControlsEnabledV3
+        v3.ParentalControlsEnabled
     ).join(
         Channel
-    ).union(
-        ParentalControlsEnabledViewV2
+    ).union_all(
+        DbSession().query(
+            ParentalControlsEnabledViewV2.occured_at,
+            ParentalControlsEnabledViewV2.os_version,
+            ParentalControlsEnabledViewV2.enabled,
+            ParentalControlsEnabledViewV2.image_id,
+            ParentalControlsEnabledViewV2.site,
+            ParentalControlsEnabledViewV2.dual_boot,
+            ParentalControlsEnabledViewV2.live
+        )
     )
 
 
@@ -596,19 +647,27 @@ class ProgramDumpedCoreView(View):
     __tablename__ = 'program_dumped_core_view'
 
     __query__ = DbSession().query(
-        ProgramDumpedCoreV3.occured_at,
-        ProgramDumpedCoreV3.os_version,
-        ProgramDumpedCoreV3.info,
+        v3.ProgramDumpedCore.occured_at,
+        v3.ProgramDumpedCore.os_version,
+        v3.ProgramDumpedCore.info,
         Channel.image_id,
         Channel.site,
         Channel.dual_boot,
         Channel.live
     ).select_from(
-        ProgramDumpedCoreV3
+        v3.ProgramDumpedCore
     ).join(
         Channel
-    ).union(
-        ProgramDumpedCoreViewV2
+    ).union_all(
+        DbSession().query(
+            ProgramDumpedCoreViewV2.occured_at,
+            ProgramDumpedCoreViewV2.os_version,
+            ProgramDumpedCoreViewV2.info,
+            ProgramDumpedCoreViewV2.image_id,
+            ProgramDumpedCoreViewV2.site,
+            ProgramDumpedCoreViewV2.dual_boot,
+            ProgramDumpedCoreViewV2.live
+        )
     )
 
 
@@ -616,20 +675,29 @@ class UpdaterFailureView(View):
     __tablename__ = 'updater_failure_view'
 
     __query__ = DbSession().query(
-        UpdaterFailureV3.occured_at,
-        UpdaterFailureV3.os_version,
-        UpdaterFailureV3.component,
-        UpdaterFailureV3.error_message,
+        v3.UpdaterFailure.occured_at,
+        v3.UpdaterFailure.os_version,
+        v3.UpdaterFailure.component,
+        v3.UpdaterFailure.error_message,
         Channel.image_id,
         Channel.site,
         Channel.dual_boot,
         Channel.live
     ).select_from(
-        UpdaterFailureV3
+        v3.UpdaterFailure
     ).join(
         Channel
-    ).union(
-        UpdaterFailureViewV2
+    ).union_all(
+        DbSession().query(
+            UpdaterFailureViewV2.occured_at,
+            UpdaterFailureViewV2.os_version,
+            UpdaterFailureViewV2.component,
+            UpdaterFailureViewV2.error_message,
+            UpdaterFailureViewV2.image_id,
+            UpdaterFailureViewV2.site,
+            UpdaterFailureViewV2.dual_boot,
+            UpdaterFailureViewV2.live
+        )
     )
 
 
@@ -637,19 +705,27 @@ class WindowsAppOpenedView(View):
     __tablename__ = 'windows_app_opened_view'
 
     __query__ = DbSession().query(
-        WindowsAppOpenedV3.occured_at,
-        WindowsAppOpenedV3.os_version,
-        WindowsAppOpenedV3.argv,
+        v3.WindowsAppOpened.occured_at,
+        v3.WindowsAppOpened.os_version,
+        v3.WindowsAppOpened.argv,
         Channel.image_id,
         Channel.site,
         Channel.dual_boot,
         Channel.live
     ).select_from(
-        WindowsAppOpenedV3
+        v3.WindowsAppOpened
     ).join(
         Channel
-    ).union(
-        WindowsAppOpenedViewV2
+    ).union_all(
+        DbSession().query(
+            WindowsAppOpenedViewV2.occured_at,
+            WindowsAppOpenedViewV2.os_version,
+            WindowsAppOpenedViewV2.argv,
+            WindowsAppOpenedViewV2.image_id,
+            WindowsAppOpenedViewV2.site,
+            WindowsAppOpenedViewV2.dual_boot,
+            WindowsAppOpenedViewV2.live
+        )
     )
 
 
@@ -657,22 +733,35 @@ class StartupFinishedView(View):
     __tablename__ = 'startup_finished_view'
 
     __query__ = DbSession().query(
-        StartupFinishedV3.occured_at,
-        StartupFinishedV3.os_version,
-        StartupFinishedV3.firmware,
-        StartupFinishedV3.loader,
-        StartupFinishedV3.kernel,
-        StartupFinishedV3.initrd,
-        StartupFinishedV3.userspace,
-        StartupFinishedV3.total,
+        v3.StartupFinished.occured_at,
+        v3.StartupFinished.os_version,
+        v3.StartupFinished.firmware,
+        v3.StartupFinished.loader,
+        v3.StartupFinished.kernel,
+        v3.StartupFinished.initrd,
+        v3.StartupFinished.userspace,
+        v3.StartupFinished.total,
         Channel.image_id,
         Channel.site,
         Channel.dual_boot,
         Channel.live
     ).select_from(
-        StartupFinishedV3
+        v3.StartupFinished
     ).join(
         Channel
     ).union_all(
-        StartupFinishedViewV2
+        DbSession().query(
+            StartupFinishedViewV2.occured_at,
+            StartupFinishedViewV2.os_version,
+            StartupFinishedViewV2.firmware,
+            StartupFinishedViewV2.loader,
+            StartupFinishedViewV2.kernel,
+            StartupFinishedViewV2.initrd,
+            StartupFinishedViewV2.userspace,
+            StartupFinishedViewV2.total,
+            StartupFinishedViewV2.image_id,
+            StartupFinishedViewV2.site,
+            StartupFinishedViewV2.dual_boot,
+            StartupFinishedViewV2.live
+        )
     )
