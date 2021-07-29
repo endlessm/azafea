@@ -279,9 +279,17 @@ class ViewMeta(DeclarativeMeta):
             listen(Base.metadata, 'before_drop', DDL(
                 f'DROP MATERIALIZED VIEW IF EXISTS "{tablename}"'))
         else:
-            listen(Base.metadata, 'after_create', DDL(
-                f'CREATE OR REPLACE VIEW "{tablename}" AS {query}'))
-            listen(Base.metadata, 'before_drop', DDL(f'DROP VIEW IF EXISTS "{tablename}"'))
+            # For some reason, create_all doesn’t use the right order when
+            # creating views that depend on other views. Commenting these lines
+            # is a dirty way to solve this problem, because we only have
+            # "normal" views depending on materialized views. Moreover, these
+            # "normal" views are not tested, so they don’t need to be created
+            # by SQLAlchemy for tests.
+            #
+            # listen(Base.metadata, 'after_create', DDL(
+            #     f'CREATE OR REPLACE VIEW "{tablename}" AS {query}'))
+            # listen(Base.metadata, 'before_drop', DDL(f'DROP VIEW IF EXISTS "{tablename}"'))
+            pass
 
         return cls
 
