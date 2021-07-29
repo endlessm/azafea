@@ -253,6 +253,8 @@ views = {}
 
 
 class ViewMeta(DeclarativeMeta):
+    __materialized__ = False
+
     def __new__(mcl, name: str, bases: Tuple[type, ...], attrs: Dict[str, Any]) -> 'ViewMeta':
         cls = super().__new__(mcl, name, bases, attrs)
 
@@ -262,14 +264,32 @@ class ViewMeta(DeclarativeMeta):
             return cls
 
         table = cls.__table__ = views[tablename] = Table(tablename, MetaData())
+        # Add properties needed to reference views in other views
+        cls.c, cls.self_group = table.c, table.self_group
+
         for column in query.column_descriptions:
             # FIXME: Always set all columns as primary keys, may need to be changed for other tables
             table.append_column(Column(column['name'], column['type'], primary_key=True))
         for from_table in query.selectable.locate_all_froms():
             table.add_is_dependent_on(from_table)
-        listen(Base.metadata, 'after_create', DDL(
-            f'CREATE MATERIALIZED VIEW IF NOT EXISTS "{tablename}" AS {query}'))
-        listen(Base.metadata, 'before_drop', DDL(f'DROP MATERIALIZED VIEW IF EXISTS "{tablename}"'))
+
+        if cls.__materialized__:
+            listen(Base.metadata, 'after_create', DDL(
+                f'CREATE MATERIALIZED VIEW IF NOT EXISTS "{tablename}" AS {query}'))
+            listen(Base.metadata, 'before_drop', DDL(
+                f'DROP MATERIALIZED VIEW IF EXISTS "{tablename}"'))
+        else:
+            # For some reason, create_all doesn’t use the right order when
+            # creating views that depend on other views. Commenting these lines
+            # is a dirty way to solve this problem, because we only have
+            # "normal" views depending on materialized views. Moreover, these
+            # "normal" views are not tested, so they don’t need to be created
+            # by SQLAlchemy for tests.
+            #
+            # listen(Base.metadata, 'after_create', DDL(
+            #     f'CREATE OR REPLACE VIEW "{tablename}" AS {query}'))
+            # listen(Base.metadata, 'before_drop', DDL(f'DROP VIEW IF EXISTS "{tablename}"'))
+            pass
 
         return cls
 
@@ -278,6 +298,7 @@ class View(Base, metaclass=ViewMeta):
     """Declarative class for PostgreSQL materialized views."""
     __abstract__ = True
 
+    __materialized__ = False
     __query__: Query
 
 
