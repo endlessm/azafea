@@ -273,15 +273,15 @@ class ViewMeta(DeclarativeMeta):
         for from_table in query.selectable.locate_all_froms():
             table.add_is_dependent_on(from_table)
 
-        # Creating materialized views allows "IF [NOT] EXISTS]" but creating normal views doesn’t
         if cls.__materialized__:
             listen(Base.metadata, 'after_create', DDL(
                 f'CREATE MATERIALIZED VIEW IF NOT EXISTS "{tablename}" AS {query}'))
             listen(Base.metadata, 'before_drop', DDL(
                 f'DROP MATERIALIZED VIEW IF EXISTS "{tablename}"'))
         else:
-            listen(Base.metadata, 'after_create', DDL(f'CREATE VIEW "{tablename}" AS {query}'))
-            listen(Base.metadata, 'before_drop', DDL(f'DROP VIEW "{tablename}"'))
+            listen(Base.metadata, 'after_create', DDL(
+                f'CREATE OR REPLACE VIEW "{tablename}" AS {query}'))
+            listen(Base.metadata, 'before_drop', DDL(f'DROP VIEW IF EXISTS "{tablename}"'))
 
         return cls
 

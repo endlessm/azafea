@@ -19,7 +19,7 @@ depends_on = None
 
 def upgrade():
     op.execute(
-        'CREATE VIEW "launched_equivalent_existing_flatpak_view" AS SELECT '
+        'CREATE OR REPLACE VIEW "launched_equivalent_existing_flatpak_view" AS SELECT '
         'anon_1.launched_equivalent_existing_flatpak_v3_occured_at AS '
         'anon_1_launched_equivalent_existing_flatpak_v3_occured_at, '
         'anon_1.launched_equivalent_existing_flatpak_v3_os_version AS '
@@ -71,7 +71,7 @@ def upgrade():
         'FROM launched_equivalent_existing_flatpak_view_v2) AS anon_1'
     )
     op.execute(
-        'CREATE VIEW "launched_equivalent_installer_for_flatpak_view" AS SELECT '
+        'CREATE OR REPLACE VIEW "launched_equivalent_installer_for_flatpak_view" AS SELECT '
         'anon_1.launched_equivalent_installer_for_flatpak_v3_occured_at AS '
         'anon_1_launched_equivalent_installer_for_flatpak_v3_occured_at, '
         'anon_1.launched_equivalent_installer_for_flatpak_v3_os_version AS '
@@ -123,7 +123,7 @@ def upgrade():
         'FROM launched_equivalent_installer_for_flatpak_view_v2) AS anon_1'
     )
     op.execute(
-        'CREATE VIEW "launched_existing_flatpak_view" AS SELECT '
+        'CREATE OR REPLACE VIEW "launched_existing_flatpak_view" AS SELECT '
         'anon_1.launched_existing_flatpak_v3_occured_at AS '
         'anon_1_launched_existing_flatpak_v3_occured_at, '
         'anon_1.launched_existing_flatpak_v3_os_version AS '
@@ -175,7 +175,7 @@ def upgrade():
         'FROM launched_existing_flatpak_view_v2) AS anon_1'
     )
     op.execute(
-        'CREATE VIEW "launched_installer_for_flatpak_view" AS SELECT '
+        'CREATE OR REPLACE VIEW "launched_installer_for_flatpak_view" AS SELECT '
         'anon_1.launched_installer_for_flatpak_v3_occured_at AS '
         'anon_1_launched_installer_for_flatpak_v3_occured_at, '
         'anon_1.launched_installer_for_flatpak_v3_os_version AS '
@@ -227,7 +227,7 @@ def upgrade():
         'FROM launched_installer_for_flatpak_view_v2) AS anon_1'
     )
     op.execute(
-        'CREATE VIEW "linux_package_opened_view" AS SELECT '
+        'CREATE OR REPLACE VIEW "linux_package_opened_view" AS SELECT '
         'anon_1.linux_package_opened_v3_occured_at AS '
         'anon_1_linux_package_opened_v3_occured_at, '
         'anon_1.linux_package_opened_v3_os_version AS '
@@ -263,7 +263,7 @@ def upgrade():
         'FROM linux_package_opened_view_v2) AS anon_1'
     )
     op.execute(
-        'CREATE VIEW "parental_controls_blocked_flatpak_install_view" AS SELECT '
+        'CREATE OR REPLACE VIEW "parental_controls_blocked_flatpak_install_view" AS SELECT '
         'anon_1.parental_controls_blocked_flatpak_install_v3_occured_at AS '
         'anon_1_parental_controls_blocked_flatpak_install_v3_occured_at, '
         'anon_1.parental_controls_blocked_flatpak_install_v3_os_version AS '
@@ -309,7 +309,7 @@ def upgrade():
         'FROM parental_controls_blocked_flatpak_install_view_v2) AS anon_1'
     )
     op.execute(
-        'CREATE VIEW "parental_controls_blocked_flatpak_run_view" AS SELECT '
+        'CREATE OR REPLACE VIEW "parental_controls_blocked_flatpak_run_view" AS SELECT '
         'anon_1.parental_controls_blocked_flatpak_run_v3_occured_at AS '
         'anon_1_parental_controls_blocked_flatpak_run_v3_occured_at, '
         'anon_1.parental_controls_blocked_flatpak_run_v3_os_version AS '
@@ -355,7 +355,7 @@ def upgrade():
         'FROM parental_controls_blocked_flatpak_run_view_v2) AS anon_1'
     )
     op.execute(
-        'CREATE VIEW "parental_controls_changed_view" AS SELECT '
+        'CREATE OR REPLACE VIEW "parental_controls_changed_view" AS SELECT '
         'anon_1.parental_controls_changed_v3_occured_at AS '
         'anon_1_parental_controls_changed_v3_occured_at, '
         'anon_1.parental_controls_changed_v3_os_version AS '
@@ -437,7 +437,7 @@ def upgrade():
         'FROM parental_controls_changed_view_v2) AS anon_1'
     )
     op.execute(
-        'CREATE VIEW "parental_controls_enabled_view" AS SELECT '
+        'CREATE OR REPLACE VIEW "parental_controls_enabled_view" AS SELECT '
         'anon_1.parental_controls_enabled_v3_occured_at AS '
         'anon_1_parental_controls_enabled_v3_occured_at, '
         'anon_1.parental_controls_enabled_v3_os_version AS '
@@ -483,7 +483,7 @@ def upgrade():
         'FROM parental_controls_enabled_view_v2) AS anon_1'
     )
     op.execute(
-        'CREATE VIEW "program_dumped_core_view" AS SELECT '
+        'CREATE OR REPLACE VIEW "program_dumped_core_view" AS SELECT '
         'anon_1.program_dumped_core_v3_occured_at AS '
         'anon_1_program_dumped_core_v3_occured_at, '
         'anon_1.program_dumped_core_v3_os_version AS '
@@ -519,7 +519,7 @@ def upgrade():
         'FROM program_dumped_core_view_v2) AS anon_1'
     )
     op.execute(
-        'CREATE VIEW "updater_failure_view" AS SELECT '
+        'CREATE OR REPLACE VIEW "updater_failure_view" AS SELECT '
         'anon_1.updater_failure_v3_occured_at AS '
         'anon_1_updater_failure_v3_occured_at, '
         'anon_1.updater_failure_v3_os_version AS '
@@ -559,7 +559,7 @@ def upgrade():
         'FROM updater_failure_view_v2) AS anon_1'
     )
     op.execute(
-        'CREATE VIEW "windows_app_opened_view" AS SELECT '
+        'CREATE OR REPLACE VIEW "windows_app_opened_view" AS SELECT '
         'anon_1.windows_app_opened_v3_occured_at AS '
         'anon_1_windows_app_opened_v3_occured_at, '
         'anon_1.windows_app_opened_v3_os_version AS '
@@ -596,7 +596,7 @@ def upgrade():
         'anon_1'
     )
     op.execute(
-        'CREATE VIEW "startup_finished_view" AS SELECT '
+        'CREATE OR REPLACE VIEW "startup_finished_view" AS SELECT '
         'anon_1.startup_finished_v3_occured_at AS '
         'anon_1_startup_finished_v3_occured_at, '
         'anon_1.startup_finished_v3_os_version AS '
@@ -655,16 +655,16 @@ def upgrade():
 
 
 def downgrade():
-    op.execute('DROP VIEW "launched_equivalent_existing_flatpak_view"')
-    op.execute('DROP VIEW "launched_equivalent_installer_for_flatpak_view"')
-    op.execute('DROP VIEW "launched_existing_flatpak_view"')
-    op.execute('DROP VIEW "launched_installer_for_flatpak_view"')
-    op.execute('DROP VIEW "linux_package_opened_view"')
-    op.execute('DROP VIEW "parental_controls_blocked_flatpak_install_view"')
-    op.execute('DROP VIEW "parental_controls_blocked_flatpak_run_view"')
-    op.execute('DROP VIEW "parental_controls_changed_view"')
-    op.execute('DROP VIEW "parental_controls_enabled_view"')
-    op.execute('DROP VIEW "program_dumped_core_view"')
-    op.execute('DROP VIEW "updater_failure_view"')
-    op.execute('DROP VIEW "windows_app_opened_view"')
-    op.execute('DROP VIEW "startup_finished_view"')
+    op.execute('DROP VIEW IF EXISTS "launched_equivalent_existing_flatpak_view"')
+    op.execute('DROP VIEW IF EXISTS "launched_equivalent_installer_for_flatpak_view"')
+    op.execute('DROP VIEW IF EXISTS "launched_existing_flatpak_view"')
+    op.execute('DROP VIEW IF EXISTS "launched_installer_for_flatpak_view"')
+    op.execute('DROP VIEW IF EXISTS "linux_package_opened_view"')
+    op.execute('DROP VIEW IF EXISTS "parental_controls_blocked_flatpak_install_view"')
+    op.execute('DROP VIEW IF EXISTS "parental_controls_blocked_flatpak_run_view"')
+    op.execute('DROP VIEW IF EXISTS "parental_controls_changed_view"')
+    op.execute('DROP VIEW IF EXISTS "parental_controls_enabled_view"')
+    op.execute('DROP VIEW IF EXISTS "program_dumped_core_view"')
+    op.execute('DROP VIEW IF EXISTS "updater_failure_view"')
+    op.execute('DROP VIEW IF EXISTS "windows_app_opened_view"')
+    op.execute('DROP VIEW IF EXISTS "startup_finished_view"')
