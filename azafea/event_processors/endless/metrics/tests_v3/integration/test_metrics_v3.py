@@ -545,7 +545,7 @@ class TestMetrics(IntegrationTest):
                         None
                     ),
                     (
-                        UUID('f2839256-ccbf-45ec-a5b0-fdc99c3f0a2b').bytes,
+                        UUID('22cdaa7c-e125-5f65-a535-c8345e5434f2').bytes,
                         'os_version',
                         '2020-06-15',
                         1000,
@@ -559,7 +559,7 @@ class TestMetrics(IntegrationTest):
                         None,
                     ),
                     (
-                        UUID('86cacd30-e1c0-4c66-8f1e-99fdb4c3546f').bytes,
+                        UUID('584f3525-4805-5d25-a0a3-5807f14b4d91').bytes,
                         'os_version',
                         '2020-06-15',
                         1000,
@@ -573,7 +573,7 @@ class TestMetrics(IntegrationTest):
                         None,
                     ),
                     (
-                        UUID('8023ae8e-f0c7-4fee-bc00-2d6b28061fce').bytes,
+                        UUID('2ee16e97-2993-5dcc-b9d2-841152520ad6').bytes,
                         'os_version',
                         '2020-06-15',
                         1000,

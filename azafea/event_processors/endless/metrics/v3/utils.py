@@ -10,6 +10,7 @@
 import logging
 from datetime import datetime, timezone
 from typing import Tuple
+from uuid import UUID, uuid5
 
 from gi.repository import GLib
 
@@ -54,3 +55,8 @@ def clamp_to_int64(u64: int) -> int:
         return GLib.MAXINT64
     else:
         return u64
+
+
+def aggregate_uuid(event_uuid: str, period: str) -> str:
+    """Generate an aggregate UUID from an event UUID"""
+    return str(uuid5(UUID(event_uuid), period))

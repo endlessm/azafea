@@ -15,7 +15,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.schema import Column, Index
 from sqlalchemy.types import ARRAY, BigInteger, Boolean, Unicode
 
-from ..utils import clamp_to_int64, get_child_values
+from ..utils import aggregate_uuid, clamp_to_int64, get_child_values
 from ._base import (  # noqa: F401
     AGGREGATE_EVENT_MODELS,
     IGNORED_EMPTY_PAYLOAD_ERRORS,
@@ -610,7 +610,7 @@ class MonthlyAppUsage(AggregateEvent):
 
     """
     __tablename__ = 'monthly_app_usage_v3'
-    __event_uuid__ = 'f2839256-ccbf-45ec-a5b0-fdc99c3f0a2b'
+    __event_uuid__ = aggregate_uuid(DailyAppUsage.__event_uuid__, 'monthly')
     __payload_type__ = 's'
 
     #: application ID
@@ -652,7 +652,7 @@ class MonthlyUsers(AggregateEvent):
 
     """
     __tablename__ = 'monthly_users_v3'
-    __event_uuid__ = '86cacd30-e1c0-4c66-8f1e-99fdb4c3546f'
+    __event_uuid__ = aggregate_uuid(DailyUsers.__event_uuid__, 'monthly')
     __payload_type__ = None
 
 
@@ -682,5 +682,5 @@ class MonthlySessionTime(AggregateEvent):
 
     """
     __tablename__ = 'monthly_session_time_v3'
-    __event_uuid__ = '8023ae8e-f0c7-4fee-bc00-2d6b28061fce'
+    __event_uuid__ = aggregate_uuid(DailySessionTime.__event_uuid__, 'monthly')
     __payload_type__ = None
