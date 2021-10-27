@@ -7,6 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+from fnmatch import fnmatch
 from importlib import import_module
 from pathlib import Path
 from typing import Mapping
@@ -26,7 +27,7 @@ def pytest_collection_modifyitems(items):
         if markers:
             continue
 
-        if '/tests/integration/' in item.nodeid:
+        if fnmatch(item.nodeid, '*/tests*/integration/*'):
             item.add_marker(pytest.mark.integration)
 
 
