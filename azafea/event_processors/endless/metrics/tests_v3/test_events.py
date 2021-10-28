@@ -22,7 +22,7 @@ def test_singular_registry():
         SINGULAR_EVENT_MODELS, SingularEvent)
 
     class TestSingularEvent(SingularEvent):
-        __tablename__ = 'test_singular'
+        __tablename__ = 'test_singular_v3'
         __event_uuid__ = '00000000-0000-0000-0000-000000000000'
 
     assert SINGULAR_EVENT_MODELS['00000000-0000-0000-0000-000000000000'] == TestSingularEvent
@@ -33,7 +33,7 @@ def test_aggregate_registry():
         AGGREGATE_EVENT_MODELS, AggregateEvent)
 
     class TestAggregateEvent(AggregateEvent):
-        __tablename__ = 'test_aggregate'
+        __tablename__ = 'test_aggregate_v3'
         __event_uuid__ = '00000000-0000-0000-0000-000000000000'
 
     assert AGGREGATE_EVENT_MODELS['00000000-0000-0000-0000-000000000000'] == TestAggregateEvent
@@ -43,7 +43,7 @@ def test_new_event_no_payload():
     from azafea.event_processors.endless.metrics.v3.model import SingularEvent
 
     class TestEventNoPayload(SingularEvent):
-        __tablename__ = 'test_singular_no_payload'
+        __tablename__ = 'test_singular_no_payload_v3'
         __event_uuid__ = '00000000-0000-0000-0000-000000000000'
         __payload_type__ = None
 
@@ -55,7 +55,7 @@ def test_new_event_allow_empty_payload():
     from azafea.event_processors.endless.metrics.v3.model import SingularEvent
 
     class TestEventIgnoreEmptyPayload(SingularEvent):
-        __tablename__ = 'test_singular_ignore_empty_payload'
+        __tablename__ = 'test_singular_ignore_empty_payload_v3'
         __event_uuid__ = '00000000-0000-0000-0000-000000000000'
         __ignore_empty_payload__ = True
         __payload_type__ = None
@@ -70,7 +70,7 @@ def test_new_event_with_payload():
     from azafea.event_processors.endless.metrics.v3.model import SingularEvent
 
     class TestEventWithPayload(SingularEvent):
-        __tablename__ = 'test_singular_with_payload'
+        __tablename__ = 'test_singular_with_payload_v3'
         __event_uuid__ = '00000000-0000-0000-0000-000000000000'
         __payload_type__ = '(is)'
 
@@ -97,7 +97,7 @@ def test_new_event_no_payload_but_payload_given(capfd):
     setup_logging(verbose=False)
 
     class TestEventNoPayloadButPayloadGiven(SingularEvent):
-        __tablename__ = 'test_singular_no_payload_but_payload_given'
+        __tablename__ = 'test_singular_no_payload_but_payload_given_v3'
         __event_uuid__ = '00000000-0000-0000-0000-000000000000'
         __payload_type__ = None
 
@@ -113,7 +113,7 @@ def test_new_event_no_payload_given():
     from azafea.event_processors.endless.metrics.v3.model import EmptyPayloadError, SingularEvent
 
     class TestEventNoPayloadGiven(SingularEvent):
-        __tablename__ = 'test_singular_no_payload_given'
+        __tablename__ = 'test_singular_no_payload_given_v3'
         __event_uuid__ = '00000000-0000-0000-0000-000000000000'
         __payload_type__ = 'i'
 
@@ -130,7 +130,7 @@ def test_new_event_wrong_payload_given():
     from azafea.event_processors.endless.metrics.v3.model import SingularEvent, WrongPayloadError
 
     class TestEventWrongPayloadGiven(SingularEvent):
-        __tablename__ = 'test_singular_wrong_payload_given'
+        __tablename__ = 'test_singular_wrong_payload_given_v3'
         __event_uuid__ = '00000000-0000-0000-0000-000000000000'
         __payload_type__ = 'i'
 
@@ -147,7 +147,7 @@ def test_new_unknown_event():
     from azafea.event_processors.endless.metrics.v3.model import UnknownEvent
 
     class TestUnknownEvent(UnknownEvent):
-        __tablename__ = 'test_unknown'
+        __tablename__ = 'test_unknown_v3'
 
     payload = GLib.Variant('mv', GLib.Variant('i', 43))
     event = TestUnknownEvent(payload=payload)
