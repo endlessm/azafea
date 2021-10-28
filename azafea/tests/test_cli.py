@@ -474,6 +474,7 @@ def test_replay_errors_fail_to_push(capfd, monkeypatch, make_config_file):
     assert 'Failed to push b\'event3\' back in "some-queue":' in capture.err
 
 
+@pytest.mark.integration
 def test_refresh_views(capfd, make_config_file):
     config_file = make_config_file({
         'postgresql': {'database': 'azafea-tests'},
@@ -485,6 +486,7 @@ def test_refresh_views(capfd, make_config_file):
     azafea.cli.run_command('-c', str(config_file), 'dropdb')
 
 
+@pytest.mark.integration
 def test_refresh_views_no_view(capfd, make_config_file):
     config_file = make_config_file({'postgresql': {'database': 'azafea-tests'}})
 
