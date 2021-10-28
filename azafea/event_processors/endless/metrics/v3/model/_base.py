@@ -9,7 +9,7 @@
 
 import logging
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from hashlib import sha512
 from typing import Any, Dict, Optional, Set, Tuple, Type, cast
 
@@ -268,6 +268,21 @@ class AggregateEvent(MetricEvent):
     period_start = Column(Date, nullable=False, index=True)
     count = Column(BigInteger, nullable=False)
 
+    @staticmethod
+    def parse_period_start(period_start_str: str) -> date:
+        """Convert the event period_start string to a date
+
+        Parse date strings in the %Y-%m-%d and %Y-%m formats and return
+        a date instance.
+        """
+        # First try the %Y-%m-%d isoformat, and fallback to %Y-%m
+        # parsing from the datetime class and convert it to a date. That
+        # implicitly adds the first day of the month.
+        try:
+            return date.fromisoformat(period_start_str)
+        except ValueError:
+            return datetime.strptime(period_start_str, '%Y-%m').date()
+
 
 class InvalidAggregateEvent(AggregateEvent, InvalidEvent):
     __tablename__ = 'invalid_aggregate_event_v3'
@@ -419,7 +434,7 @@ def new_aggregate_event(request: RequestData, channel: Channel, event_id: str,
             event = event_model(
                 payload=payload,  # type: ignore
                 os_version=os_version,
-                period_start=date.fromisoformat(period_start_str),
+                period_start=AggregateEvent.parse_period_start(period_start_str),
                 count=count,
                 channel=channel,
                 **request.asdict()

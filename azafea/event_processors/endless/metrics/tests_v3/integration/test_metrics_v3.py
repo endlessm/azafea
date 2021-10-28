@@ -547,7 +547,7 @@ class TestMetrics(IntegrationTest):
                     (
                         UUID('22cdaa7c-e125-5f65-a535-c8345e5434f2').bytes,
                         'os_version',
-                        '2020-06-15',
+                        '2020-06',
                         1000,
                         GLib.Variant('s', 'app_id')
                     ),
@@ -561,7 +561,7 @@ class TestMetrics(IntegrationTest):
                     (
                         UUID('584f3525-4805-5d25-a0a3-5807f14b4d91').bytes,
                         'os_version',
-                        '2020-06-15',
+                        '2020-06',
                         1000,
                         None,
                     ),
@@ -575,7 +575,7 @@ class TestMetrics(IntegrationTest):
                     (
                         UUID('2ee16e97-2993-5dcc-b9d2-841152520ad6').bytes,
                         'os_version',
-                        '2020-06-15',
+                        '2020-06',
                         1000,
                         None,
                     ),
@@ -612,7 +612,7 @@ class TestMetrics(IntegrationTest):
             monthly_app_usage = dbsession.query(MonthlyAppUsage).one()
             assert monthly_app_usage.channel_id == channel.id
             assert monthly_app_usage.count == 1000
-            assert monthly_app_usage.period_start.isoformat() == '2020-06-15'
+            assert monthly_app_usage.period_start.isoformat() == '2020-06-01'
             assert monthly_app_usage.app_id == 'app_id'
 
             daily_users = dbsession.query(DailyUsers).one()
@@ -623,16 +623,17 @@ class TestMetrics(IntegrationTest):
             monthly_users = dbsession.query(MonthlyUsers).one()
             assert monthly_users.channel_id == channel.id
             assert monthly_users.count == 1000
-            assert monthly_users.period_start.isoformat() == '2020-06-15'
+            assert monthly_users.period_start.isoformat() == '2020-06-01'
 
             daily_session_time = dbsession.query(DailySessionTime).one()
             assert daily_session_time.channel_id == channel.id
             assert daily_session_time.count == 1000
             assert daily_session_time.period_start.isoformat() == '2020-06-15'
+
             monthly_session_time = dbsession.query(MonthlySessionTime).one()
             assert monthly_session_time.channel_id == channel.id
             assert monthly_session_time.count == 1000
-            assert monthly_session_time.period_start.isoformat() == '2020-06-15'
+            assert monthly_session_time.period_start.isoformat() == '2020-06-01'
 
     def test_ignored_event(self):
         from azafea.event_processors.endless.metrics.v3.model import (
