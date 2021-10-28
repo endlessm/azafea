@@ -7,6 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+from datetime import date
 from typing import Any, Dict
 
 from gi.repository import GLib
@@ -393,6 +394,16 @@ def test_aggregate_event(event_model_name, payload, expected_attrs):
 
     for attr_name, attr_value in expected_attrs.items():
         assert getattr(event, attr_name) == attr_value
+
+
+def test_aggregate_parse_period_start():
+    from azafea.event_processors.endless.metrics.v3.model import AggregateEvent
+
+    assert AggregateEvent.parse_period_start('2000-01-01') == date(2000, 1, 1)
+    assert AggregateEvent.parse_period_start('2000-01') == date(2000, 1, 1)
+    with pytest.raises(ValueError) as excinfo:
+        AggregateEvent.parse_period_start('2000')
+    assert str(excinfo.value) == "time data '2000' does not match format '%Y-%m'"
 
 
 def test_invalid_parental_controls_changed_event():
