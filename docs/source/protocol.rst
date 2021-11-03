@@ -140,7 +140,7 @@ Event ID
 
 - Array of 16 unsigned bytes
 - GVariant symbol: ``ay``
-- Listed in :ref:`events page`
+- Listed in :ref:`events page`. For monthly events, this is derived from the UUID of the corresponding daily event with ``uuid5(daily_uuid, 'monthly')``.
 - See: http://linux.die.net/man/3/uuid
 
 OS Version
@@ -154,8 +154,10 @@ Period Start
 
 - String
 - GVariant symbol: ``s``
-- Date string format: ``YYYY-MM-DD``
-- Beginning of the period, with aggregation done using user’s computer time
+- A date string, indicating the beginning of the aggregation period. Aggregation is performed based on the client computer's local time.
+- Date string format:
+  - ``YYYY-MM-DD`` for events aggregated by calendar day
+  - ``YYYY-MM`` for events aggregated by calendar month, with the period implicitly beginning on the 1st of the month
 
 Count
 +++++
