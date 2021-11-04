@@ -112,6 +112,23 @@ Both are run automatically with the following command:
 ```
 
 
+## Dependencies
+
+Python dependencies are managed with [Pipenv](https://docs.pipenv.org/).
+Required packages are handled in [Pipfile](Pipfile) with the fully
+specified dependencies in `Pipfile.lock`. When changing requirements,
+run `pipenv lock` to update the lock file. The `--keep-outdated` option
+can be used to keep existing pins from being updated.
+
+The documentation is also built on [Read the
+Docs](https://readthedocs.org/), but that service doesn't support
+Pipenv. Dependencies for Read the Docs are managed in the
+[requirements.readthedocs.txt](requirements.readthedocs.txt) file, which
+is generated from `Pipfile.lock` by running `pipenv lock --requirements
+--dev > requirements.readthedocs.txt`. Please update this file when
+updating `Pipfile.lock`.
+
+
 ## Writing Unit Tests
 
 Unit tests are simply files in the `azafea/tests/` directory. They must be

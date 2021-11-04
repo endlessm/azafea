@@ -1,3 +1,6 @@
+# Some dev packages are just for Read the Docs so that requirements
+# don't need to be duplicated there. See
+# https://docs.readthedocs.io/en/stable/builds.html#default-versions-of-dependencies.
 [dev-packages]
 flake8-bugbear = "*"
 mypy = ">=0.750"
@@ -9,6 +12,8 @@ types-toml = "*"
 types-requests = "*"
 types-redis = "*"
 sphinx = "*"
+# For Read the Docs
+sphinx-rtd-theme = "*"
 sqlalchemy-stubs = ">=0.3"
 typing-extensions = ">= 3.7.4"
 
