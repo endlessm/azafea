@@ -5,6 +5,22 @@
 # Required
 version: 2
 
+build:
+  os: ubuntu-20.04
+
+  tools:
+    # Keep this in sync with the Dockerfile python image version.
+    python: "3.8"
+
+  # System packages needed for python requirements.
+  apt_packages:
+    # pycairo, dependency of pygobject
+    - libcairo2-dev
+    # pygobject
+    - libgirepository1.0-dev
+    # psycopg2
+    - libpq-dev
+
 python:
   install:
     - requirements: requirements.readthedocs.txt
