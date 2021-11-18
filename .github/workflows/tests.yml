@@ -71,8 +71,8 @@ jobs:
         run: docker load < docker-image.tar
       - name: Check Read the Docs requirements
         run: |
-          docker run --rm --network=host --entrypoint="" azafea-tests \
-            bash -c "diff -u requirements.readthedocs.txt <(pipenv lock --requirements --dev)"
+          docker run --rm --network=host --entrypoint="" -v "$PWD:/src:ro" \
+            azafea-tests /src/update-rtd-requirements --check
       - name: Documentation Building Test
         run: docker run --rm --network=host --entrypoint="" azafea-tests pipenv run doc -nW --keep-going
 

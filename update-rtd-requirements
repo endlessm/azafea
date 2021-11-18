@@ -1,0 +1,70 @@
+#!/bin/bash
+
+set -e
+
+prog=$(basename "$0")
+srcdir=$(dirname "$0")
+target="${srcdir}/requirements.readthedocs.txt"
+
+usage() {
+    cat <<EOF
+Usage: $0 [OPTION...]
+
+  -c, --check	check if current requirements are up to date
+  -h, --help	show this message and exit
+EOF
+}
+
+ARGS=$(getopt -n "$0" -o ch -l check,help -- "$@")
+eval set -- "$ARGS"
+
+CHECK=false
+while true; do
+    case "$1" in
+        -c|--check)
+            CHECK=true
+            shift
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "Unrecognized option \"$1\"" >&2
+            exit 1
+            ;;
+    esac
+done
+
+tmpreqs=$(mktemp)
+trap 'rm -f "$tmpreqs"' EXIT
+
+(
+    cd "$srcdir"
+    cat <<EOF
+#
+# Don't update this directly. To update these requirements from Pipfile,
+# run ./$prog from the root of the checkout.
+#
+EOF
+
+    # Standard package requirements so that sphinx-build can succeed.
+    pipenv lock --requirements --keep-outdated --no-header
+
+    # Dev packages required for RTD.
+    # https://docs.readthedocs.io/en/stable/builds.html#default-versions-of-dependencies
+    pipenv lock --dev-only --requirements --keep-outdated | grep \
+        -e '^sphinx\b' \
+        -e '^sphinx-rtd-theme\b'
+) > "$tmpreqs"
+
+if $CHECK; then
+    diff -u "$target" "$tmpreqs"
+else
+    chmod 644 "$tmpreqs"
+    mv -f "$tmpreqs" "$target"
+fi
