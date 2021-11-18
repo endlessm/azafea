@@ -124,9 +124,8 @@ The documentation is also built on [Read the
 Docs](https://readthedocs.org/), but that service doesn't support
 Pipenv. Dependencies for Read the Docs are managed in the
 [requirements.readthedocs.txt](requirements.readthedocs.txt) file, which
-is generated from `Pipfile.lock` by running `pipenv lock --requirements
---dev > requirements.readthedocs.txt`. Please update this file when
-updating `Pipfile.lock`.
+is generated from `Pipfile.lock` by running `./update-rtd-requirements`.
+Please run this when updating `Pipfile.lock`.
 
 
 ## Writing Unit Tests
