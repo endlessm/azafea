@@ -13,7 +13,7 @@ from gi.repository import GLib
 
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.schema import Column, Index
-from sqlalchemy.types import ARRAY, BigInteger, Boolean, Unicode
+from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, Unicode
 
 from ..utils import aggregate_uuid, clamp_to_int64, get_child_values
 from ._base import (  # noqa: F401
@@ -567,6 +567,39 @@ class ComputerInformation(SingularEvent):
             'used_disk': payload.get_child_value(2).get_uint32(),
             'free_disk': payload.get_child_value(3).get_uint32(),
             'info': cpu_info,
+        }
+
+
+class SplitFlatpakRepoStats(SingularEvent):
+    """Statictics for splitting the Flatpak repo from the OSTree repo.
+
+    Sent at most once.
+
+    :UUID name: ``SPLIT_FLATPAK_REPO_STATS`` in eos-boot-helper
+
+    .. versionadded:: 4.0.1
+
+    """
+    __tablename__ = 'split_flatpak_repo_stats_v3'
+    __event_uuid__ = '880fd091-2e68-4bd2-baa1-f6810fabcc1c'
+    __payload_type__ = '(uuuu)'
+
+    #: time elapsed in seconds
+    elapsed = Column(Integer, nullable=False)
+    #: number of OSTree refs duplicated
+    num_refs = Column(Integer, nullable=False)
+    #: number of OSTree objects duplicated
+    num_objects = Column(Integer, nullable=False)
+    #: number of OSTree static deltas duplicated
+    num_deltas = Column(Integer, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'elapsed': payload.get_child_value(0).get_uint32(),
+            'num_refs': payload.get_child_value(1).get_uint32(),
+            'num_objects': payload.get_child_value(2).get_uint32(),
+            'num_deltas': payload.get_child_value(3).get_uint32(),
         }
 
 

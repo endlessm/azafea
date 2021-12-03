@@ -359,6 +359,16 @@ def test_new_unknown_event():
             ],
         },
     ),
+    (
+        'SplitFlatpakRepoStats',
+        GLib.Variant('(uuuu)', (700, 500, 1000000, 0)),
+        {
+            'elapsed': 700,
+            'num_refs': 500,
+            'num_objects': 1000000,
+            'num_deltas': 0,
+        },
+    ),
 ])
 def test_singular_event(event_model_name, payload, expected_attrs):
     from azafea.event_processors.endless.metrics.v3 import model

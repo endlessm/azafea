@@ -187,7 +187,8 @@ class TestMetrics(IntegrationTest):
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened,
             ParentalControlsBlockedFlatpakInstall, ParentalControlsBlockedFlatpakRun,
             ProgramDumpedCore, UpdaterFailure, ParentalControlsEnabled,
-            ParentalControlsChanged, WindowsAppOpened, ComputerInformation
+            ParentalControlsChanged, WindowsAppOpened, ComputerInformation,
+            SplitFlatpakRepoStats,
         )
         from azafea.event_processors.endless.metrics.v3.model import _base
         _base.IGNORED_EMPTY_PAYLOAD_ERRORS = ['9d03daad-f1ed-41a8-bc5a-6b532c075832']
@@ -200,7 +201,8 @@ class TestMetrics(IntegrationTest):
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened,
             ParentalControlsBlockedFlatpakInstall, ParentalControlsBlockedFlatpakRun,
             ProgramDumpedCore, UpdaterFailure, ParentalControlsEnabled,
-            ParentalControlsChanged, WindowsAppOpened, ComputerInformation
+            ParentalControlsChanged, WindowsAppOpened, ComputerInformation,
+            SplitFlatpakRepoStats,
         )
 
         # Build a request as it would have been sent to us
@@ -370,7 +372,21 @@ class TestMetrics(IntegrationTest):
                                 [('model_1', 8, 14.5), ('model_2', 8, 14.5)]
                             )
                         )
-                    )
+                    ),
+                    (
+                        UUID('880fd091-2e68-4bd2-baa1-f6810fabcc1c').bytes,
+                        'os_version',
+                        100,
+                        GLib.Variant(
+                            '(uuuu)',
+                            (
+                                700,
+                                500,
+                                1000000,
+                                0
+                            )
+                        )
+                    ),
                 ],
                 [],                       # aggregate events
             )
@@ -503,6 +519,13 @@ class TestMetrics(IntegrationTest):
 
             assert dbsession.query(InvalidSingularEvent).count() == 0
             assert dbsession.query(UnknownSingularEvent).count() == 0
+
+            split_flatpak_repo_stats = dbsession.query(SplitFlatpakRepoStats).one()
+            assert split_flatpak_repo_stats.os_version == 'os_version'
+            assert split_flatpak_repo_stats.elapsed == 700
+            assert split_flatpak_repo_stats.num_refs == 500
+            assert split_flatpak_repo_stats.num_objects == 1000000
+            assert split_flatpak_repo_stats.num_deltas == 0
 
     def test_aggregate_events(self):
         from azafea.event_processors.endless.metrics.v3.model import (
@@ -644,7 +667,8 @@ class TestMetrics(IntegrationTest):
             ParentalControlsBlockedFlatpakInstall, ParentalControlsBlockedFlatpakRun,
             ProgramDumpedCore, UpdaterFailure, ParentalControlsEnabled,
             ParentalControlsChanged, WindowsAppOpened, DailyAppUsage, MonthlyAppUsage,
-            DailyUsers, MonthlyUsers, DailySessionTime, MonthlySessionTime
+            DailyUsers, MonthlyUsers, DailySessionTime, MonthlySessionTime,
+            SplitFlatpakRepoStats,
         )
         self.run_subcommand('initdb')
         self.ensure_tables(
@@ -655,7 +679,8 @@ class TestMetrics(IntegrationTest):
             ParentalControlsBlockedFlatpakInstall, ParentalControlsBlockedFlatpakRun,
             ProgramDumpedCore, UpdaterFailure, ParentalControlsEnabled,
             ParentalControlsChanged, WindowsAppOpened, DailyAppUsage, MonthlyAppUsage,
-            DailyUsers, MonthlyUsers, DailySessionTime, MonthlySessionTime
+            DailyUsers, MonthlyUsers, DailySessionTime, MonthlySessionTime,
+            SplitFlatpakRepoStats,
         )
         now = datetime.now(tz=timezone.utc)
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
@@ -731,6 +756,7 @@ class TestMetrics(IntegrationTest):
             assert dbsession.query(MonthlyUsers).count() == 0
             assert dbsession.query(DailySessionTime).count() == 0
             assert dbsession.query(MonthlySessionTime).count() == 0
+            assert dbsession.query(SplitFlatpakRepoStats).count() == 0
 
     def test_unknown_singular_events(self):
         from azafea.event_processors.endless.metrics.v3.model import (
