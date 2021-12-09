@@ -7,7 +7,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-from datetime import date
+from datetime import date, timedelta
 from typing import Any, Dict
 
 from gi.repository import GLib
@@ -357,6 +357,25 @@ def test_new_unknown_event():
                 {'model': 'model_1', 'cores': 8, 'max_frequency': 14.5},
                 {'model': 'model_2', 'cores': 8, 'max_frequency': 14.5}
             ],
+        },
+    ),
+    (
+        'SplitFlatpakRepoStats',
+        GLib.Variant(
+            '(uuuuuuutut)',
+            (700, 10, 500, 0, 1000000, 0, 200, 10000000000, 50, 20000000000)
+        ),
+        {
+            'elapsed': timedelta(seconds=700),
+            'num_os_refs': 10,
+            'num_flatpak_refs': 500,
+            'num_other_refs': 0,
+            'num_objects': 1000000,
+            'num_deltas': 0,
+            'num_apps': 200,
+            'size_apps': 10000000000,
+            'num_runtimes': 50,
+            'size_runtimes': 20000000000,
         },
     ),
 ])

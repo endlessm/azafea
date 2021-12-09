@@ -7,13 +7,14 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+from datetime import timedelta
 from typing import Any, Dict
 
 from gi.repository import GLib
 
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.schema import Column, Index
-from sqlalchemy.types import ARRAY, BigInteger, Boolean, Unicode
+from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, Interval, Unicode
 
 from ..utils import aggregate_uuid, clamp_to_int64, get_child_values
 from ._base import (  # noqa: F401
@@ -567,6 +568,64 @@ class ComputerInformation(SingularEvent):
             'used_disk': payload.get_child_value(2).get_uint32(),
             'free_disk': payload.get_child_value(3).get_uint32(),
             'info': cpu_info,
+        }
+
+
+class SplitFlatpakRepoStats(SingularEvent):
+    """Statistics for splitting the Flatpak repo from the OSTree repo.
+
+    Prior to Endless OS 4, both the OS and Flatpaks were stored in a
+    single, shared OSTree repository. On the first boot into Endless OS
+    4 or later, these are split into two repositories, one for the OS
+    and one for Flatpaks. This can take a long time,
+    so we report this event to quantify how long it takes and
+    why.
+
+    This is a one-time operation which only runs if needed, so this
+    event is sent at most once per Endless OS system.
+
+    :UUID name: ``SPLIT_FLATPAK_REPO_STATS`` in eos-boot-helper
+
+    .. versionadded:: 4.0.1
+    """
+    __tablename__ = 'split_flatpak_repo_stats_v3'
+    __event_uuid__ = '880fd091-2e68-4bd2-baa1-f6810fabcc1c'
+    __payload_type__ = '(uuuuuuutut)'
+
+    #: time elapsed in seconds
+    elapsed = Column(Interval, nullable=False)
+    #: number of OS OSTree refs duplicated
+    num_os_refs = Column(Integer, nullable=False)
+    #: number of Flatpak OSTree refs duplicated
+    num_flatpak_refs = Column(Integer, nullable=False)
+    #: number of other OSTree refs duplicated
+    num_other_refs = Column(Integer, nullable=False)
+    #: number of OSTree objects duplicated
+    num_objects = Column(Integer, nullable=False)
+    #: number of OSTree static deltas duplicated
+    num_deltas = Column(Integer, nullable=False)
+    #: number of Flatpak apps duplicated
+    num_apps = Column(Integer, nullable=False)
+    #: size of Flatpak apps duplicated in bytes
+    size_apps = Column(BigInteger, nullable=False)
+    #: number of Flatpak runtimes duplicated
+    num_runtimes = Column(Integer, nullable=False)
+    #: size of Flatpak runtimes duplicated in bytes
+    size_runtimes = Column(BigInteger, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            'elapsed': timedelta(seconds=payload.get_child_value(0).get_uint32()),
+            'num_os_refs': payload.get_child_value(1).get_uint32(),
+            'num_flatpak_refs': payload.get_child_value(2).get_uint32(),
+            'num_other_refs': payload.get_child_value(3).get_uint32(),
+            'num_objects': payload.get_child_value(4).get_uint32(),
+            'num_deltas': payload.get_child_value(5).get_uint32(),
+            'num_apps': payload.get_child_value(6).get_uint32(),
+            'size_apps': clamp_to_int64(payload.get_child_value(7).get_uint64()),
+            'num_runtimes': payload.get_child_value(8).get_uint32(),
+            'size_runtimes': clamp_to_int64(payload.get_child_value(9).get_uint64()),
         }
 
 

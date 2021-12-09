@@ -108,8 +108,11 @@ def get_event_datetime(request_absolute_timestamp: int, request_relative_timesta
 
 
 def clamp_to_int64(u64: int) -> int:
-    if u64 > GLib.MAXINT64:
-        log.error(f'Clamped integer larger than MAXINT64: {u64}')
+    try:
+        if u64 > GLib.MAXINT64:
+            raise ValueError(f'{u64} larger than {GLib.MAXINT64}')
+    except ValueError:
+        log.exception(f'Clamped integer larger than MAXINT64: {u64}')
         return GLib.MAXINT64
     else:
         return u64
