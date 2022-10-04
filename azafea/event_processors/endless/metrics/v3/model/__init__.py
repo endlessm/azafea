@@ -28,6 +28,7 @@ from ._base import (  # noqa: F401
     InvalidAggregateEvent,
     InvalidSingularEvent,
     Request,
+    RequestChannel,
     SingularEvent,
     UnknownAggregateEvent,
     UnknownEvent,
