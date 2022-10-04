@@ -19,6 +19,7 @@ from .model import (
     IGNORED_EVENTS,
     Channel,
     Request,
+    RequestChannel,
     new_aggregate_event,
     new_singular_event,
     parse_record,
@@ -29,13 +30,7 @@ from .utils import get_bytes
 log = logging.getLogger(__name__)
 
 
-def process(dbsession: DbSession, record: bytes) -> None:
-    log.debug('Processing metric v3 record: %s', record)
-
-    request_data, request_channel = parse_record(record)
-    events_and_functions = (
-        (request_data.singulars, new_singular_event),
-        (request_data.aggregates, new_aggregate_event))
+def _get_or_create_channel(dbsession: DbSession, request_channel: RequestChannel) -> Channel:
     channel_dict = asdict(request_channel)
 
     try:
@@ -44,6 +39,19 @@ def process(dbsession: DbSession, record: bytes) -> None:
             dbsession.add(channel)
     except IntegrityError:
         channel = dbsession.query(Channel).filter_by(**channel_dict).one()
+
+    return channel
+
+
+def process(dbsession: DbSession, record: bytes) -> None:
+    log.debug('Processing metric v3 record: %s', record)
+
+    request_data, request_channel = parse_record(record)
+    events_and_functions = (
+        (request_data.singulars, new_singular_event),
+        (request_data.aggregates, new_aggregate_event))
+
+    channel = _get_or_create_channel(dbsession, request_channel)
 
     try:
         with dbsession.begin_nested():
