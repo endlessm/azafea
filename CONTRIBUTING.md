@@ -74,7 +74,7 @@ database = "azafea"
 handler = "azafea.event_processors.endless.metrics.v3"
 
 [postgresql.connect_args]
-$ sudo docker build --rm --build-arg build_type=dev --tag azafea-dev .
+$ sudo docker build --rm --tag azafea-dev .
 ```
 
 Now try running the unit tests:
