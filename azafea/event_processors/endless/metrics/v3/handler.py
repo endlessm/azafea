@@ -16,7 +16,12 @@ from azafea.model import DbSession
 from sqlalchemy.exc import IntegrityError
 
 from .model import (
-    IGNORED_EVENTS, Channel, Request, new_aggregate_event, new_singular_event, parse_record
+    IGNORED_EVENTS,
+    Channel,
+    Request,
+    new_aggregate_event,
+    new_singular_event,
+    parse_record,
 )
 from .utils import get_bytes
 
