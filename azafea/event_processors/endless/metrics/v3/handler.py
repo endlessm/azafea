@@ -33,12 +33,14 @@ log = logging.getLogger(__name__)
 def _get_or_create_channel(dbsession: DbSession, request_channel: RequestChannel) -> Channel:
     channel_dict = asdict(request_channel)
 
-    try:
-        with dbsession.begin_nested():
-            channel = Channel(**channel_dict)
-            dbsession.add(channel)
-    except IntegrityError:
-        channel = dbsession.query(Channel).filter_by(**channel_dict).one()
+    channel = dbsession.query(Channel).filter_by(**channel_dict).one_or_none()
+    if not channel:
+        try:
+            with dbsession.begin_nested():
+                channel = Channel(**channel_dict)
+                dbsession.add(channel)
+        except IntegrityError:
+            channel = dbsession.query(Channel).filter_by(**channel_dict).one()
 
     return channel
 

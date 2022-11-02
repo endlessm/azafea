@@ -180,6 +180,85 @@ class TestMetrics(IntegrationTest):
             channel = dbsession.query(Channel).one()
             assert channel.image_id == 'eos-eos3.7-amd64-amd64.190419-225606.base'
 
+    def test_channel_ids_dense(self):
+        from azafea.event_processors.endless.metrics.v3.model import Channel
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Channel)
+
+        # Send many requests from the same channel
+        channel_1_image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
+        now = datetime.now(tz=timezone.utc)
+        for i in range(1000):
+            request = GLib.Variant(
+                '(xxsa{ss}ya(aysxmv)a(ayssumv))',
+                (
+                    2000000 + (100 * i),  # request relative timestamp
+                    int(now.timestamp() * 1000000000),  # Absolute timestamp
+                    channel_1_image_id,
+                    {},
+                    0,                                     # flags
+                    [],                                    # singular events
+                    []                                     # aggregate events
+                )
+            )
+            assert request.is_normal_form()
+            request_body = request.get_data_as_bytes().get_data()
+
+            received_at = now + timedelta(minutes=2)
+            received_at_timestamp = int(received_at.timestamp() * 1000000)  # microseconds
+            received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+            record = received_at_timestamp_bytes + request_body
+
+            # Send the request to the Redis queue
+            self.redis.lpush('test_channel_ids_dense', record)
+
+        # And a request from another channel
+        channel_2_image_id = "eos-eos4.0-amd64-amd64.221014-103929.pt_BR"
+        request = GLib.Variant(
+            '(xxsa{ss}ya(aysxmv)a(ayssumv))',
+            (
+                2000000 + (100 * i),  # request relative timestamp
+                int(now.timestamp() * 1000000000),  # Absolute timestamp
+                channel_2_image_id,
+                {},
+                0,                                     # flags
+                [],                                    # singular events
+                []                                     # aggregate events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the request to the Redis queue
+        self.redis.lpush('test_channel_ids_dense', record)
+
+        # Run Azafea so it processes the requests
+        self.run_azafea()
+
+        with self.db as dbsession:
+            channels = dbsession.query(Channel).order_by(Channel.image_id).all()
+            assert len(channels) == 2
+
+            channel_1, channel_2 = channels
+            assert channel_1.id == 1
+            # Their generated IDs should be (nearly) adjacent.
+            # We can't tighten this down to channel_2.id == 2 because the integration tests run two
+            # queue processors, so it is possible that they both try to create the row for
+            # channel 1 simultaneously, in which case an item from the sequence will be spuriously
+            # consumed. This is still better than consuming the sequence for almost every request!
+            # It might be nice to run just one process in this test, but the advantage of
+            # (non-deterministically) hitting the conflict path is that we (sometimes) exercise it.
+            assert channel_2.id in (2, 3)
+
     def test_singular_events(self):
         from azafea.event_processors.endless.metrics.v3.model import (
             Channel, InvalidSingularEvent, UnknownSingularEvent, StartupFinished,
