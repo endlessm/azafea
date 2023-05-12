@@ -14,7 +14,7 @@ import json
 def test_from_bytes():
     from azafea.event_processors.endless.activation.v1.handler import Activation
 
-    created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+    created_at = datetime.now(tz=timezone.utc)
     activation = Activation.from_serialized(json.dumps({
         'image': 'eos-eos3.7-amd64-amd64.190419-225606.base',
         'vendor': 'the vendor',

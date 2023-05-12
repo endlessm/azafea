@@ -42,7 +42,7 @@ class TestActivation(IntegrationTest):
         self.ensure_tables(Activation)
 
         # Insert an activation with a known bad vendor
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
         bad_vendor = 'EnDlEsS'
 
         with self.db as dbsession:
@@ -70,7 +70,7 @@ class TestActivation(IntegrationTest):
         self.ensure_tables(Activation)
 
         # Insert an activation with a known normalized vendor
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
         vendor = 'Endless'
         assert vendor == normalize_vendor(vendor)
 
@@ -99,7 +99,7 @@ class TestActivation(IntegrationTest):
 
         # Insert an activation without parsed image components
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             dbsession.add(Activation(image=image_id, product='product', release='release',
@@ -138,7 +138,7 @@ class TestActivation(IntegrationTest):
 
         # Insert an activation without parsed image components
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             dbsession.add(Activation(image=image_id, image_product='eos', image_branch='eos3.7',
@@ -185,7 +185,7 @@ class TestActivation(IntegrationTest):
 
         # Insert an activation with an unknown image
         image_id = 'unknown'
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             dbsession.add(Activation(image=image_id, product='product', release='release',

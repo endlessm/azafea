@@ -1962,7 +1962,7 @@ class TestMetrics(IntegrationTest):
         self.run_subcommand('initdb')
         self.ensure_tables(Request, DualBootBooted, ImageVersion, LiveUsbBooted)
 
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             # Add a first request with 1 dualboot, 2 image version and 3 live usb events

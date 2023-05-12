@@ -42,7 +42,7 @@ class TestPing(IntegrationTest):
         self.ensure_tables(PingConfiguration)
 
         # Insert a ping configuration with a known bad vendor
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
         bad_vendor = 'EnDlEsS'
 
         with self.db as dbsession:
@@ -70,7 +70,7 @@ class TestPing(IntegrationTest):
         self.ensure_tables(PingConfiguration)
 
         # Insert a ping configuration with a known normalized vendor
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
         vendor = 'Endless'
         assert vendor == normalize_vendor(vendor)
 
@@ -98,7 +98,7 @@ class TestPing(IntegrationTest):
         self.ensure_tables(PingConfiguration)
 
         # Insert a ping configuration with a known bad vendor, with a first ping
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             ping_config = PingConfiguration(image='eos-eos3.7-amd64-amd64.190419-225606.base',
@@ -110,7 +110,7 @@ class TestPing(IntegrationTest):
 
         # Insert another ping configuration with a known bad vendor which normalizes to the same
         # vendor as the previous one
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             ping_config = PingConfiguration(image='eos-eos3.7-amd64-amd64.190419-225606.base',
@@ -162,7 +162,7 @@ class TestPing(IntegrationTest):
         self.ensure_tables(PingConfiguration)
 
         # Insert a ping configuration with a known bad vendor, with a first ping
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
         bad_vendor = 'EnDlEsS'
 
         with self.db as dbsession:
@@ -174,7 +174,7 @@ class TestPing(IntegrationTest):
                                created_at=created_at))
 
         # Now insert a ping configuration with a known normalized vendor, with a second ping
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
         good_vendor = normalize_vendor(bad_vendor)
 
         with self.db as dbsession:
@@ -230,7 +230,7 @@ class TestPing(IntegrationTest):
 
         # Insert a ping configuration without parsed image components
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             dbsession.add(PingConfiguration(image=image_id, product='product', release='release',
@@ -268,7 +268,7 @@ class TestPing(IntegrationTest):
 
         # Insert a ping configuration without parsed image components
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             dbsession.add(PingConfiguration(image=image_id, image_product='eos',
@@ -315,7 +315,7 @@ class TestPing(IntegrationTest):
 
         # Insert a ping configuration without parsed image components
         image_id = 'unknown'
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             dbsession.add(PingConfiguration(image=image_id, product='product', release='release',

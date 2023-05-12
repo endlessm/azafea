@@ -24,7 +24,7 @@ class TestPing(IntegrationTest):
         self.ensure_tables(Ping, PingConfiguration)
 
         # Send an event to the Redis queue
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
         self.redis.lpush('test_ping_v1', json.dumps({
             'image': 'eos-eos3.7-amd64-amd64.190419-225606.base',
             'vendor': 'the vendor',
@@ -66,7 +66,7 @@ class TestPing(IntegrationTest):
         self.ensure_tables(Ping, PingConfiguration)
 
         # Send events to the Redis queue
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
         for i in range(10):
             self.redis.lpush('test_ping_configuration_v1_dualboot_unicity', json.dumps({
                 'image': 'eos-eos3.7-amd64-amd64.190419-225606.base',
@@ -106,7 +106,7 @@ class TestPing(IntegrationTest):
         self.ensure_tables(Ping, PingConfiguration)
 
         # Send an event to the Redis queue
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
         self.redis.lpush('test_ping_v1_unknown_image', json.dumps({
             'image': 'unknown',
             'vendor': 'the vendor',
@@ -148,7 +148,7 @@ class TestPing(IntegrationTest):
         self.ensure_tables(Ping, PingConfiguration)
 
         # Send an event to the Redis queue
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
         self.redis.lpush('test_ping_v1_invalid_image', json.dumps({
             'image': 'image',
             'vendor': 'the vendor',

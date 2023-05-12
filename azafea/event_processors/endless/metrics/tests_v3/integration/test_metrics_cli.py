@@ -27,7 +27,7 @@ class TestMetrics(IntegrationTest):
         self.ensure_tables(
             Channel, InvalidSingularEvent, UnknownSingularEvent)
 
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
 
         with self.db as dbsession:
@@ -140,7 +140,7 @@ class TestMetrics(IntegrationTest):
             Channel, InvalidSingularEvent, UnknownSingularEvent, ParentalControlsEnabled,
         )
 
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
 
         with self.db as dbsession:
@@ -219,7 +219,7 @@ class TestMetrics(IntegrationTest):
         self.run_subcommand('initdb')
         self.ensure_tables(Channel, UnknownAggregateEvent)
 
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
 
         with self.db as dbsession:
