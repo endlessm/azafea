@@ -38,6 +38,7 @@ AGGREGATE_EVENT_MODELS: Dict[str, Type['AggregateEvent']] = {}
 
 IGNORED_EVENTS: Set[str] = {
     '005096c4-9444-48c6-844b-6cb693c15235',
+    '140643be-fe47-4b4b-985b-d16f8f3973a9',
     '337fa66d-5163-46ae-ab20-dc605b5d7307',
     '350ac4ff-3026-4c25-9e7e-e8103b4fd5d8',
     '3a4eff55-5d01-48c8-a827-fca5732fd767',
