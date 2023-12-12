@@ -946,6 +946,34 @@ Automatic updates settings have changed.
 
 .. versionadded:: 3.9.1
 
+Tour Response
+~~~~~~~~~~~~~
+
+When a user first logs into GNOME 40+ (which in the case of Endless OS means
+Endless OS 5), they are offered the chance to take a tour. This event had a
+boolean payload, ``true`` if the user chose to take the tour and ``false``
+otherwise.
+
+Combined with the image ID from the channel, this data can be separated into
+new installations, and users upgrading from Endless OS 4 and older.
+
+Over a period of just under a year, we determined:
+
+- 15% of users upgrading from Endless OS 4 took the tour
+- 32% of users starting from Endless OS 5 took the tour
+- 19% of users overall took the tour
+
+Having validated our belief that relatively few users would opt to choose the
+tour, and learned that upgrading users are less likely to take it (which is a
+shame since they are the ones whose desktop changed significantly when they
+upgrade to Endless OS 5), we removed this event in Endless OS 5.2.0 and
+discarded the data on the server.
+
+:UUID: ``140643be-fe47-4b4b-985b-d16f8f3973a9``
+:UUID name: ``TOUR_RESPONSE_EVENT`` in gnome-shell
+
+.. versionadded:: 5.0.0
+
 
 Test Events
 -----------
