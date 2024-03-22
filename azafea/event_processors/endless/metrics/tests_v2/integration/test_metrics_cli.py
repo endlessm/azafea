@@ -43,7 +43,7 @@ class TestMetrics(IntegrationTest):
         self.run_subcommand('initdb')
         self.ensure_tables(Request, DualBootBooted)
 
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             dbsession.add(Request(sha512='sha512-1', received_at=occured_at,
@@ -108,7 +108,7 @@ class TestMetrics(IntegrationTest):
         self.run_subcommand('initdb')
         self.ensure_tables(Request, ImageVersion)
 
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
         image_id = 'eos-eos3.7-amd64-amd64.190419-225606.base'
 
         with self.db as dbsession:
@@ -174,7 +174,7 @@ class TestMetrics(IntegrationTest):
         self.run_subcommand('initdb')
         self.ensure_tables(Request, LiveUsbBooted)
 
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             dbsession.add(Request(sha512='sha512-1', received_at=occured_at,
@@ -241,7 +241,7 @@ class TestMetrics(IntegrationTest):
         self.ensure_tables(Request, UpdaterBranchSelected)
 
         # Insert an event with a known bad vendor
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
         bad_vendor = 'EnDlEsS'
         payload = GLib.Variant('mv', GLib.Variant('(sssb)', (
             'whatever, this gets replaced',
@@ -285,7 +285,7 @@ class TestMetrics(IntegrationTest):
         self.ensure_tables(Request, UpdaterBranchSelected)
 
         # Insert an event with a known normalized vendor
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
         vendor = 'Endless'
         assert vendor == normalize_vendor(vendor)
         payload = GLib.Variant('mv', GLib.Variant('(sssb)', (
@@ -321,7 +321,7 @@ class TestMetrics(IntegrationTest):
         self.run_subcommand('initdb')
         self.ensure_tables(DualBootBooted, Machine, Request)
 
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             request = Request(sha512='whatever', received_at=occured_at,
@@ -395,7 +395,7 @@ class TestMetrics(IntegrationTest):
         self.run_subcommand('initdb')
         self.ensure_tables(ImageVersion, Machine, Request)
 
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             request = Request(sha512='whatever', received_at=occured_at,
@@ -468,7 +468,7 @@ class TestMetrics(IntegrationTest):
         self.run_subcommand('initdb')
         self.ensure_tables(LiveUsbBooted, Machine, Request)
 
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             request = Request(sha512='whatever', received_at=occured_at,
@@ -545,7 +545,7 @@ class TestMetrics(IntegrationTest):
         self.ensure_tables(Request, ShellAppIsOpen, Uptime, InvalidSequence, InvalidSingularEvent,
                            UnknownSequence, UnknownSingularEvent)
 
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             request = Request(sha512='whatever', received_at=occured_at,
@@ -715,7 +715,7 @@ class TestMetrics(IntegrationTest):
         self.ensure_tables(Request, ShellAppIsOpen, Uptime, InvalidSequence, InvalidSingularEvent,
                            UnknownAggregateEvent, UnknownSequence, UnknownSingularEvent)
 
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
 
         with self.db as dbsession:
             request = Request(sha512='whatever', received_at=occured_at,
@@ -1004,7 +1004,7 @@ class TestMetrics(IntegrationTest):
         self.ensure_tables(OSVersion)
 
         payload = GLib.Variant('mv', GLib.Variant('(sss)', ['"Endless"', '"1.2.3"', 'useless']))
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
         with self.db as dbsession:
             version = OSVersion(
                 version='"1.2.3"', user_id=1, payload=payload, occured_at=occured_at)
@@ -1030,7 +1030,7 @@ class TestMetrics(IntegrationTest):
         self.ensure_tables(OSVersion)
 
         payload = GLib.Variant('mv', GLib.Variant('(sss)', ['Endless', '1.2.3', 'useless']))
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
         with self.db as dbsession:
             dbsession.add(OSVersion(
                 version='1.2.3', user_id=1, occured_at=occured_at, payload=payload))
@@ -1060,7 +1060,7 @@ class TestMetrics(IntegrationTest):
             'facility': '22KPJ9043L',
         }
         payload = GLib.Variant('mv', GLib.Variant('a{ss}', info))
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
         with self.db as dbsession:
             request = Request(sha512='whatever', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='whatever',
@@ -1097,7 +1097,7 @@ class TestMetrics(IntegrationTest):
         empty_info = {
             'id': '', 'city': '', 'state': '', 'street': '', 'country': '', 'facility': ''}
         payload = GLib.Variant('mv', GLib.Variant('a{ss}', info))
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
         with self.db as dbsession:
             request = Request(sha512='whatever', received_at=occured_at,
                               absolute_timestamp=1, relative_timestamp=2, machine_id='whatever',
@@ -1124,7 +1124,7 @@ class TestMetrics(IntegrationTest):
         self.run_subcommand('initdb')
         self.ensure_tables(Request)
 
-        occured_at_1 = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at_1 = datetime.now(tz=timezone.utc)
         occured_at_2 = occured_at_1 + timedelta(days=1)
 
         with self.db as dbsession:

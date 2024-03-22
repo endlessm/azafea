@@ -24,7 +24,7 @@ class TestActivation(IntegrationTest):
         self.ensure_tables(Activation)
 
         # Send an event to the Redis queue
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
         self.redis.lpush('test_activation_v1', json.dumps({
             'image': 'eos-eos3.7-amd64-amd64.190419-225606.base',
             'vendor': 'the vendor',
@@ -62,7 +62,7 @@ class TestActivation(IntegrationTest):
         self.ensure_tables(Activation)
 
         # Send an event to the Redis queue
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
         self.redis.lpush('test_activation_v1_unknown_image', json.dumps({
             'image': 'unknown',
             'vendor': 'the vendor',
@@ -99,7 +99,7 @@ class TestActivation(IntegrationTest):
         self.ensure_tables(Activation)
 
         # Send an event to the Redis queue
-        created_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        created_at = datetime.now(tz=timezone.utc)
         self.redis.lpush('test_activation_v1_invalid_image', json.dumps({
             'image': 'image',
             'vendor': 'the vendor',

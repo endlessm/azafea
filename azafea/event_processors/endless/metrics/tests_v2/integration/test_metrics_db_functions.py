@@ -40,7 +40,7 @@ class TestMetrics(IntegrationTest):
         self.ensure_tables(ImageVersion, Machine, Request)
 
         image_id = 'eosoem-eos3.7-amd64-amd64.190419-225606.base'
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
 
         # Add a request with an image version
         with self.db as dbsession:
@@ -64,7 +64,7 @@ class TestMetrics(IntegrationTest):
         self.run_subcommand('migratedb')
         self.ensure_tables(ImageVersion, Machine, Request)
 
-        occured_at = datetime.utcnow().replace(tzinfo=timezone.utc)
+        occured_at = datetime.now(tz=timezone.utc)
 
         # Add a request without an image version
         with self.db as dbsession:
