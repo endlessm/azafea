@@ -1,2 +1,6 @@
 [build-system]
 requires = ["setuptools", "wheel"]
+
+[tool.black]
+# Keep in synch with [flake8] section of setup.cfg
+line-length = 100

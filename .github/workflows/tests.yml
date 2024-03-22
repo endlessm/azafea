@@ -10,13 +10,13 @@ jobs:
     name: Build Docker Image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Build Docker Image
         run: docker build --tag azafea-tests .
       - name: Save Docker Image
         run: docker save azafea-tests > docker-image.tar
       - name: Upload Artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: image
           path: docker-image.tar
@@ -26,9 +26,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Get Docker Image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: image
       - name: Load Docker Image
@@ -47,9 +47,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Get Docker Image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: image
       - name: Load Docker Image
@@ -62,9 +62,9 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Get Docker Image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: image
       - name: Load Docker Image
@@ -85,13 +85,13 @@ jobs:
     if: github.event_name == 'push'
     steps:
       - name: Login to Docker Hub
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           username: '${{ secrets.DOCKERHUB_USERNAME }}'
           password: '${{ secrets.DOCKERHUB_TOKEN }}'
 
       - name: Get Docker Image
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: image
 

@@ -12,7 +12,7 @@ jobs:
       METABASE_USERNAME: ${{ secrets.METABASE_USERNAME }}
       METABASE_PASSWORD: ${{ secrets.METABASE_PASSWORD }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Install GObject-Introspection
         run: sudo apt install libgirepository1.0-dev
       - name: Install Pipenv
