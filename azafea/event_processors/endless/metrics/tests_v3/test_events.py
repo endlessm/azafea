@@ -402,6 +402,46 @@ def test_singular_event(event_model_name, payload, expected_attrs):
         GLib.Variant('s', 'app_id'),
         {'app_id': 'app_id'}
     ),
+    (
+        'CheckpointBlockedDaily',
+        GLib.Variant(
+            '(sssss)',
+            (
+                'to be filled by oem',
+                'product name',
+                'os/eos/amd64/latest2',
+                'os/eos/amd64/latest3',
+                'nvme-remap',
+            ),
+        ),
+        {
+            'vendor': 'unknown',
+            'product': 'product name',
+            'booted_ref': 'os/eos/amd64/latest2',
+            'target_ref': 'os/eos/amd64/latest3',
+            'reason': 'nvme-remap',
+        },
+    ),
+    (
+        'CheckpointBlockedMonthly',
+        GLib.Variant(
+            '(sssss)',
+            (
+                'to be filled by oem',
+                'product name',
+                'os/eos/amd64/latest2',
+                'os/eos/amd64/latest3',
+                'nvme-remap',
+            ),
+        ),
+        {
+            'vendor': 'unknown',
+            'product': 'product name',
+            'booted_ref': 'os/eos/amd64/latest2',
+            'target_ref': 'os/eos/amd64/latest3',
+            'reason': 'nvme-remap',
+        },
+    ),
 ])
 def test_aggregate_event(event_model_name, payload, expected_attrs):
     from azafea.event_processors.endless.metrics.v3 import model
