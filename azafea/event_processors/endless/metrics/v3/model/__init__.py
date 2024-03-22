@@ -16,6 +16,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.schema import Column, Index
 from sqlalchemy.types import ARRAY, BigInteger, Boolean, Integer, Interval, Unicode
 
+from azafea.vendors import normalize_vendor
 from ..utils import aggregate_uuid, clamp_to_int64, get_child_values
 from ._base import (  # noqa: F401
     AGGREGATE_EVENT_MODELS,
@@ -743,3 +744,83 @@ class MonthlySessionTime(AggregateEvent):
     __tablename__ = 'monthly_session_time_v3'
     __event_uuid__ = aggregate_uuid(DailySessionTime.__event_uuid__, 'monthly')
     __payload_type__ = None
+
+
+class CheckpointBlockedDaily(AggregateEvent):
+    """Recorded when an upgrade across a checkpoint is blocked, aggregated
+    daily.
+
+    The count is approximately the number of times the upgrade was blocked,
+    but since this is a static condition of the device the count is somewhat
+    meaningless.
+
+    :UUID name: ``EOS_UPDATER_METRIC_CHECKPOINT_BLOCKED`` in ``eos-updater``
+
+    .. versionadded:: 5.1.3
+
+    """
+    __tablename__ = "checkpoint_blocked_daily"
+    __event_uuid__ = "e3609b7e-88aa-4ba5-90f9-418bf9234139"
+    __payload_type__ = "(sssss)"
+
+    #: Hardware vendor
+    vendor = Column(Unicode, nullable=False)
+
+    #: Hardware product
+    product = Column(Unicode, nullable=False)
+
+    #: Currently-booted ref, which has a checkpoint
+    booted_ref = Column(Unicode, nullable=False)
+
+    #: Target of the checkpoint on booted_ref
+    target_ref = Column(Unicode, nullable=False)
+
+    #: Reason the upgrade from booted_ref to target_ref was blocked; e.g.
+    #: ``forced`` or ``nvme-remap``
+    reason = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return {
+            "vendor": normalize_vendor(payload.get_child_value(0).get_string()),
+            "product": payload.get_child_value(1).get_string(),
+            "booted_ref": payload.get_child_value(2).get_string(),
+            "target_ref": payload.get_child_value(3).get_string(),
+            "reason": payload.get_child_value(4).get_string(),
+        }
+
+
+class CheckpointBlockedMonthly(AggregateEvent):
+    """Recorded when an upgrade across a checkpoint is blocked, aggregated
+    monthly.
+
+    The count is approximately the number of times the upgrade was blocked,
+    but since this is a static condition of the device the count is somewhat
+    meaningless.
+
+    .. versionadded:: 5.1.3
+
+    """
+    __tablename__ = "checkpoint_blocked_monthly"
+    __event_uuid__ = aggregate_uuid(CheckpointBlockedDaily.__event_uuid__, "monthly")
+    __payload_type__ = "(sssss)"
+
+    #: Hardware vendor
+    vendor = Column(Unicode, nullable=False)
+
+    #: Hardware product
+    product = Column(Unicode, nullable=False)
+
+    #: Currently-booted ref, which has a checkpoint
+    booted_ref = Column(Unicode, nullable=False)
+
+    #: Target of the checkpoint on booted_ref
+    target_ref = Column(Unicode, nullable=False)
+
+    #: Reason the upgrade from booted_ref to target_ref was blocked; e.g.
+    #: ``forced`` or ``nvme-remap``
+    reason = Column(Unicode, nullable=False)
+
+    @staticmethod
+    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
+        return CheckpointBlockedDaily._get_fields_from_payload(payload)
