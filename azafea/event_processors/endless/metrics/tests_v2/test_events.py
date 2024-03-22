@@ -351,46 +351,6 @@ def test_new_unknown_event():
             },
         }
     ),
-    (
-        'MonitorConnected',
-        GLib.Variant('(ssssiiay)', (
-            'Samsung Electric Company 22',
-            'SAM',
-            'S22E450',
-            'serial number is ignored',
-            500,
-            350,
-            b'edid data'
-        )),
-        {
-            'display_name': 'Samsung Electric Company 22',
-            'display_vendor': 'SAM',
-            'display_product': 'S22E450',
-            'display_width': 500,
-            'display_height': 350,
-            'edid': b'edid data',
-        }
-    ),
-    (
-        'MonitorDisconnected',
-        GLib.Variant('(ssssiiay)', (
-            'Samsung Electric Company 22',
-            'SAM',
-            'S22E450',
-            'serial number is ignored',
-            500,
-            350,
-            b'edid data'
-        )),
-        {
-            'display_name': 'Samsung Electric Company 22',
-            'display_vendor': 'SAM',
-            'display_product': 'S22E450',
-            'display_width': 500,
-            'display_height': 350,
-            'edid': b'edid data',
-        }
-    ),
     ('NetworkId', GLib.Variant('u', 123456), {'network_id': 123456}),
     (
         'OSVersion',

@@ -22,14 +22,13 @@ from sqlalchemy.types import (
     Boolean,
     Float,
     Integer,
-    LargeBinary,
     Numeric,
     Unicode,
 )
 
 from azafea.model import Base, DbSession
 from azafea.vendors import normalize_vendor
-from ..utils import clamp_to_int64, get_bytes, get_child_values, get_variant
+from ..utils import clamp_to_int64, get_child_values, get_variant
 from ._base import (  # noqa: F401
     AGGREGATE_EVENT_MODELS,
     SEQUENCE_EVENT_MODELS,
@@ -938,92 +937,6 @@ class MissingCodec(SingularEvent):
             'type': payload.get_child_value(2).get_string(),
             'name': payload.get_child_value(3).get_string(),
             'extra_info': payload.get_child_value(4).unpack(),
-        }
-
-
-class MonitorConnected(SingularEvent):
-    """A display is connected (e.g. computer monitor, television) to the machine.
-
-    We include any information about the display (e.g. with, height).
-
-    :UUID name: ``MONITOR_CONNECTED`` in mutter
-
-    UUID was ``566adb36-7701-4067-a971-a398312c2874`` before 2.1.7.
-
-    .. versionadded:: 2.1.4
-
-    """
-    __tablename__ = 'monitor_connected'
-    __event_uuid__ = 'fa82f422-a685-46e4-91a7-7b7bfb5b289f'
-
-    # The 4th field is the serial number of the monitor, we ignore it as it could identify people
-    __payload_type__ = '(ssssiiay)'
-
-    #: display name
-    display_name = Column(Unicode, nullable=False)
-    #: display vendor
-    display_vendor = Column(Unicode, nullable=False)
-    #: display product
-    display_product = Column(Unicode, nullable=False)
-    #: display width (in mm)
-    display_width = Column(Integer, nullable=False)
-    #: display height (in mm)
-    display_height = Column(Integer, nullable=False)
-    #: EDID
-    edid = Column(LargeBinary, nullable=False)
-
-    @staticmethod
-    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {
-            'display_name': payload.get_child_value(0).get_string(),
-            'display_vendor': payload.get_child_value(1).get_string(),
-            'display_product': payload.get_child_value(2).get_string(),
-            'display_width': payload.get_child_value(4).get_int32(),
-            'display_height': payload.get_child_value(5).get_int32(),
-            'edid': get_bytes(payload.get_child_value(6)),
-        }
-
-
-class MonitorDisconnected(SingularEvent):
-    """A display is disconnected (e.g. computer monitor, television) from the machine.
-
-    We include any information about the display (e.g. with, height).
-
-    :UUID name: ``MONITOR_DISCONNECTED`` in mutter
-
-    UUID was ``ce179909-dacb-4b7e-83a5-690480bf21eb`` before 2.1.7.
-
-    .. versionadded:: 2.1.4
-
-    """
-    __tablename__ = 'monitor_disconnected'
-    __event_uuid__ = '5e8c3f40-22a2-4d5d-82f3-e3bf927b5b74'
-
-    # The 4th field is the serial number of the monitor, we ignore it as it could identify people
-    __payload_type__ = '(ssssiiay)'
-
-    #: display name
-    display_name = Column(Unicode, nullable=False)
-    #: display vendor
-    display_vendor = Column(Unicode, nullable=False)
-    #: display product
-    display_product = Column(Unicode, nullable=False)
-    #: display width (in mm)
-    display_width = Column(Integer, nullable=False)
-    #: display height (in mm)
-    display_height = Column(Integer, nullable=False)
-    #: EDID
-    edid = Column(LargeBinary, nullable=False)
-
-    @staticmethod
-    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {
-            'display_name': payload.get_child_value(0).get_string(),
-            'display_vendor': payload.get_child_value(1).get_string(),
-            'display_product': payload.get_child_value(2).get_string(),
-            'display_width': payload.get_child_value(4).get_int32(),
-            'display_height': payload.get_child_value(5).get_int32(),
-            'edid': get_bytes(payload.get_child_value(6)),
         }
 
 

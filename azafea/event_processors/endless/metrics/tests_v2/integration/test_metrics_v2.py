@@ -167,7 +167,7 @@ class TestMetrics(IntegrationTest):
             ImageVersion, InvalidSingularEvent, UnknownSingularEvent,
             LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
-            Location, LocationLabel, Machine, MissingCodec, MonitorConnected, MonitorDisconnected,
+            Location, LocationLabel, Machine, MissingCodec,
             NetworkId, OSVersion, ProgramDumpedCore, RAMSize, Request, ShellAppAddedToDesktop,
             ShellAppRemovedFromDesktop, UnderscanEnabled, UpdaterBranchSelected, Uptime,
             WindowsAppOpened, WindowsLicenseTables,
@@ -182,7 +182,7 @@ class TestMetrics(IntegrationTest):
             DiskSpaceSysroot, DualBootBooted, EndlessApplicationUnmaximized, EnteredDemoMode,
             ImageVersion, LaunchedEquivalentExistingFlatpak, LaunchedEquivalentInstallerForFlatpak,
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
-            Location, LocationLabel, MissingCodec, MonitorConnected, MonitorDisconnected, NetworkId,
+            Location, LocationLabel, MissingCodec, NetworkId,
             OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
             ShellAppRemovedFromDesktop, UnderscanEnabled, UpdaterBranchSelected, Uptime,
             WindowsAppOpened, WindowsLicenseTables,
@@ -359,34 +359,6 @@ class TestMetrics(IntegrationTest):
                                 "mpegversion": GLib.Variant('i', 1),
                                 "layer": GLib.Variant('u', 3),
                             },
-                        ))
-                    ),
-                    (
-                        user_id,
-                        UUID('fa82f422-a685-46e4-91a7-7b7bfb5b289f').bytes,
-                        15000000000,                   # event relative timestamp (15 secs)
-                        GLib.Variant('(ssssiiay)', (
-                            'Samsung Electric Company 22',
-                            'SAM',
-                            'S22E450',
-                            'serial number ignored',
-                            500,
-                            350,
-                            b'edid data'
-                        ))
-                    ),
-                    (
-                        user_id,
-                        UUID('5e8c3f40-22a2-4d5d-82f3-e3bf927b5b74').bytes,
-                        14000000000,                   # event relative timestamp (14 secs)
-                        GLib.Variant('(ssssiiay)', (
-                            'Samsung Electric Company 22',
-                            'SAM',
-                            'S22E450',
-                            'serial number ignored',
-                            500,
-                            350,
-                            b'edid data'
                         ))
                     ),
                     (
@@ -669,28 +641,6 @@ class TestMetrics(IntegrationTest):
                 "mpegversion": 1,
                 "layer": 3,
             }
-
-            monitor = dbsession.query(MonitorConnected).one()
-            assert monitor.request_id == request.id
-            assert monitor.user_id == user_id
-            assert monitor.occured_at == now - timedelta(seconds=2) + timedelta(seconds=15)
-            assert monitor.display_name == 'Samsung Electric Company 22'
-            assert monitor.display_vendor == 'SAM'
-            assert monitor.display_product == 'S22E450'
-            assert monitor.display_width == 500
-            assert monitor.display_height == 350
-            assert monitor.edid == b'edid data'
-
-            monitor = dbsession.query(MonitorDisconnected).one()
-            assert monitor.request_id == request.id
-            assert monitor.user_id == user_id
-            assert monitor.occured_at == now - timedelta(seconds=2) + timedelta(seconds=14)
-            assert monitor.display_name == 'Samsung Electric Company 22'
-            assert monitor.display_vendor == 'SAM'
-            assert monitor.display_product == 'S22E450'
-            assert monitor.display_width == 500
-            assert monitor.display_height == 350
-            assert monitor.edid == b'edid data'
 
             network = dbsession.query(NetworkId).one()
             assert network.request_id == request.id
