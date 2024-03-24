@@ -39,6 +39,7 @@ IGNORED_EVENTS: Set[str] = {
     '3a4eff55-5d01-48c8-a827-fca5732fd767',
     '350ac4ff-3026-4c25-9e7e-e8103b4fd5d8',
     '566adb36-7701-4067-a971-a398312c2874',
+    '5e8c3f40-22a2-4d5d-82f3-e3bf927b5b74',
     '5fae6179-e108-4962-83be-c909259c0584',
     '6dad6c44-f52f-4bca-8b4c-dc203f175b97',
     '72fea371-15d1-401d-8a40-c47f379f64fd',
@@ -59,6 +60,7 @@ IGNORED_EVENTS: Set[str] = {
     'ce179909-dacb-4b7e-83a5-690480bf21eb',
     'd936cd5c-08de-4d4e-8a87-8df1f4a33cba',
     'e6541049-9462-4db5-96df-1977f3051578',
+    'fa82f422-a685-46e4-91a7-7b7bfb5b289f',
     'fb59199e-5384-472e-af1e-00b7a419d5c2',
 }
 IGNORED_EMPTY_PAYLOAD_ERRORS: Set[str] = set()
