@@ -169,7 +169,7 @@ class TestMetrics(IntegrationTest):
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
             Location, LocationLabel, Machine, MissingCodec,
             NetworkId, OSVersion, ProgramDumpedCore, RAMSize, Request, ShellAppAddedToDesktop,
-            ShellAppRemovedFromDesktop, UnderscanEnabled, UpdaterBranchSelected, Uptime,
+            ShellAppRemovedFromDesktop, UnderscanEnabled, UpdaterBranchSelected,
             WindowsAppOpened, WindowsLicenseTables,
         )
 
@@ -184,7 +184,7 @@ class TestMetrics(IntegrationTest):
             LaunchedExistingFlatpak, LaunchedInstallerForFlatpak, LinuxPackageOpened, LiveUsbBooted,
             Location, LocationLabel, MissingCodec, NetworkId,
             OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
-            ShellAppRemovedFromDesktop, UnderscanEnabled, UpdaterBranchSelected, Uptime,
+            ShellAppRemovedFromDesktop, UnderscanEnabled, UpdaterBranchSelected,
             WindowsAppOpened, WindowsLicenseTables,
         )
 
@@ -416,13 +416,6 @@ class TestMetrics(IntegrationTest):
                             'os/eos/amd64/eos3',
                             False
                         ))
-                    ),
-                    (
-                        user_id,
-                        UUID('9af2cc74-d6dd-423f-ac44-600a6eee2d96').bytes,
-                        4000000000,                    # event relative timestamp (4 secs)
-                        # Pack uptime payload into 2 levels of variants, that's how we receive them
-                        GLib.Variant('v', GLib.Variant('(xx)', (2, 1))),
                     ),
                     (
                         user_id,
@@ -691,13 +684,6 @@ class TestMetrics(IntegrationTest):
             assert branch.hardware_product == 'To Be Filled By O.E.M.'
             assert branch.ostree_branch == 'os/eos/amd64/eos3'
             assert not branch.on_hold
-
-            uptime = dbsession.query(Uptime).one()
-            assert uptime.request_id == request.id
-            assert uptime.user_id == user_id
-            assert uptime.occured_at == now - timedelta(seconds=2) + timedelta(seconds=4)
-            assert uptime.accumulated_uptime == 2
-            assert uptime.number_of_boots == 1
 
             windows_app = dbsession.query(WindowsAppOpened).one()
             assert windows_app.request_id == request.id
@@ -1465,6 +1451,59 @@ class TestMetrics(IntegrationTest):
             assert machine.location_city == 'City'
             assert machine.location_state == 'State'
 
+    def test_empty_location_is_ignored(self):
+        from azafea.event_processors.endless.metrics.v2.model import (
+            ImageVersion, InvalidSingularEvent, LocationLabel, Machine, Request,
+        )
+
+        # Create the table
+        self.run_subcommand('initdb')
+        self.ensure_tables(Request, Machine, ImageVersion, InvalidSingularEvent, LocationLabel)
+
+        # Build a request as it would have been sent to us
+        now = datetime.now(tz=timezone.utc)
+        machine_id = 'ffffffffffffffffffffffffffffffff'
+        request = GLib.Variant(
+            '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
+            (
+                0,                                     # network send number
+                2000000000,                            # request relative timestamp (2 secs)
+                int(now.timestamp() * 1000000000),     # request absolute timestamp
+                bytes.fromhex(machine_id),
+                [                                      # singular events
+                    (
+                        1001,
+                        UUID('eb0302d8-62e7-274b-365f-cd4e59103983').bytes,
+                        2000000000,                    # event relative timestamp (2 secs)
+                        GLib.Variant('a{ss}', {}),
+                    ),
+                ],
+                [],                                    # aggregate events
+                []                                     # sequence events
+            )
+        )
+        assert request.is_normal_form()
+        request_body = request.get_data_as_bytes().get_data()
+
+        received_at = now + timedelta(minutes=2)
+        received_at_timestamp = int(received_at.timestamp() * 1000000)  # timestamp as microseconds
+        received_at_timestamp_bytes = received_at_timestamp.to_bytes(8, 'little')
+
+        record = received_at_timestamp_bytes + request_body
+
+        # Send the event request to the Redis queue
+        self.redis.lpush('test_empty_location_is_ignored', record)
+
+        # Run Azafea so it processes the event
+        self.run_azafea()
+
+        # Ensure the record was ignored
+        with self.db as dbsession:
+            request = dbsession.query(Request).one()
+
+            assert dbsession.query(LocationLabel).count() == 0
+            assert dbsession.query(InvalidSingularEvent).count() == 0
+
     def test_upsert_machine_all_at_once(self):
         from azafea.event_processors.endless.metrics.v2.model import (
             DualBootBooted, EnteredDemoMode, ImageVersion, LiveUsbBooted, Machine, Request)
@@ -2063,17 +2102,17 @@ class TestMetrics(IntegrationTest):
 
     def test_invalid_singular_event_payload(self, capfd):
         from azafea.event_processors.endless.metrics.v2.model import (
-            InvalidSingularEvent, Request, Uptime)
+            InvalidSingularEvent, Request, UpdaterFailure)
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(Request, Uptime, InvalidSingularEvent)
+        self.ensure_tables(Request, UpdaterFailure, InvalidSingularEvent)
 
         # Build a request as it would have been sent to us
         now = datetime.now(tz=timezone.utc)
         machine_id = 'ffffffffffffffffffffffffffffffff'
         user_id = 2000
-        event_id = UUID('aee94585-07a2-4483-a090-25abda650b12')
+        event_id = UUID('927d0f61-4890-4912-a513-b2cb0205908f')
         request = GLib.Variant(
             '(ixxaya(uayxmv)a(uayxxmv)a(uaya(xmv)))',
             (
@@ -2086,13 +2125,13 @@ class TestMetrics(IntegrationTest):
                         user_id,
                         event_id.bytes,
                         3000000000,                    # event relative timestamp (3 secs)
-                        None,                          # empty payload, expected '(xx)'
+                        None,                          # empty payload, expected '(ss)'
                     ),
                     (
                         user_id,
                         event_id.bytes,
                         4000000000,                    # event relative timestamp (3 secs)
-                        GLib.Variant('s', 'Up!'),      # 's' payload, expected '(xx)'
+                        GLib.Variant('s', 'Up!'),      # 's' payload, expected '(ss)'
                     ),
                 ],
                 [],                                    # aggregate events
@@ -2120,7 +2159,7 @@ class TestMetrics(IntegrationTest):
             assert request.send_number == 0
             assert request.machine_id == machine_id
 
-            assert dbsession.query(Uptime).count() == 0
+            assert dbsession.query(UpdaterFailure).count() == 0
 
             events = dbsession.query(InvalidSingularEvent).order_by(InvalidSingularEvent.occured_at)
             assert events.count() == 2
@@ -2134,7 +2173,7 @@ class TestMetrics(IntegrationTest):
             assert event.event_id == event_id
             assert event.payload_data == b''
             assert event.error == (
-                'Metric event aee94585-07a2-4483-a090-25abda650b12 needs a u payload, '
+                'Metric event 927d0f61-4890-4912-a513-b2cb0205908f needs a (ss) payload, '
                 'but got none')
 
             event = events[1]
@@ -2146,14 +2185,14 @@ class TestMetrics(IntegrationTest):
                                                GLib.Bytes.new(event.payload_data),
                                                False).unpack() == 'Up!'
             assert event.error == (
-                'Metric event aee94585-07a2-4483-a090-25abda650b12 needs a u payload, '
+                'Metric event 927d0f61-4890-4912-a513-b2cb0205908f needs a (ss) payload, '
                 "but got 'Up!' (s)")
 
         capture = capfd.readouterr()
         assert 'An error occured while processing the event:' in capture.err
-        assert ('Metric event aee94585-07a2-4483-a090-25abda650b12 needs a u payload, '
+        assert ('Metric event 927d0f61-4890-4912-a513-b2cb0205908f needs a (ss) payload, '
                 'but got none') in capture.err
-        assert ('Metric event aee94585-07a2-4483-a090-25abda650b12 needs a u payload, '
+        assert ('Metric event 927d0f61-4890-4912-a513-b2cb0205908f needs a (ss) payload, '
                 "but got 'Up!' (s)") in capture.err
 
     def test_unknown_aggregate_events(self):
@@ -2617,7 +2656,7 @@ class TestMetrics(IntegrationTest):
 
     def test_ignored_empty_payload_errors(self):
         from azafea.event_processors.endless.metrics.v2.model import (
-            InvalidSequence, InvalidSingularEvent, Request, Uptime, UserIsLoggedIn)
+            InvalidSequence, Request, UserIsLoggedIn)
 
         # Create the table
         self.run_subcommand('initdb')
@@ -2634,14 +2673,7 @@ class TestMetrics(IntegrationTest):
                 2000000000,                                # request relative timestamp (2 secs)
                 int(now.timestamp() * 1000000000),         # request absolute timestamp
                 bytes.fromhex(machine_id),
-                [                                          # singular events
-                    (
-                        user_id,
-                        UUID('9af2cc74-d6dd-423f-ac44-600a6eee2d96').bytes,
-                        1000000000,                        # event relative timestamp (1 sec)
-                        None,                              # empty payload
-                    ),
-                ],
+                [],                                        # singular events
                 [],                                        # aggregate events
                 [                                          # sequence events
                     (
@@ -2682,9 +2714,6 @@ class TestMetrics(IntegrationTest):
             request = dbsession.query(Request).one()
             assert request.send_number == 0
             assert request.machine_id == machine_id
-
-            assert dbsession.query(InvalidSingularEvent).count() == 0
-            assert dbsession.query(Uptime).count() == 0
 
             assert dbsession.query(InvalidSequence).count() == 0
             assert dbsession.query(UserIsLoggedIn).count() == 0

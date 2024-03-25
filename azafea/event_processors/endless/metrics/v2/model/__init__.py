@@ -1381,45 +1381,6 @@ class UpdaterFailure(SingularEvent):
         }
 
 
-class Uptime(SingularEvent):
-    """Total length of time the computer has been powered on and total number of boots.
-
-    The difference with the system shutdown event is that this is sent
-    periodically while the computer is up, not just at shutdown. This allows
-    catching "dirty" shutdowns and makes it easier to estimate connectivity.
-
-    See https://github.com/endlessm/eos-metrics-instrumentation/commit/8dfd1e5b9.
-
-    :UUID name: ``UPTIME_EVENT`` in eos-metrics-instrumentation
-
-    UUID was ``005096c4-9444-48c6-844b-6cb693c15235`` before 2.5.2.
-
-    .. note::
-
-        A serious bug that often prevented the boot count from being
-        incremented was fixed in the 2.5.2 release.
-
-    .. versionadded:: 2.5.0
-
-    """
-    __tablename__ = 'uptime'
-    __event_uuid__ = '9af2cc74-d6dd-423f-ac44-600a6eee2d96'
-    __payload_type__ = '(xx)'
-    __ignore_empty_payload__ = True
-
-    #: total uptime across all boots
-    accumulated_uptime = Column(BigInteger, nullable=False)
-    #: number of boots the computer has been through
-    number_of_boots = Column(BigInteger, nullable=False)
-
-    @staticmethod
-    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {
-            'accumulated_uptime': payload.get_child_value(0).get_int64(),
-            'number_of_boots': payload.get_child_value(1).get_int64(),
-        }
-
-
 class WindowsAppOpened(SingularEvent):
     """A user tries to open a ``.exe`` or ``.msi`` file.
 
