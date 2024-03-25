@@ -1403,45 +1403,6 @@ class WindowsAppOpened(SingularEvent):
         }
 
 
-class WindowsLicenseTables(SingularEvent):
-    """ACPI tables are present on the system, at startup.
-
-    The tables we check for are MSDM and SLIC, which hold OEM Windows license
-    information on newer and older systems respectively.
-
-    We have not seen systems which have both tables, but they might exist in
-    the wild and would appear with a value of 3. With this information,
-    assuming Metrics Events is not sent, then we can distinguish:
-
-    - SLIC/MSDM > 0 and no dual boot: Endless OS is the sole OS, PC came with Windows
-    - SLIC/MSDM > 0 and dual boot: Endless OS installed alongside OEM Windows
-    - SLIC/MSDM = 0 and no dual boot: Endless OS is the sole OS, PC came without Windows
-    - SLIC/MSDM = 0 and dual boot: Dual-booting with a retail Windows
-
-    See `T18296 <https://phabricator.endlessm.com/T18296>`_.
-
-    :UUID name: ``WINDOWS_LICENSE_TABLES_EVENT`` in eos-metrics-instrumentation
-
-    .. versionadded:: 3.2.0
-
-    """
-    __tablename__ = 'windows_license_tables'
-    __event_uuid__ = 'ef74310f-7c7e-ca05-0e56-3e495973070a'
-    __payload_type__ = 'u'
-
-    # This comes in as a uint32, but PostgreSQL only has signed types so we need a BIGINT (int64)
-    #: bitmask of which ACPI tables are found:
-    #:
-    #: - 0: no table found, system shipped without Windows
-    #: - 1: MSDM table found, system shipped with newer Windows
-    #: - 2: SLIC table found, system shipped with Vista-era Windows
-    tables = Column(BigInteger, nullable=False)
-
-    @staticmethod
-    def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
-        return {'tables': payload.get_uint32()}
-
-
 class CacheHasInvalidElements(SingularEvent):
     """Some invalid cache elements were found.
 

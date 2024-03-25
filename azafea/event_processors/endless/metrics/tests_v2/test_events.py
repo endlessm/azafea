@@ -520,7 +520,6 @@ def test_new_unknown_event():
         }
     ),
     ('WindowsAppOpened', GLib.Variant('as', ['photoshop.exe']), {'argv': ['photoshop.exe']}),
-    ('WindowsLicenseTables', GLib.Variant('u', 0), {'tables': 0}),
     (
         'CacheHasInvalidElements',
         GLib.Variant('(tt)', (10, 1500)),

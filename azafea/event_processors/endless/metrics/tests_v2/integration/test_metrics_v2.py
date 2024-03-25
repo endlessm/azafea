@@ -170,7 +170,7 @@ class TestMetrics(IntegrationTest):
             Location, LocationLabel, Machine, MissingCodec,
             NetworkId, OSVersion, ProgramDumpedCore, RAMSize, Request, ShellAppAddedToDesktop,
             ShellAppRemovedFromDesktop, UnderscanEnabled, UpdaterBranchSelected,
-            WindowsAppOpened, WindowsLicenseTables,
+            WindowsAppOpened,
         )
 
         # Create the table
@@ -185,7 +185,7 @@ class TestMetrics(IntegrationTest):
             Location, LocationLabel, MissingCodec, NetworkId,
             OSVersion, ProgramDumpedCore, RAMSize, ShellAppAddedToDesktop,
             ShellAppRemovedFromDesktop, UnderscanEnabled, UpdaterBranchSelected,
-            WindowsAppOpened, WindowsLicenseTables,
+            WindowsAppOpened,
         )
 
         # Build a request as it would have been sent to us
@@ -422,12 +422,6 @@ class TestMetrics(IntegrationTest):
                         UUID('cf09194a-3090-4782-ab03-87b2f1515aed').bytes,
                         26000000000,                   # event relative timestamp (26 secs)
                         GLib.Variant('as', ['photoshop.exe'])
-                    ),
-                    (
-                        user_id,
-                        UUID('ef74310f-7c7e-ca05-0e56-3e495973070a').bytes,
-                        27000000000,                   # event relative timestamp (27 secs)
-                        GLib.Variant('u', 0)
                     ),
                 ],
                 [],                                    # aggregate events
@@ -690,12 +684,6 @@ class TestMetrics(IntegrationTest):
             assert windows_app.user_id == user_id
             assert windows_app.occured_at == now - timedelta(seconds=2) + timedelta(seconds=26)
             assert windows_app.argv == ['photoshop.exe']
-
-            windows_tables = dbsession.query(WindowsLicenseTables).one()
-            assert windows_tables.request_id == request.id
-            assert windows_tables.user_id == user_id
-            assert windows_tables.occured_at == now - timedelta(seconds=2) + timedelta(seconds=27)
-            assert windows_tables.tables == 0
 
             assert dbsession.query(InvalidSingularEvent).count() == 0
             assert dbsession.query(UnknownSingularEvent).count() == 0
