@@ -52,6 +52,7 @@ IGNORED_EVENTS: Set[str] = {
     'ab839fd2-a927-456c-8c18-f1136722666b',
     'ae391c82-1937-4ae5-8539-8d1aceed037d',
     'af3e89b2-8293-4703-809c-8e0231c128cb',
+    'b02266bc-b010-44b2-ae0f-8f116ffa50eb',
     'b1f87a3f-a464-48d4-8e35-35dd45659010',
     'b2b17dfd-c30e-4789-abcc-4a38323127f6',
     'b89f9a4a-3035-4fc3-9bef-584367fe2c96',
