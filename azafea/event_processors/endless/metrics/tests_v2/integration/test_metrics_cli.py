@@ -537,13 +537,26 @@ class TestMetrics(IntegrationTest):
 
     def test_replay_invalid(self):
         from azafea.event_processors.endless.metrics.v2.model import (
-            InvalidSequence, InvalidSingularEvent, Request, ShellAppIsOpen, UnknownSequence,
-            UnknownSingularEvent, Uptime)
+            InvalidSequence,
+            InvalidSingularEvent,
+            Request,
+            ShellAppIsOpen,
+            UnknownSequence,
+            UnknownSingularEvent,
+            UpdaterFailure,
+        )
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(Request, ShellAppIsOpen, Uptime, InvalidSequence, InvalidSingularEvent,
-                           UnknownSequence, UnknownSingularEvent)
+        self.ensure_tables(
+            Request,
+            ShellAppIsOpen,
+            InvalidSequence,
+            InvalidSingularEvent,
+            UnknownSequence,
+            UnknownSingularEvent,
+            UpdaterFailure,
+        )
 
         occured_at = datetime.now(tz=timezone.utc)
 
@@ -567,22 +580,17 @@ class TestMetrics(IntegrationTest):
                 request=request, event_id='ffffffff-ffff-ffff-ffff-ffffffffffff', user_id=1002,
                 occured_at=occured_at, payload=unknown_singular, error='unknown'))
 
-            # Add an invalid singular event which will be replayed as an uptime event
+            # Add an invalid singular event which will be replayed as an UpdaterFailure
             dbsession.add(InvalidSingularEvent(
-                request=request, event_id='9af2cc74-d6dd-423f-ac44-600a6eee2d96', user_id=1003,
-                occured_at=occured_at, payload=GLib.Variant('mv', GLib.Variant('(xx)', (2, 1))),
+                request=request, event_id='927d0f61-4890-4912-a513-b2cb0205908f', user_id=1003,
+                occured_at=occured_at,
+                payload=GLib.Variant('mv', GLib.Variant('(ss)', ('a', 'b'))),
                 error='ok'))
-
-            # Add an invalid singular event which will be replayed as an uptime event, but with an
-            # error we decided to ignore
-            dbsession.add(InvalidSingularEvent(
-                request=request, event_id='9af2cc74-d6dd-423f-ac44-600a6eee2d96', user_id=1004,
-                occured_at=occured_at, payload=GLib.Variant('mv', None), error='discard'))
 
             # Add an invalid singular event which will still be invalid after the replay
             invalid_singular = GLib.Variant('mv', GLib.Variant('as', ['invalid', 'payload']))
             dbsession.add(InvalidSingularEvent(
-                request=request, event_id='9af2cc74-d6dd-423f-ac44-600a6eee2d96', user_id=1005,
+                request=request, event_id='927d0f61-4890-4912-a513-b2cb0205908f', user_id=1005,
                 occured_at=occured_at, payload=invalid_singular, error='invalid'))
 
             # -- Invalid aggregate events -------
@@ -645,7 +653,7 @@ class TestMetrics(IntegrationTest):
 
         with self.db as dbsession:
             assert dbsession.query(Request).count() == 1
-            assert dbsession.query(InvalidSingularEvent).count() == 5
+            assert dbsession.query(InvalidSingularEvent).count() == 4
             assert dbsession.query(InvalidSequence).count() == 6
 
         # Replay the invalid events
@@ -662,12 +670,12 @@ class TestMetrics(IntegrationTest):
             assert unknown.occured_at == occured_at
             assert unknown.payload_data == unknown_singular.get_data_as_bytes().get_data()
 
-            uptime = dbsession.query(Uptime).one()
-            assert uptime.request == request
-            assert uptime.user_id == 1003
-            assert uptime.occured_at == occured_at
-            assert uptime.accumulated_uptime == 2
-            assert uptime.number_of_boots == 1
+            updater_failure = dbsession.query(UpdaterFailure).one()
+            assert updater_failure.request == request
+            assert updater_failure.user_id == 1003
+            assert updater_failure.occured_at == occured_at
+            assert updater_failure.component == 'a'
+            assert updater_failure.error_message == 'b'
 
             invalid = dbsession.query(InvalidSingularEvent).one()
             assert invalid.request == request
@@ -707,13 +715,27 @@ class TestMetrics(IntegrationTest):
 
     def test_replay_unknown(self):
         from azafea.event_processors.endless.metrics.v2.model import (
-            InvalidSequence, InvalidSingularEvent, Request, ShellAppIsOpen, UnknownAggregateEvent,
-            UnknownSequence, UnknownSingularEvent, Uptime)
+            InvalidSequence,
+            InvalidSingularEvent,
+            Request,
+            ShellAppIsOpen,
+            UnknownAggregateEvent,
+            UnknownSequence,
+            UnknownSingularEvent,
+            UpdaterFailure)
 
         # Create the table
         self.run_subcommand('initdb')
-        self.ensure_tables(Request, ShellAppIsOpen, Uptime, InvalidSequence, InvalidSingularEvent,
-                           UnknownAggregateEvent, UnknownSequence, UnknownSingularEvent)
+        self.ensure_tables(
+            Request,
+            ShellAppIsOpen,
+            InvalidSequence,
+            InvalidSingularEvent,
+            UnknownAggregateEvent,
+            UnknownSequence,
+            UnknownSingularEvent,
+            UpdaterFailure,
+        )
 
         occured_at = datetime.now(tz=timezone.utc)
 
@@ -736,22 +758,17 @@ class TestMetrics(IntegrationTest):
                 request=request, event_id='ffffffff-ffff-ffff-ffff-ffffffffffff', user_id=1002,
                 occured_at=occured_at, payload=unknown_singular))
 
-            # Add an unknown singular event which will be replayed as an uptime event
+            # Add an unknown singular event which will be replayed as an updater failure event
             dbsession.add(UnknownSingularEvent(
-                request=request, event_id='9af2cc74-d6dd-423f-ac44-600a6eee2d96', user_id=1003,
-                occured_at=occured_at, payload=GLib.Variant('mv', GLib.Variant('(xx)', (2, 1)))))
-
-            # Add an unknown singular event which will be replayed as an uptime event, but with an
-            # error we decided to ignore
-            dbsession.add(UnknownSingularEvent(
-                request=request, event_id='9af2cc74-d6dd-423f-ac44-600a6eee2d96', user_id=1004,
-                occured_at=occured_at, payload=GLib.Variant('mv', None)))
+                request=request, event_id='927d0f61-4890-4912-a513-b2cb0205908f', user_id=1003,
+                occured_at=occured_at,
+                payload=GLib.Variant('mv', GLib.Variant('(ss)', ('a', 'b')))))
 
             # Add an unknown singular event which will be replayed as an uptime event, but with an
             # actual error making it invalid
             invalid_singular = GLib.Variant('mv', GLib.Variant('as', ['invalid', 'payload']))
             dbsession.add(UnknownSingularEvent(
-                request=request, event_id='9af2cc74-d6dd-423f-ac44-600a6eee2d96', user_id=1005,
+                request=request, event_id='eb0302d8-62e7-274b-365f-cd4e59103983', user_id=1005,
                 occured_at=occured_at, payload=invalid_singular))
 
             # -- Unknown aggregate events -------
@@ -807,7 +824,7 @@ class TestMetrics(IntegrationTest):
 
         with self.db as dbsession:
             assert dbsession.query(Request).count() == 1
-            assert dbsession.query(UnknownSingularEvent).count() == 5
+            assert dbsession.query(UnknownSingularEvent).count() == 4
             assert dbsession.query(UnknownAggregateEvent).count() == 1
             assert dbsession.query(UnknownSequence).count() == 5
 
@@ -825,12 +842,12 @@ class TestMetrics(IntegrationTest):
             assert unknown.occured_at == occured_at
             assert unknown.payload_data == unknown_singular.get_data_as_bytes().get_data()
 
-            uptime = dbsession.query(Uptime).one()
-            assert uptime.request == request
-            assert uptime.user_id == 1003
-            assert uptime.occured_at == occured_at
-            assert uptime.accumulated_uptime == 2
-            assert uptime.number_of_boots == 1
+            updater_failure = dbsession.query(UpdaterFailure).one()
+            assert updater_failure.request == request
+            assert updater_failure.user_id == 1003
+            assert updater_failure.occured_at == occured_at
+            assert updater_failure.component == 'a'
+            assert updater_failure.error_message == 'b'
 
             invalid = dbsession.query(InvalidSingularEvent).one()
             assert invalid.request == request
@@ -1073,8 +1090,8 @@ class TestMetrics(IntegrationTest):
 
         info.pop('id')
         with self.db as dbsession:
-            location_label = dbsession.query(LocationLabel).one()
-            assert location_label.info == info
+            updater_failure = dbsession.query(LocationLabel).one()
+            assert updater_failure.info == info
 
         capture = capfd.readouterr()
         assert 'No locations events with empty info in database' in capture.out
@@ -1114,8 +1131,8 @@ class TestMetrics(IntegrationTest):
 
         info.pop('id')
         with self.db as dbsession:
-            location_label = dbsession.query(LocationLabel).one()
-            assert location_label.info == info
+            updater_failure = dbsession.query(LocationLabel).one()
+            assert updater_failure.info == info
 
     def test_refresh_views(self):
         from azafea.event_processors.endless.metrics.v2.model import MachineIdsByDay, Request
