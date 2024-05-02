@@ -58,6 +58,17 @@ import pytest
             'image_personality': None
         }
     ),
+    (
+        '[Invalid UTF-8]',
+        {
+            'image_product': None,
+            'image_branch': None,
+            'image_arch': None,
+            'image_platform': None,
+            'image_timestamp': None,
+            'image_personality': None
+        }
+    ),
 ])
 def test_parse_endless_os_image(image_id, expected):
     from azafea.event_processors.endless.image import parse_endless_os_image
