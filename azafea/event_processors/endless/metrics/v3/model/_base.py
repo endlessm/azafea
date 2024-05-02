@@ -11,7 +11,7 @@ import logging
 from dataclasses import dataclass
 from datetime import date, datetime
 from hashlib import sha512
-from typing import Any, Dict, Optional, Set, Tuple, Type, cast
+from typing import Any, Dict, Optional, Set, Tuple, Type, Union, cast
 
 from gi.repository import GLib
 
@@ -191,7 +191,7 @@ class MetricEvent(Base, metaclass=MetricMeta):
     __abstract__ = True
 
     __event_uuid__: str
-    __payload_type__: Optional[str]
+    __payload_type__: Optional[Union[str, Tuple[str, ...]]]
     __ignore_empty_payload__ = False
 
     id = Column(Integer, primary_key=True)
@@ -223,16 +223,21 @@ class MetricEvent(Base, metaclass=MetricMeta):
                           self.__event_uuid__, payload)
             return {}
 
+        if isinstance(self.__payload_type__, tuple):
+            types = self.__payload_type__
+        else:
+            types = (self.__payload_type__,)
+
         if payload is None:
             raise EmptyPayloadError(f'Metric event {self.__event_uuid__} needs a '
-                                    f'{self.__payload_type__} payload, but got none')
+                                    f'{" or ".join(types)} payload, but got none')
 
         payload = get_variant(payload)
         payload_type = payload.get_type_string()
 
-        if payload_type != self.__payload_type__:
+        if payload_type not in types:
             raise WrongPayloadError(f'Metric event {self.__event_uuid__} needs a '
-                                    f'{self.__payload_type__} payload, but got '
+                                    f'{" or ".join(types)} payload, but got '
                                     f'{payload} ({payload_type})')
 
         return self._get_fields_from_payload(payload)
