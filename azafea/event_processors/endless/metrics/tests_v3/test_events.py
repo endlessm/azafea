@@ -360,6 +360,29 @@ def test_new_unknown_event():
         },
     ),
     (
+        'ComputerInformation',
+        GLib.Variant(
+            '(uuuua(sqds))',
+            (
+                40000,
+                50000000,
+                300000,
+                49700000,
+                [('model_1', 8, 14.5, 'a a b'), ('model_2', 8, 14.5, ' d  b  c ')]
+            )
+        ),
+        {
+            'total_ram': 40000,
+            'total_disk': 50000000,
+            'used_disk': 300000,
+            'free_disk': 49700000,
+            'info': [
+                {'model': 'model_1', 'cores': 8, 'max_frequency': 14.5, 'flags': ['a', 'b']},
+                {'model': 'model_2', 'cores': 8, 'max_frequency': 14.5, 'flags': ['b', 'c', 'd']},
+            ],
+        },
+    ),
+    (
         'SplitFlatpakRepoStats',
         GLib.Variant(
             '(uuuuuuutut)',

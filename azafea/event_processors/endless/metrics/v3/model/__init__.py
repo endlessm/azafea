@@ -540,7 +540,10 @@ class ComputerInformation(SingularEvent):
     """
     __tablename__ = 'computer_information_v3'
     __event_uuid__ = '81f303aa-448d-443d-97f9-8d8a9169321c'
-    __payload_type__ = '(uuuua(sqd))'
+    __payload_type__ = (
+        '(uuuua(sqd))',
+        '(uuuua(sqds))',
+    )
 
     #: total RAM size in mebibytes (2^20)
     total_ram = Column(BigInteger, nullable=False)
@@ -550,20 +553,32 @@ class ComputerInformation(SingularEvent):
     used_disk = Column(BigInteger, nullable=False)
     #: free disk space in gibibytes (2^30)
     free_disk = Column(BigInteger, nullable=False)
-    #: array of CPU model (e.g. Intel(R) Core(TM) i7-5500U CPU @ 2.40GHz),
-    #: number of cores (e.g. 4) and maximum CPU speed in MHz or current CPU speed
-    #: if maximum can’t be determined (e.g. 3000.0)
+    #: array of objects containing the following keys:
+    #:
+    #: ``model`` (string)
+    #:     CPU model (e.g. ``Intel(R) Core(TM) i7-5500U CPU @ 2.40GHz``).
+    #: ``cores`` (integer)
+    #:     number of cores (e.g. ``4``).
+    #: ``max_frequency`` (float)
+    #:     maximum CPU speed in MHz, or current CPU speed if maximum couldn’t
+    #:     be determined (e.g. ``3000.0``).
+    #: ``cpu_flags`` (sorted array of unique strings)
+    #:     CPU flags (e.g. ``["de", "fpu", "vme", ...]``). Reported since
+    #:     Endless OS 6; this key is absent if the client did not send it.
     info = Column(JSONB, nullable=False)
 
     @staticmethod
     def _get_fields_from_payload(payload: GLib.Variant) -> Dict[str, Any]:
         cpu_info = []
         for item in payload.get_child_value(4).unpack():
-            cpu_info.append({
+            cpu = {
                 'model': item[0],
                 'cores': item[1],
                 'max_frequency': item[2],
-            })
+            }
+            if len(item) == 4:
+                cpu['flags'] = sorted(set(item[3].split()))
+            cpu_info.append(cpu)
         return {
             'total_ram': payload.get_child_value(0).get_uint32(),
             'total_disk': payload.get_child_value(1).get_uint32(),
