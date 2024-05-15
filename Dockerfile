@@ -32,5 +32,5 @@ ENV VERBOSE=false \
     POSTGRES_PASSWORD="CHANGE ME!!" \
     POSTGRES_SSL_MODE=allow
 
-ENTRYPOINT ["./entrypoint", "pipenv", "run", "azafea"]
+ENTRYPOINT ["./entrypoint", "pipenv", "run", "azafea", "-c", "/tmp/config.toml"]
 HEALTHCHECK CMD pgrep python || exit 1
