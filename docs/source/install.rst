@@ -145,8 +145,7 @@ Finally, you can run Azafea::
                       --env=REDIS_PASSWORD=S3cretRedisP@ssw0rd \
                       --env=POSTGRES_HOST=localhost \
                       --env=POSTGRES_PASSWORD=S3cretPgAdminP@ssw0rd \
-                      docker.io/endlessm/azafea \
-                      run
+                      docker.io/endlessm/azafea
 
 If you're using a local configuration file, 2 changes are needed. First, rather
 than passing ``--env`` to ``docker run``, the file needs to be mounted into the
