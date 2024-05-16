@@ -22,6 +22,7 @@ def test_defaults():
     assert config.main.number_of_workers == number_of_workers
     assert config.redis.host == 'localhost'
     assert config.redis.port == 6379
+    assert config.redis.ssl is False
     assert config.postgresql.host == 'localhost'
     assert config.postgresql.port == 5432
     assert config.postgresql.user == 'azafea'
@@ -38,6 +39,7 @@ def test_defaults():
         'host = "localhost"',
         'port = 6379',
         'password = "** hidden **"',
+        'ssl = false',
         '',
         '[postgresql]',
         'host = "localhost"',
@@ -84,6 +86,7 @@ def test_override(monkeypatch, make_config):
     assert config.main.number_of_workers == 1
     assert config.redis.host == 'localhost'
     assert config.redis.port == 42
+    assert config.redis.ssl is False
     assert config.postgresql.host == 'pg-server'
     assert config.postgresql.port == 5432
     assert config.postgresql.user == 'azafea'
@@ -101,6 +104,7 @@ def test_override(monkeypatch, make_config):
         'host = "localhost"',
         'port = 42',
         'password = "** hidden **"',
+        'ssl = false',
         '',
         '[postgresql]',
         'host = "pg-server"',

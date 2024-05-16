@@ -41,12 +41,17 @@ class Processor(Process):
         return Db(self.config.postgresql)
 
     def _get_redis(self) -> Redis:
-        redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
-                      password=self.config.redis.password)
+        redis = Redis(
+            host=self.config.redis.host,
+            port=self.config.redis.port,
+            password=self.config.redis.password,
+            ssl=self.config.redis.ssl,
+        )
 
         # Try to connect, to fail early if the Redis server can't be reached. The connection
         # disconnects automatically when garbage collected.
         redis.connection_pool.make_connection().connect()
+        log.info(f'Connected to Redis host {self.config.redis.host}:{self.config.redis.port}')
 
         return redis
 

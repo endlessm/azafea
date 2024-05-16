@@ -82,8 +82,12 @@ class IntegrationTest:
         self.config = Config.from_file(self.config_file)
 
         self.db = Db(self.config.postgresql)
-        self.redis = Redis(host=self.config.redis.host, port=self.config.redis.port,
-                           password=self.config.redis.password)
+        self.redis = Redis(
+            host=self.config.redis.host,
+            port=self.config.redis.port,
+            password=self.config.redis.password,
+            ssl=self.config.redis.ssl,
+        )
 
         # Ensure we start with a clean slate
         self.ensure_no_queues()

@@ -168,7 +168,12 @@ def do_replay(config: Config, args: argparse.Namespace) -> None:
         log.error(f'Could not replay events from "{args.queue}": unknown event queue requested')
         raise NoEventQueueExit()
 
-    redis = Redis(host=config.redis.host, port=config.redis.port, password=config.redis.password)
+    redis = Redis(
+        host=config.redis.host,
+        port=config.redis.port,
+        password=config.redis.password,
+        ssl=config.redis.ssl,
+    )
     error_queue = f'errors-{args.queue}'
 
     # We could try and pull them out until there aren't any left, but we'd enter a race with Azafea:

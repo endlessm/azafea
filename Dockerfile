@@ -29,6 +29,7 @@ ENV VERBOSE=false \
     REDIS_HOST=localhost \
     REDIS_PORT=6379 \
     REDIS_PASSWORD="CHANGE ME!!" \
+    REDIS_SSL=false \
     POSTGRES_HOST=localhost \
     POSTGRES_PORT=5432 \
     POSTGRES_USER=azafea \

@@ -24,7 +24,7 @@ import azafea.processor
 
 
 class MockRedis:
-    def __init__(self, host: str, port: int, password: str):
+    def __init__(self, host: str, port: int, password: str, ssl: bool = False):
         print('Created Redis client')
 
         # FIXME: This is a hack just to have code coverage of the cases BRPOP returns None (the
