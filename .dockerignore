@@ -1,5 +1,6 @@
 /.coverage
 /.dockerignore
+/.env
 /.git
 /.gitignore
 /.mypy_cache
