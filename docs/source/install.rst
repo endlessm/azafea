@@ -67,9 +67,14 @@ We can now run PostgreSQL, telling it to use that volume::
 Azafea
 ------
 
-The easiest deployment method is also to use Docker.
+The easiest deployment method is also to use Docker. The image is published on
+`Docker Hub`_ and can be downloaded by running ``sudo docker pull
+docker.io/endlessm/azafea``.
 
-You need to first get the sources and build the Docker image::
+.. _Docker Hub: https://hub.docker.com/r/endlessm/azafea
+
+If you prefer, you can first get the sources and build the Docker image
+locally::
 
     $ git clone https://github.com/endlessm/azafea
     $ cd azafea
@@ -93,24 +98,26 @@ Running
 =======
 
 .. note::
-    The commands  below all assume that your config file is at
-    ``/etc/azafea/config.toml``. If you saved it elsewhere, you will need to
-    adapt the ``--volume`` argument.
+    The commands below all assume that you're using the Docker Hub image and
+    your config file is at ``/etc/azafea/config.toml``. If you're using a built
+    image, adapt the ``docker.io/endlessm/azafea`` argument to use the tag you
+    passed in ``--tag``. If you saved it elsewhere, you will need to adapt the
+    ``--volume`` argument.
 
 Once you built the Docker image and wrote your configuration file, you can
 ensure that Azafea loads your configuration correctly with the following
 command::
 
-    $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro azafea print-config
+    $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro docker.io/endlessm/azafea print-config
 
 If everything is the way you want it, it is time to initialize the database,
 creating all the tables::
 
-    $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro azafea migratedb
+    $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro docker.io/endlessm/azafea migratedb
 
 Finally, you can run Azafea::
 
-    $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro azafea run
+    $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro docker.io/endlessm/azafea run
 
 Upgrading the Database
 ======================
@@ -121,4 +128,4 @@ database model.
 To reflect the code changes into PostgreSQL, you should run the following
 command every time you update::
 
-    $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro azafea migratedb
+    $ sudo docker run --volume=/etc/azafea:/etc/azafea:ro docker.io/endlessm/azafea migratedb
