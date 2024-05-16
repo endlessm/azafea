@@ -95,12 +95,17 @@ variables are:
 * ``VERBOSE``: Sets the ``main.verbose`` value. (Default: ``false``)
 * ``NUM_OF_WORKERS``: Sets the ``main.number_of_workers`` value.
 * ``REDIS_HOST``: Sets the ``redis.host`` value. (Default: ``localhost``)
+* ``REDIS_PORT``: Sets the ``redis.port`` value. (Default: 6379)
 * ``REDIS_PASSWORD``: Sets the ``redis.password`` value. (Default: ``CHANGE
   ME!!``)
 * ``POSTGRES_HOST``: Sets the ``postgresql.host`` value. (Default:
   ``localhost``)
+* ``POSTGRES_PORT``: Sets the ``postgresql.port`` value. (Default: 5432)
+* ``POSTGRES_USER``: Sets the ``postgresql.user`` value. (Default: ``azafea``)
 * ``POSTGRES_PASSWORD``: Sets the ``postgresql.password`` value. (Default:
   ``CHANGE ME!!``)
+* ``POSTGRES_DATABASE``: Sets the ``postgresql.database`` value. (Default:
+  ``azafea``)
 * ``POSTGRES_SSL_MODE``: Sets the ``postgresql.connect_args.sslmode`` value.
   (Default: ``allow``)
 

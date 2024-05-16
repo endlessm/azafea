@@ -27,9 +27,13 @@ COPY --chown=azafea:root . .
 ENV VERBOSE=false \
     NUM_OF_WORKERS=1 \
     REDIS_HOST=localhost \
+    REDIS_PORT=6379 \
     REDIS_PASSWORD="CHANGE ME!!" \
     POSTGRES_HOST=localhost \
+    POSTGRES_PORT=5432 \
+    POSTGRES_USER=azafea \
     POSTGRES_PASSWORD="CHANGE ME!!" \
+    POSTGRES_DATABASE=azafea \
     POSTGRES_SSL_MODE=allow
 
 ENTRYPOINT ["./entrypoint", "pipenv", "run", "azafea", "-c", "/tmp/config.toml"]
