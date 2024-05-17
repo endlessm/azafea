@@ -1,5 +1,6 @@
 /.cache
 /.coverage*
+/.env
 /.local
 /.mypy_cache/
 /azafea.egg-info/
