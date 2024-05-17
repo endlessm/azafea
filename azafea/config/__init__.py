@@ -113,6 +113,7 @@ class Redis(_Base):
     host: str = 'localhost'
     port: int = 6379
     password: str = DEFAULT_PASSWORD
+    ssl: bool = False
 
     @validator('host', pre=True)
     def host_is_non_empty_string(cls, value: Any) -> str:

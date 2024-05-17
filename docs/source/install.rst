@@ -98,6 +98,7 @@ variables are:
 * ``REDIS_PORT``: Sets the ``redis.port`` value. (Default: 6379)
 * ``REDIS_PASSWORD``: Sets the ``redis.password`` value. (Default: ``CHANGE
   ME!!``)
+* ``REDIS_SSL``: Sets the ``redis.ssl`` value. (Default: ``false``)
 * ``POSTGRES_HOST``: Sets the ``postgresql.host`` value. (Default:
   ``localhost``)
 * ``POSTGRES_PORT``: Sets the ``postgresql.port`` value. (Default: 5432)

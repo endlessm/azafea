@@ -26,6 +26,7 @@ the default options:
    host = "localhost"
    port = 6379
    password = "CHANGE ME!!"
+   ssl = false
 
    [postgresql]
    host = "localhost"
@@ -88,6 +89,10 @@ queues.
 
   The default is ``"CHANGE ME!!"``.
 
+``ssl`` (boolean)
+  Whether to connect to the Redis server with SSL wrapping.
+
+  The default is ``false``
 
 The ``postgresql`` table
 ========================
