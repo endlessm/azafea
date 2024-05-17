@@ -55,9 +55,12 @@ class ImageParsingError(Exception):
 
 
 def parse_endless_os_image(image_id: str, tzinfo: bool = True) -> ParsedImage:
-    if image_id == 'unknown':
-        # In case of errors, the activation and pings come with an "unknown" image id which we must
-        # treat as valid
+    if image_id in ('unknown', '[Invalid UTF-8]'):
+        # If the image ID cannot be read from disk, the activation/ping and metrics submissions
+        # use the string "unknown", which we must treat as valid-but-empty.
+        #
+        # Due to a bug in eos-event-recorder-daemon in eos4.0 and eos5.0, a missing image ID would
+        # instead lead to the string "[Invalid UTF-8]" being used; treat this the same as "unknown".
         return {
             'image_product': None,
             'image_branch': None,
