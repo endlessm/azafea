@@ -105,10 +105,11 @@ community.
 We also use type checking with [mypy](http://www.mypy-lang.org/), which
 prevents a lot of problems inherent to dynamically typed languages like Python.
 
-Both are run automatically with the following command:
+Both are run with the following commands:
 
 ```
 [azafea-dev]$ pipenv run lint
+[azafea-dev]$ pipenv run type-check
 ```
 
 

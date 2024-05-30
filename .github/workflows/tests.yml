@@ -54,8 +54,10 @@ jobs:
           name: image
       - name: Load Docker Image
         run: docker load < docker-image.tar
-      - name: Lint and Type Checking
-        run: docker run --rm --network=host --entrypoint="" azafea-tests pipenv run lint
+      - name: Lint
+        run: docker run --rm --entrypoint="" azafea-tests pipenv run lint
+      - name: Type Checking
+        run: docker run --rm --entrypoint="" azafea-tests pipenv run type-check
 
   doc:
     name: Documentation Building Test

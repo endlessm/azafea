@@ -5,12 +5,11 @@ sort_pipfile = true
 # don't need to be duplicated there. See
 # https://docs.readthedocs.io/en/stable/builds.html#default-versions-of-dependencies.
 [dev-packages]
+flake8 = "*"
 flake8-bugbear = "*"
 mypy = ">=0.750"
 pytest = "*"
 pytest-cov = "*"
-pytest-flake8 = "*"
-pytest-mypy = ">=0.3.3"
 sphinx = "*"
 # For Read the Docs
 sphinx-rtd-theme = "*"
@@ -33,6 +32,7 @@ toml = "*"
 [scripts]
 azafea = "python -m azafea"
 doc = "sphinx-build -b html docs/source docs/build/html"
-lint = "py.test --flake8 --mypy -m 'flake8 or mypy'"
+lint = "flake8"
 test = "py.test --cov=azafea --cov-fail-under=65 --no-cov-on-fail -m 'not integration'"
 test-all = "py.test --cov=azafea --cov-fail-under=99 --no-cov-on-fail --verbose"
+type-check = "mypy"

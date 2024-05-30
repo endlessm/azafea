@@ -22,11 +22,6 @@ from azafea.config import Config
 
 def pytest_collection_modifyitems(items):
     for item in items:
-        markers = [m for m in item.own_markers if m.name in ('flake8', 'mypy')]
-
-        if markers:
-            continue
-
         if fnmatch(item.nodeid, '*/tests*/integration/*'):
             item.add_marker(pytest.mark.integration)
 
