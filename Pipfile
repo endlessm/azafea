@@ -7,7 +7,7 @@ sort_pipfile = true
 [dev-packages]
 flake8 = "*"
 flake8-bugbear = "*"
-mypy = ">=0.750"
+mypy = ">=0.750, < 0.920"
 pytest = "*"
 pytest-cov = "*"
 sphinx = "*"
@@ -22,7 +22,7 @@ typing-extensions = ">= 3.7.4"
 [packages]
 alembic = "*"
 psycopg2 = "*"
-pydantic = ">= 1.3"
+pydantic = ">= 1.3, < 1.9"
 pygobject = "*"
 redis = "*"
 requests = "*"
