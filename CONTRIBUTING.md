@@ -114,11 +114,12 @@ Both are run automatically with the following command:
 
 ## Dependencies
 
-Python dependencies are managed with [Pipenv](https://docs.pipenv.org/).
-Required packages are handled in [Pipfile](Pipfile) with the fully
-specified dependencies in `Pipfile.lock`. When changing requirements,
-run `pipenv lock` to update the lock file. The `--keep-outdated` option
-can be used to keep existing pins from being updated.
+Azafea requires Python 3.8 or newer. Python dependencies are managed with
+[Pipenv](https://docs.pipenv.org/). Pipenv version 2023.10.24 or newer is
+required. Required packages are handled in [Pipfile](Pipfile) with the fully
+specified dependencies in `Pipfile.lock`. When changing requirements, run
+`pipenv lock` to update the lock file. The `--keep-outdated` option can be used
+to keep existing pins from being updated.
 
 The documentation is also built on [Read the
 Docs](https://readthedocs.org/), but that service doesn't support

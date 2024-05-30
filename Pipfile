@@ -1,3 +1,6 @@
+[pipenv]
+sort_pipfile = true
+
 # Some dev packages are just for Read the Docs so that requirements
 # don't need to be duplicated there. See
 # https://docs.readthedocs.io/en/stable/builds.html#default-versions-of-dependencies.
@@ -8,13 +11,13 @@ pytest = "*"
 pytest-cov = "*"
 pytest-flake8 = "*"
 pytest-mypy = ">=0.3.3"
-types-toml = "*"
-types-requests = "*"
-types-redis = "*"
 sphinx = "*"
 # For Read the Docs
 sphinx-rtd-theme = "*"
 sqlalchemy-stubs = ">=0.3"
+types-redis = "*"
+types-requests = "*"
+types-toml = "*"
 typing-extensions = ">= 3.7.4"
 
 [packages]
