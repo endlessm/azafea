@@ -7,14 +7,14 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-from typing import Any, Callable, List
+from typing import Any, Callable, List, Optional
 
 
 def fixture(scope: str = "function",
-            params: List[Any] = None,
+            params: Optional[List[Any]] = None,
             autouse: bool = False,
-            ids: List[str] = None,
-            name: str = None) -> Callable: ...
+            ids: Optional[List[str]] = None,
+            name: Optional[str] = None) -> Callable: ...
 
 class mark:
     @staticmethod
@@ -23,4 +23,4 @@ class mark:
     @staticmethod
     def integration(func: Callable[[Any, Any], Any]) -> Callable: ...
 
-def param(*values: Any, id: str = None) -> Callable: ...
+def param(*values: Any, id: Optional[str] = None) -> Callable: ...
