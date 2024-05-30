@@ -1,6 +1,9 @@
 [pipenv]
 sort_pipfile = true
 
+[requires]
+python_version = "3.11"
+
 # Some dev packages are just for Read the Docs so that requirements
 # don't need to be duplicated there. See
 # https://docs.readthedocs.io/en/stable/builds.html#default-versions-of-dependencies.

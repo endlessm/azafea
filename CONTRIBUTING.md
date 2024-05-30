@@ -115,7 +115,7 @@ Both are run with the following commands:
 
 ## Dependencies
 
-Azafea requires Python 3.8 or newer. Python dependencies are managed with
+Azafea requires Python 3.11 or newer. Python dependencies are managed with
 [Pipenv](https://docs.pipenv.org/). Pipenv version 2023.10.24 or newer is
 required. Required packages are handled in [Pipfile](Pipfile) with the fully
 specified dependencies in `Pipfile.lock`. When changing requirements, run
