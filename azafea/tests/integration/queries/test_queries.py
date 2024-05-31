@@ -7,14 +7,19 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+from importlib import import_module
+from pathlib import Path
+
 from .. import IntegrationTest
+
+TEST_DIR = Path(__file__).parent
 
 
 class TestQuery(IntegrationTest):
-    handler_module = 'azafea.tests.integration.queries.handler_module'
+    handler_path = TEST_DIR / 'handler_module.py'
 
     def test_chunked_query(self):
-        from .handler_module import Event
+        Event = import_module(self.handler_module).Event
 
         # Create the table
         self.run_subcommand('initdb')
@@ -45,7 +50,7 @@ class TestQuery(IntegrationTest):
         assert counted == 60
 
     def test_chunked_query_descending(self):
-        from .handler_module import Event
+        Event = import_module(self.handler_module).Event
 
         # Create the table
         self.run_subcommand('initdb')
@@ -77,7 +82,7 @@ class TestQuery(IntegrationTest):
         assert counted == 60
 
     def test_filtered_chunked_query(self):
-        from .handler_module import Event
+        Event = import_module(self.handler_module).Event
 
         # Create the table
         self.run_subcommand('initdb')

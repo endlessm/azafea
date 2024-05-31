@@ -6,22 +6,26 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+from importlib import import_module
+from pathlib import Path
 
 from .. import IntegrationTest
 
+TEST_DIR = Path(__file__).parent
+
 
 class TestManageDb(IntegrationTest):
-    handler_module = 'azafea.tests.integration.managedb.handler_module'
+    handler_path = TEST_DIR / 'handler_module.py'
 
     def test_initdb(self):
-        from .handler_module import Event
+        Event = import_module(self.handler_module).Event
 
         # Create the table
         self.run_subcommand('initdb')
         self.ensure_tables(Event)
 
     def test_reinitdb(self):
-        from .handler_module import Event
+        Event = import_module(self.handler_module).Event
 
         # Create the table
         self.run_subcommand('initdb')

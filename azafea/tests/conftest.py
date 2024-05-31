@@ -8,7 +8,6 @@
 
 
 from fnmatch import fnmatch
-from importlib import import_module
 from pathlib import Path
 from typing import Mapping
 import sys
@@ -79,18 +78,20 @@ def make_config(make_config_file):
 
 
 @pytest.fixture()
-def handler_with_migrations(tmpdir):
-    # Make a fake Azafea handler with its migrations dir
-    (tmpdir / '__init__.py').write_text('def process(*args, **kwargs): pass', 'utf-8')
-    (tmpdir / 'migrations').mkdir()
+def handler_with_migrations(tmp_path, monkeypatch):
+    # Create a temporary handler package with an empty process method.
+    handler_pkg = tmp_path / 'tmp_azafea_handler'
+    handler_pkg.mkdir()
+    handler_pkg_init = handler_pkg / '__init__.py'
+    handler_pkg_init.write_text('def process(*args, **kwargs): pass', 'utf-8')
 
-    # Make it importable
-    sys.path.insert(0, tmpdir.dirname)
+    # Create the handler migrations directory.
+    migrations_dir = handler_pkg / 'migrations'
+    migrations_dir.mkdir()
 
-    # FIXME: Why is this needed? What does pkg_resources do here?
-    import_module(tmpdir.basename)
+    # Make the handler package available and return its path.
+    monkeypatch.syspath_prepend(tmp_path)
+    yield handler_pkg
 
-    yield tmpdir
-
-    # Return sys.path to how it was
-    sys.path.pop(0)
+    # Remove the handler package if it's been imported.
+    sys.modules.pop(handler_pkg.name, None)

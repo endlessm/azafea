@@ -7,15 +7,19 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
+from importlib import import_module
+from pathlib import Path
 import pytest
 
 from sqlalchemy.sql import text
 
 from .. import IntegrationTest
 
+TEST_DIR = Path(__file__).parent
+
 
 class TestNullableBoolean(IntegrationTest):
-    handler_module = 'azafea.tests.integration.nullableboolean.handler_module'
+    handler_path = TEST_DIR / 'handler_module.py'
 
     @pytest.mark.parametrize('name, value', [
         pytest.param('true', True, id='true'),
@@ -23,7 +27,7 @@ class TestNullableBoolean(IntegrationTest):
         pytest.param('unknown', None, id='unknown'),
     ])
     def test_nullableboolean(self, name, value):
-        from .handler_module import Event
+        Event = import_module(self.handler_module).Event
 
         # Create the table
         self.run_subcommand('initdb')
@@ -47,7 +51,7 @@ class TestNullableBoolean(IntegrationTest):
             assert result.fetchone()[0] == name
 
     def test_query_filtered_on_none(self):
-        from .handler_module import Event
+        Event = import_module(self.handler_module).Event
 
         # Create the table
         self.run_subcommand('initdb')

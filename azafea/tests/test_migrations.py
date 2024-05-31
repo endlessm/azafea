@@ -22,7 +22,7 @@ def test_get_alembic_config(monkeypatch, handler_with_migrations, make_config):
         config = make_config({
             'queues': {
                 'some-queue': {'handler': 'azafea'},
-                'other-queue': {'handler': handler_with_migrations.basename},
+                'other-queue': {'handler': handler_with_migrations.name},
             },
         })
 
