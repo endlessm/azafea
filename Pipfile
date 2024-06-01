@@ -17,8 +17,15 @@ sphinx = "*"
 # For Read the Docs
 sphinx-rtd-theme = "*"
 sqlalchemy-stubs = ">=0.3"
-types-redis = "~= 3.5"
-types-requests = "~= 2.26.0"
+# FIXME: redis-py 5 has added native type hints, so types-redis is no
+# longer required. Unfortunately, the native hints have problems at
+# present, so types-redis still works better even though it hasn't been
+# updated past 4.6.
+#
+# https://github.com/redis/redis-py/issues/2399
+# https://github.com/redis/redis-py/issues/2933
+types-redis = "< 6.0"
+types-requests = "~= 2.32"
 types-toml = "*"
 typing-extensions = ">= 3.7.4"
 
@@ -27,8 +34,8 @@ alembic = "*"
 psycopg2 = "*"
 pydantic = "~= 2.7"
 pygobject = "*"
-redis = "~= 3.5"
-requests = "~= 2.26.0"
+redis = "~= 5.0"
+requests = "~= 2.32"
 sqlalchemy = "<1.4"
 toml = "*"
 
