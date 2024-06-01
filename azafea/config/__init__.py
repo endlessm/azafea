@@ -13,9 +13,9 @@ import logging
 import os
 from typing import Any, Callable, Dict, List, Mapping, MutableMapping, Optional
 
-from pydantic.class_validators import root_validator, validator
+from pydantic import field_validator, ValidationError
 from pydantic.dataclasses import dataclass
-from pydantic.error_wrappers import ValidationError
+from pydantic_core import ErrorDetails
 
 import toml
 
@@ -29,23 +29,38 @@ DEFAULT_PASSWORD = 'CHANGE ME!!'
 
 
 class InvalidConfigurationError(Exception):
-    def __init__(self, errors: List[Dict[str, Any]]) -> None:
+    def __init__(self, errors: List[ErrorDetails]) -> None:
         self.errors = errors
 
     def __str__(self) -> str:
         msg = ['Invalid configuration:']
 
         for e in self.errors:
-            loc = e['loc']
-
-            # Make the output prettier
-            # FIXME: Do that better: https://github.com/samuelcolvin/pydantic/issues/982
-            if loc[0] == 'queues' and loc[-1] == '__root__':
-                loc = (*loc[0:-1], 'handler')
-
-            msg.append(f"* {'.'.join(loc)}: {e['msg']}")
+            loc = self._loc_str(e)
+            msg.append(f"* {loc}: {e['msg']}")
 
         return '\n'.join(msg)
+
+    # The loc field in ErrorDetails is a tuple of strings and ints.
+    # https://docs.pydantic.dev/latest/errors/errors/#customize-error-messages
+    @staticmethod
+    def _loc_str(details: ErrorDetails) -> str:
+        # Make the output prettier
+        # FIXME: Do that better: https://github.com/samuelcolvin/pydantic/issues/982
+        loc = details['loc']
+        if loc[0] == 'queues':
+            loc += ('handler',)
+
+        path = ''
+        for i, element in enumerate(loc):
+            if isinstance(element, str):
+                if i > 0:
+                    path += '.'
+                path += element
+            else:  # pragma: no cover (our config does not use lists)
+                path += f'[{element}]'
+
+        return path
 
 
 class NoSuchConfigurationError(Exception):
@@ -95,15 +110,18 @@ class Main(_Base):
     number_of_workers: int = dataclasses.field(default_factory=get_cpu_count)
     exit_on_empty_queues: bool = False
 
-    @validator('verbose', pre=True)
+    @field_validator('verbose', mode='before')
+    @classmethod
     def verbose_is_boolean(cls, value: Any) -> bool:
         return is_boolean(value)
 
-    @validator('number_of_workers', pre=True)
+    @field_validator('number_of_workers', mode='before')
+    @classmethod
     def number_of_workers_is_strictly_positive_integer(cls, value: Any) -> int:
         return is_strictly_positive_integer(value)
 
-    @validator('exit_on_empty_queues', pre=True)
+    @field_validator('exit_on_empty_queues', mode='before')
+    @classmethod
     def exit_on_empty_queues_is_boolean(cls, value: Any) -> bool:
         return is_boolean(value)
 
@@ -115,11 +133,13 @@ class Redis(_Base):
     password: str = DEFAULT_PASSWORD
     ssl: bool = False
 
-    @validator('host', pre=True)
+    @field_validator('host', mode='before')
+    @classmethod
     def host_is_non_empty_string(cls, value: Any) -> str:
         return is_non_empty_string(value)
 
-    @validator('port', pre=True)
+    @field_validator('port', mode='before')
+    @classmethod
     def port_is_strictly_positive_integer(cls, value: Any) -> int:
         return is_strictly_positive_integer(value)
 
@@ -133,23 +153,28 @@ class PostgreSQL(_Base):
     database: str = 'azafea'
     connect_args: Dict[str, str] = dataclasses.field(default_factory=dict)
 
-    @validator('host', pre=True)
+    @field_validator('host', mode='before')
+    @classmethod
     def host_is_non_empty_string(cls, value: Any) -> str:
         return is_non_empty_string(value)
 
-    @validator('port', pre=True)
+    @field_validator('port', mode='before')
+    @classmethod
     def port_is_strictly_positive_integer(cls, value: Any) -> int:
         return is_strictly_positive_integer(value)
 
-    @validator('user', pre=True)
+    @field_validator('user', mode='before')
+    @classmethod
     def user_is_non_empty_string(cls, value: Any) -> str:
         return is_non_empty_string(value)
 
-    @validator('password', pre=True)
+    @field_validator('password', mode='before')
+    @classmethod
     def password_is_non_empty_string(cls, value: Any) -> str:
         return is_non_empty_string(value)
 
-    @validator('database', pre=True)
+    @field_validator('database', mode='before')
+    @classmethod
     def database_is_non_empty_string(cls, value: Any) -> str:
         return is_non_empty_string(value)
 
@@ -171,19 +196,20 @@ class Queue(_Base):
         except AttributeError:
             raise ValueError(f'Module {module_name!r} is missing a {callable_name!r} function')
 
-    @root_validator(pre=True)
-    def get_computed_fields(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-        handler = values['handler']
-        values['processor'] = cls._validate_callable(handler, 'process')
+    # Since processor and cli are init=False, they need to be set in __post_init__ instead of
+    # @model_validator. Also, since the dataclass is frozen, they need to be set with
+    # object.__setattr__.
+    def __post_init__(self) -> None:
+        processor = self._validate_callable(self.handler, 'process')
+        object.__setattr__(self, 'processor', processor)
 
         try:
-            values['cli'] = cls._validate_callable(handler, 'register_commands')
+            cli = self._validate_callable(self.handler, 'register_commands')
+            object.__setattr__(self, 'cli', cli)
 
         except ValueError:
             # No CLI then
             pass
-
-        return values
 
 
 @dataclass(frozen=True)
@@ -193,7 +219,7 @@ class Config(_Base):
     postgresql: PostgreSQL = dataclasses.field(default_factory=PostgreSQL)
     queues: Mapping[str, Queue] = dataclasses.field(default_factory=dict)
 
-    def __post_init_post_parse__(self) -> None:
+    def __post_init__(self) -> None:
         self.warn_about_default_passwords()
 
     @classmethod

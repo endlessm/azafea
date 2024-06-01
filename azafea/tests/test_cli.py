@@ -46,7 +46,10 @@ def test_dropdb_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'dropdb')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_dropdb_no_event_queue(capfd, make_config_file):
@@ -92,7 +95,10 @@ def test_initdb_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'initdb')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_initdb_no_event_queue(capfd, make_config_file):
@@ -113,7 +119,10 @@ def test_make_migration_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'make-migration', 'some-queue')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_make_migration_no_event_queue(capfd, make_config_file):
@@ -177,7 +186,10 @@ def test_migratedb_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'migratedb')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_migratedb_no_event_queue(capfd, make_config_file):
@@ -265,7 +277,10 @@ def test_print_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'print-config')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_print_config_no_event_queue(capfd, make_config_file):
@@ -336,7 +351,10 @@ def test_replay_errors_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'replay-errors', 'some-queue')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_replay_errors_no_event_queue(capfd, make_config_file):
@@ -533,7 +551,10 @@ def test_run_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'run')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_run_no_event_queue(capfd, make_config_file):
