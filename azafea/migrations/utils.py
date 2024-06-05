@@ -40,4 +40,4 @@ def get_migration_heads(config: AlembicConfig) -> Tuple[Script]:
 
 
 def get_queue_migrations_path(queue_handler: str) -> str:
-    return coerce_resource_to_filename(f'{queue_handler}:migrations')
+    return os.fspath(coerce_resource_to_filename(f'{queue_handler}:migrations'))

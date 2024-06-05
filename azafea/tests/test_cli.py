@@ -27,7 +27,7 @@ def test_dropdb(capfd, monkeypatch, make_config_file):
 
         return process
 
-    config_file = make_config_file({'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}}})
+    config_file = make_config_file({'queues': {'some-queue': {'handler': 'azafea.tests'}}})
 
     with monkeypatch.context() as m:
         m.setattr(azafea.config, 'get_callable', mock_get_callable)
@@ -46,7 +46,10 @@ def test_dropdb_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'dropdb')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_dropdb_no_event_queue(capfd, make_config_file):
@@ -73,7 +76,7 @@ def test_initdb(capfd, monkeypatch, make_config_file):
 
         return process
 
-    config_file = make_config_file({'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}}})
+    config_file = make_config_file({'queues': {'some-queue': {'handler': 'azafea.tests'}}})
 
     with monkeypatch.context() as m:
         m.setattr(azafea.config, 'get_callable', mock_get_callable)
@@ -92,7 +95,10 @@ def test_initdb_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'initdb')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_initdb_no_event_queue(capfd, make_config_file):
@@ -113,7 +119,10 @@ def test_make_migration_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'make-migration', 'some-queue')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_make_migration_no_event_queue(capfd, make_config_file):
@@ -135,7 +144,7 @@ def test_make_migration_unknown_queue(capfd, monkeypatch, make_config_file):
         return process
 
     config_file = make_config_file({
-        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
+        'queues': {'some-queue': {'handler': 'azafea.tests'}},
     })
 
     with monkeypatch.context() as m:
@@ -157,7 +166,7 @@ def test_make_migration_no_migrations(capfd, monkeypatch, make_config_file):
         return process
 
     config_file = make_config_file({
-        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
+        'queues': {'some-queue': {'handler': 'azafea.tests'}},
     })
 
     with monkeypatch.context() as m:
@@ -177,7 +186,10 @@ def test_migratedb_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'migratedb')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_migratedb_no_event_queue(capfd, make_config_file):
@@ -198,7 +210,7 @@ def test_migratedb_no_migrations(capfd, monkeypatch, make_config_file):
         return process
 
     config_file = make_config_file({
-        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
+        'queues': {'some-queue': {'handler': 'azafea.tests'}},
     })
 
     with monkeypatch.context() as m:
@@ -221,7 +233,7 @@ def test_print_config(capfd, monkeypatch, make_config_file):
         'main': {'number_of_workers': 1},
         'redis': {'host': 'redis-server'},
         'postgresql': {'user': 'Léo'},
-        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
+        'queues': {'some-queue': {'handler': 'azafea.tests'}},
     })
 
     with monkeypatch.context() as m:
@@ -252,7 +264,7 @@ def test_print_config(capfd, monkeypatch, make_config_file):
         '[postgresql.connect_args]',
         '',
         '[queues.some-queue]',
-        'handler = "azafea.tests.test_cli"',
+        'handler = "azafea.tests"',
         '------ END ------',
     ])
 
@@ -265,7 +277,10 @@ def test_print_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'print-config')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_print_config_no_event_queue(capfd, make_config_file):
@@ -311,7 +326,7 @@ def test_replay_errors(capfd, monkeypatch, make_config_file):
         return process
 
     config_file = make_config_file({
-        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
+        'queues': {'some-queue': {'handler': 'azafea.tests'}},
     })
 
     with monkeypatch.context() as m:
@@ -336,7 +351,10 @@ def test_replay_errors_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'replay-errors', 'some-queue')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_replay_errors_no_event_queue(capfd, make_config_file):
@@ -357,7 +375,7 @@ def test_replay_errors_unknown_queue(capfd, monkeypatch, make_config_file):
         return process
 
     config_file = make_config_file({
-        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
+        'queues': {'some-queue': {'handler': 'azafea.tests'}},
     })
 
     with monkeypatch.context() as m:
@@ -405,7 +423,7 @@ def test_replay_errors_stopped_early(capfd, monkeypatch, make_config_file):
         return process
 
     config_file = make_config_file({
-        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
+        'queues': {'some-queue': {'handler': 'azafea.tests'}},
     })
 
     with monkeypatch.context() as m:
@@ -456,7 +474,7 @@ def test_replay_errors_fail_to_push(capfd, monkeypatch, make_config_file):
         return process
 
     config_file = make_config_file({
-        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}},
+        'queues': {'some-queue': {'handler': 'azafea.tests'}},
     })
 
     with monkeypatch.context() as m:
@@ -514,7 +532,7 @@ def test_run(capfd, monkeypatch, make_config_file):
 
         return process
 
-    config_file = make_config_file({'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}}})
+    config_file = make_config_file({'queues': {'some-queue': {'handler': 'azafea.tests'}}})
 
     with monkeypatch.context() as m:
         m.setattr(azafea.config, 'get_callable', mock_get_callable)
@@ -533,7 +551,10 @@ def test_run_invalid_config(capfd, make_config_file):
         azafea.cli.run_command('-c', str(config_file), 'run')
 
     capture = capfd.readouterr()
-    assert "Invalid configuration:\n* main.verbose: 'blah' is not a boolean" in capture.err
+    assert (
+        "Invalid configuration:\n"
+        "* main.verbose: Value error, 'blah' is not a boolean"
+    ) in capture.err
 
 
 def test_run_no_event_queue(capfd, make_config_file):
@@ -557,7 +578,7 @@ def test_run_redis_connection_error(capfd, monkeypatch, make_config_file):
     # Hopefully nobody will ever run the tests with a Redis server accessible at this host:port
     config_file = make_config_file({
         'redis': {'host': 'no-such-host', 'port': 1},
-        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}}
+        'queues': {'some-queue': {'handler': 'azafea.tests'}}
     })
 
     with monkeypatch.context() as m:
@@ -592,7 +613,7 @@ def test_run_postgresql_connection_error(capfd, monkeypatch, make_config_file):
     # Hopefully nobody will ever run the tests with a Redis server accessible at this host:port
     config_file = make_config_file({
         'postgresql': {'host': 'no-such-host', 'port': 1},
-        'queues': {'some-queue': {'handler': 'azafea.tests.test_cli'}}
+        'queues': {'some-queue': {'handler': 'azafea.tests'}}
     })
 
     with monkeypatch.context() as m:
@@ -627,7 +648,7 @@ def test_per_queue_command(capfd, monkeypatch, make_config_file):
     config_file = make_config_file({
         'queues': {
             'some-queue': {
-                'handler': 'azafea.tests.test_cli',
+                'handler': 'azafea.tests',
             },
         }
     })
@@ -660,7 +681,7 @@ def test_per_queue_invalid_command(capfd, monkeypatch, make_config_file):
     config_file = make_config_file({
         'queues': {
             'some-queue': {
-                'handler': 'azafea.tests.test_cli',
+                'handler': 'azafea.tests',
             },
         }
     })

@@ -7,26 +7,19 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-import os
-
-import pytest
+from importlib import import_module
+from pathlib import Path
 
 from .. import IntegrationTest
 
+TEST_DIR = Path(__file__).parent
+
 
 class TestEmptyMigrations(IntegrationTest):
-    # This needs to run before the "setup_teardown" method, and it seems pytest runs fixtures in
-    # alphabetical order when they have the same scope, which is what makes this work.
-    # FIXME: Can we control the order explicitly to be safer?
-    @pytest.fixture(autouse=True)
-    def set_handler_module(self, handler_with_migrations):
-        self.handler_module = handler_with_migrations.basename
-        self._handler_path = handler_with_migrations
-
     def test_make_empty_migration(self):
         self.run_subcommand('make-migration', 'test_make_empty_migration')
 
-        migrations = (self._handler_path / 'migrations').listdir()
+        migrations = list(self.migrations_dir.iterdir())
         assert len(migrations) == 1
 
         migration = migrations[0].read_text('utf-8')
@@ -47,21 +40,10 @@ class TestEmptyMigrations(IntegrationTest):
 
 
 class TestMigrations(IntegrationTest):
-    handler_module = 'azafea.tests.integration.migrations.handler_module'
-
-    @pytest.fixture(autouse=True)
-    def clean_migrations(self, request):
-        self._migrations_dir = os.path.join(request.fspath.dirname, 'migrations')
-        os.makedirs(self._migrations_dir, exist_ok=True)
-        assert len(self._list_migrations()) == 0
-
-        yield
-
-        for migration in self._list_migrations():
-            os.unlink(migration)
+    handler_path = TEST_DIR / 'handler_module.py'
 
     def _list_migrations(self):
-        return [os.path.join(self._migrations_dir, m) for m in os.scandir(self._migrations_dir)]
+        return list(self.migrations_dir.iterdir())
 
     def test_make_migration(self, request):
         self.run_subcommand('make-migration', 'test_make_migration')
@@ -87,8 +69,8 @@ class TestMigrations(IntegrationTest):
             '    # ### end Alembic commands ###',
         ]) in migration
 
-    def test_migratedb(self, handler_with_migrations):
-        from .handler_module import Event
+    def test_migratedb(self):
+        Event = import_module(self.handler_module).Event
 
         self.run_subcommand('make-migration', 'test_migratedb')
         self.ensure_no_tables()
@@ -99,8 +81,8 @@ class TestMigrations(IntegrationTest):
         self.run_subcommand('migratedb')
         self.ensure_tables(Event)
 
-    def test_one_more_migration(self, handler_with_migrations):
-        from .handler_module import Event
+    def test_one_more_migration(self):
+        Event = import_module(self.handler_module).Event
 
         self.run_subcommand('make-migration', 'test_one_more_migration')
         self.ensure_no_tables()

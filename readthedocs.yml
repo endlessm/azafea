@@ -6,11 +6,11 @@
 version: 2
 
 build:
-  os: ubuntu-20.04
+  os: ubuntu-22.04
 
   tools:
     # Keep this in sync with the Dockerfile python image version.
-    python: "3.8"
+    python: "3.11"
 
   # System packages needed for python requirements.
   apt_packages:
