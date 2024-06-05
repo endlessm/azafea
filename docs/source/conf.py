@@ -75,3 +75,7 @@ autodoc_member_order = 'bysource'
 # some external dependencies are not met at build time and break the building
 # process.
 autodoc_mock_imports = ['gi']
+
+# Disable typehints in function signatures. Autodoc is only being used to
+# document events and the types used in event initialization is irrelevant.
+autodoc_typehints = 'none'
