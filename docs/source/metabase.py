@@ -3,8 +3,11 @@ A Sphinx builder putting documentation on Metabase.
 
 """
 
+import json
 import os
+from pathlib import Path
 import re
+import time
 from typing import Any, Dict, List, Optional
 
 import sphinx.writers.text
@@ -48,16 +51,72 @@ class MetabaseBuilder(DummyBuilder):
         session.headers['Content-Type'] = 'application/json'
 
         # Gather authentication headers
-        json = {
-            'username': self.config.metabase_username,
-            'password': self.config.metabase_password,
-        }
-        logger.debug('Creating Metabase session')
-        with session.post(f'{self.config.metabase_url}/session', json=json) as response:
-            response.raise_for_status()
-            session.headers['X-Metabase-Session'] = response.json()['id']
+        session_data = self._read_session_data()
+        if not session_data:
+            json = {
+                'username': self.config.metabase_username,
+                'password': self.config.metabase_password,
+            }
+            logger.debug('Creating new Metabase session')
+            with session.post(f'{self.config.metabase_url}/session', json=json) as response:
+                response.raise_for_status()
+                session_data = response.json()
+            self._store_session_data(session_data)
+
+        session.headers['X-Metabase-Session'] = session_data['id']
 
         return session
+
+    def _session_cache_path(self) -> Path:
+        xdg_cache_home = Path(os.environ.get('XDG_CACHE_HOME', '~/.cache')).expanduser()
+        return xdg_cache_home / 'sphinx-metabase-session.json'
+
+    def _store_session_data(self, data: Dict) -> None:
+        path = self._session_cache_path()
+        logger.debug(f'Storing Metabase session data at {path}')
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            with path.open('r') as f:
+                full_data = json.load(f)
+        except FileNotFoundError:
+            full_data = {}
+
+        full_data[self.config.metabase_url] = {
+            'data': data,
+            'created': int(time.time()),
+        }
+        with path.open('w') as f:
+            json.dump(full_data, f, indent=2)
+        path.chmod(0o600)
+
+    def _read_session_data(self) -> Optional[Dict]:
+        path = self._session_cache_path()
+
+        logger.debug(f'Reading Metabase session data from {path}')
+        try:
+            with path.open('r') as f:
+                full_data = json.load(f)
+        except FileNotFoundError:
+            logger.debug(f'No Metabase session data at {path}')
+            return None
+
+        entry = full_data.get(self.config.metabase_url)
+        if not entry:
+            logger.debug(f'No entry for Metabase {self.config.metabase_url} in {path}')
+            return None
+
+        # By default, metabase sessions are valid for 2 weeks. However, that's configurable, so
+        # reuse the session data for 1 week.
+        #
+        # https://www.metabase.com/learn/administration/metabase-api#authenticate-your-requests-with-a-session-token
+        max_age = 60 * 60 * 24 * 7
+        age = time.time() - entry.get('created', 0)
+        if age > max_age:
+            logger.debug(f'Ignoring session data in {path} older than 1 week')
+            return None
+
+        return entry.get('data')
 
     def format_description(self, lines: List[str]) -> str:
         """Format tables and fields descriptions from ReST to plain text."""
