@@ -15,6 +15,7 @@ import requests
 from docutils.core import publish_string
 from sphinx.application import Sphinx
 from sphinx.builders.dummy import DummyBuilder
+from sphinx.errors import ConfigError
 from sphinx.util import logging
 from sphinx.writers.text import TextTranslator, TextWriter
 
@@ -34,6 +35,16 @@ class MetabaseBuilder(DummyBuilder):
         self.tables: dict = {}
         self.session: requests.Session = self._create_session()
 
+        # Either an API key or username/password are required.
+        if (
+            not self.config.metabase_api_key and
+            not (self.config.metabase_username and self.config.metabase_password)
+        ):
+            raise ConfigError(
+                'Either metabase_api_key or metabase_username and metabase_password '
+                'must be set for the metabase builder'
+            )
+
     def _get(self, path: str) -> Dict[str, Any]:
         """Launch a GET requests on Metabase API."""
         with self.session.get(f'{self.config.metabase_url}/{path}') as response:
@@ -50,7 +61,12 @@ class MetabaseBuilder(DummyBuilder):
         session = requests.Session()
         session.headers['Content-Type'] = 'application/json'
 
-        # Gather authentication headers
+        # Prefer an API key.
+        if self.config.metabase_api_key:
+            session.headers['X-API-Key'] = self.config.metabase_api_key
+            return session
+
+        # Gather session data.
         session_data = self._read_session_data()
         if not session_data:
             json = {
@@ -259,6 +275,7 @@ def setup(app: Sphinx) -> None:
     """Setup the Sphinx application."""
     default_url = os.environ.get('METABASE_URL', 'https://metabase.endlessm.com/api')
     app.add_config_value('metabase_url', default_url, 'env')
+    app.add_config_value('metabase_api_key', os.environ.get('METABASE_API_KEY'), 'env')
     app.add_config_value('metabase_username', os.environ.get('METABASE_USERNAME'), 'env')
     app.add_config_value('metabase_password', os.environ.get('METABASE_PASSWORD'), 'env')
     dry_run_env = os.environ.get('METABASE_DRY_RUN', '')

@@ -83,8 +83,10 @@ autodoc_typehints = 'none'
 # Metabase API URL. Can also be set by the METABASE_URL environment variable.
 # metabase_url = 'https://metabase.endlessm.com/api'
 
-# Metabase username and password. Can also be set by the METABASE_USERNAME and
-# METABASE_PASSWORD environment variables.
+# Metabase authentication. Either an API key or username and password can be
+# used. The values can also be set by the METABASE_API_KEY, METABASE_USERNAME
+# and METABASE_PASSWORD environment variables, respectively.
+# metabase_api_key = None
 # metabase_username = None
 # metabase_password = None
 
