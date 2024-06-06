@@ -10,17 +10,26 @@ jobs:
   metabase:
     name: Update Documentation on Metabase
     runs-on: ubuntu-latest
+    container: python:3.11-alpine
     env:
       METABASE_USERNAME: ${{ secrets.METABASE_USERNAME }}
       METABASE_PASSWORD: ${{ secrets.METABASE_PASSWORD }}
       METABASE_DRY_RUN: >-
         ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
     steps:
-      - uses: actions/checkout@v4
-      - name: Install GObject-Introspection
-        run: sudo apt install libgirepository1.0-dev
+      - name: Install system dependencies
+        run: |
+          apk add --update --no-cache \
+          build-base \
+          cairo-dev \
+          git \
+          glib-dev \
+          gobject-introspection-dev \
+          libffi-dev \
+          postgresql-dev
       - name: Install Pipenv
-        run: sudo pip3 install pipenv
+        run: pip install --no-cache-dir pipenv
+      - uses: actions/checkout@v4
       - name: Install Dev Dependencies
         run: pipenv install --dev
       - name: Upload Documentation
