@@ -5,7 +5,7 @@ A Sphinx builder putting documentation on Metabase.
 
 import os
 import re
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 import sphinx.writers.text
 import requests
@@ -26,9 +26,10 @@ class MetabaseBuilder(DummyBuilder):
     name = 'metabase'
     epilog = 'Metabase documentation has been updated.'
     default_translator_class = TextTranslator
-    tables = None
-    writer = None
-    _session = None
+
+    def init(self) -> None:
+        self.tables: dict = {}
+        self.session: requests.Session = self._create_session()
 
     def _get(self, path: str) -> Dict[str, Any]:
         """Launch a GET requests on Metabase API."""
@@ -42,24 +43,21 @@ class MetabaseBuilder(DummyBuilder):
             response.raise_for_status()
             return response.json()
 
-    @property
-    def session(self):
-        if not self._session:
-            self._session = requests.Session()
+    def _create_session(self) -> requests.Session:
+        session = requests.Session()
+        session.headers['Content-Type'] = 'application/json'
 
-            # Gather authentication headers
-            json = {
-                'username': self.config.metabase_username,
-                'password': self.config.metabase_password,
-            }
-            with self._session.post(f'{self.config.metabase_url}/session', json=json) as response:
-                response.raise_for_status()
-                self._session.headers.update({
-                    'Content-Type': 'application/json',
-                    'X-Metabase-Session': response.json()['id'],
-                })
+        # Gather authentication headers
+        json = {
+            'username': self.config.metabase_username,
+            'password': self.config.metabase_password,
+        }
+        logger.debug('Creating Metabase session')
+        with session.post(f'{self.config.metabase_url}/session', json=json) as response:
+            response.raise_for_status()
+            session.headers['X-Metabase-Session'] = response.json()['id']
 
-        return self._session
+        return session
 
     def format_description(self, lines: List[str]) -> str:
         """Format tables and fields descriptions from ReST to plain text."""
@@ -186,10 +184,6 @@ def process_docstring(app: Sphinx, type_: str, name: str, obj: Any, data: Dict[s
     # Ignore other builders
     if app.builder.name != 'metabase':
         return
-
-    # Create tables dict if not set
-    if app.builder.tables is None:
-        app.builder.tables = {}
 
     # Find tables and fields in documentation
     tables = app.builder.tables
