@@ -24,6 +24,7 @@ sphinx.writers.text.MAXWIDTH = float('inf')
 class MetabaseBuilder(DummyBuilder):
     """Sphinx builder used to deploy descriptions on Metabase."""
     name = 'metabase'
+    epilog = 'Metabase documentation has been updated.'
     default_translator_class = TextTranslator
     tables = None
     writer = None
