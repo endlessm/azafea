@@ -20,4 +20,4 @@ jobs:
       - name: Install Dev Dependencies
         run: pipenv install --dev
       - name: Upload Documentation
-        run: pipenv run sphinx-build docs/source/ docs/build/html/ -b metabase -E
+        run: pipenv run metabase -E
