@@ -79,3 +79,18 @@ autodoc_mock_imports = ['gi']
 # Disable typehints in function signatures. Autodoc is only being used to
 # document events and the types used in event initialization is irrelevant.
 autodoc_typehints = 'none'
+
+# Metabase API URL. Can also be set by the METABASE_URL environment variable.
+# metabase_url = 'https://metabase.endlessm.com/api'
+
+# Metabase authentication. Either an API key or username and password can be
+# used. The values can also be set by the METABASE_API_KEY, METABASE_USERNAME
+# and METABASE_PASSWORD environment variables, respectively.
+# metabase_api_key = None
+# metabase_username = None
+# metabase_password = None
+
+# Metabase dry run. Shows what would be sent to Metabase without updating. Can
+# also be set by the METABASE_DRY_RUN environment variable. If the value is y,
+# yes, 1 or true, dry run mode is enabled.
+# metabase_dry_run = False
