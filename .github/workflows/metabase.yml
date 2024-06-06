@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - master
+  pull_request:
+  workflow_dispatch:
 
 jobs:
   metabase:
@@ -11,6 +13,8 @@ jobs:
     env:
       METABASE_USERNAME: ${{ secrets.METABASE_USERNAME }}
       METABASE_PASSWORD: ${{ secrets.METABASE_PASSWORD }}
+      METABASE_DRY_RUN: >-
+        ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
     steps:
       - uses: actions/checkout@v4
       - name: Install GObject-Introspection
