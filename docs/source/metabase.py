@@ -131,8 +131,17 @@ class MetabaseBuilder(DummyBuilder):
             logger.info(f'{progress} Updating table {table["name"]}')
             description, points_of_interest = self.format_description(
                 self.tables[table['name']]['lines'])
-            self._put(f'table/{table["id"]}', json={
-                'description': description, 'points_of_interest': points_of_interest})
+            path = f'table/{table["id"]}'
+            data = {
+                'description': description,
+                'points_of_interest': points_of_interest,
+            }
+            if self.config.metabase_dry_run:
+                logger.info(
+                    f'Dry run, not updating table {table["id"]} with data {data}'
+                )
+            else:
+                self._put(path, json=data)
 
         # Quit early if no table has been found
         if db_id is None:
@@ -158,8 +167,17 @@ class MetabaseBuilder(DummyBuilder):
             logger.info(f'{progress} Updating field {field["table"]["name"]}.{field["name"]}')
             description, points_of_interest = self.format_description(
                 self.tables[field['table']['name']]['fields'][field['name']])
-            self._put(f'field/{field["id"]}', json={
-                'description': description, 'points_of_interest': points_of_interest})
+            path = f'field/{field["id"]}'
+            data = {
+                'description': description,
+                'points_of_interest': points_of_interest,
+            }
+            if self.config.metabase_dry_run:
+                logger.info(
+                    f'Dry run, not updating field {field["id"]} with data {data}'
+                )
+            else:
+                self._put(path, json=data)
 
 
 def process_docstring(app: Sphinx, type_: str, name: str, obj: Any, data: Dict[str, Any],
@@ -190,5 +208,8 @@ def setup(app: Sphinx) -> None:
     app.add_config_value('metabase_url', default_url, 'env')
     app.add_config_value('metabase_username', os.environ.get('METABASE_USERNAME'), 'env')
     app.add_config_value('metabase_password', os.environ.get('METABASE_PASSWORD'), 'env')
+    dry_run_env = os.environ.get('METABASE_DRY_RUN', '')
+    dry_run = True if dry_run_env.lower() in ('y', 'yes', '1', 'true') else False
+    app.add_config_value('metabase_dry_run', dry_run, 'env')
     app.connect('autodoc-process-docstring', process_docstring)
     app.add_builder(MetabaseBuilder)
