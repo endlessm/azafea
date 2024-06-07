@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 import re
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import sphinx.writers.text
 import requests
@@ -134,6 +134,14 @@ class MetabaseBuilder(DummyBuilder):
 
         return entry.get('data')
 
+    @staticmethod
+    def _none_if_blank(value: str) -> Union[str, None]:
+        """Return the value with whitespace stripped or None if it's blank."""
+        value = value.strip()
+        if len(value) == 0:
+            return None
+        return value
+
     def format_description(self, lines: List[str]) -> str:
         """Format tables and fields descriptions from ReST to plain text."""
 
@@ -175,9 +183,13 @@ class MetabaseBuilder(DummyBuilder):
         # Split description and points of interest
         lines = plain_text.split('\n')
         if len(lines) > 2 and lines[1] == '':
-            return lines[0].strip(), '\n'.join(lines[2:]).strip()
+            description = self._none_if_blank(lines[0])
+            points_of_interest = self._none_if_blank('\n'.join(lines[2:]))
         else:
-            return '\n'.join(lines).strip(), None
+            description = self._none_if_blank('\n'.join(lines))
+            points_of_interest = None
+
+        return description, points_of_interest
 
     def finish(self) -> None:
         """Finish the Sphinx building process."""
