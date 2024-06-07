@@ -12,8 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     container: python:3.11-alpine
     env:
-      METABASE_USERNAME: ${{ secrets.METABASE_USERNAME }}
-      METABASE_PASSWORD: ${{ secrets.METABASE_PASSWORD }}
+      METABASE_API_KEY: ${{ secrets.METABASE_API_KEY }}
       METABASE_DRY_RUN: >-
         ${{ github.event_name == 'pull_request' && 'true' || 'false' }}
     steps:
