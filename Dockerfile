@@ -20,7 +20,7 @@ USER azafea
 WORKDIR /opt/azafea/src
 
 COPY Pipfile.lock .
-RUN pipenv install --ignore-pipfile --dev
+RUN pipenv sync --dev --clear
 
 COPY --chown=azafea:root . .
 
