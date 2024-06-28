@@ -1,7 +1,7 @@
 FROM registry.hub.docker.com/library/python:3.11-alpine
 
 RUN apk add --update --no-cache ca-certificates && \
-    wget https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem -O /usr/local/share/ca-certificates/rds.crt && \
+    wget https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem -O /usr/local/share/ca-certificates/rds.crt && \
     update-ca-certificates
 
 RUN pip install --no-cache-dir pipenv template && \
